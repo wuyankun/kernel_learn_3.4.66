@@ -730,11 +730,12 @@ static int hid_set_idle(struct usb_device *dev, int ifnum, int report, int idle)
 		ifnum, NULL, 0, USB_CTRL_SET_TIMEOUT);
 }
 
+//连续发送4条控制指令，获取设备的描述符信息
 static int hid_get_class_descriptor(struct usb_device *dev, int ifnum,
 		unsigned char type, void *buf, int size)
 {
 	int result, retries = 4;
-
+	//重置缓冲区为0
 	memset(buf, 0, size);
 
 	do {
@@ -743,7 +744,7 @@ static int hid_get_class_descriptor(struct usb_device *dev, int ifnum,
 				(type << 8), ifnum, buf, size, USB_CTRL_GET_TIMEOUT);
 		retries--;
 	} while (result < size && retries);
-	return result;
+	return result;//返回为读取到的描述符个数，存在bug ?
 }
 
 int usbhid_open(struct hid_device *hid)
@@ -1037,22 +1038,27 @@ static int usbhid_parse(struct hid_device *hid)
 	hid->version = le16_to_cpu(hdesc->bcdHID);
 	hid->country = hdesc->bCountryCode;
 
+	//从hid 的设备描述符中，取出描述符的长度
 	for (n = 0; n < hdesc->bNumDescriptors; n++)
-		if (hdesc->desc[n].bDescriptorType == HID_DT_REPORT)
+		if (hdesc->desc[n].bDescriptorType == HID_DT_REPORT)//描述类型为报告
 			rsize = le16_to_cpu(hdesc->desc[n].wDescriptorLength);
 
+	//长度不为空，且不超过最大值
 	if (!rsize || rsize > HID_MAX_DESCRIPTOR_SIZE) {
 		dbg_hid("weird size of report descriptor (%u)\n", rsize);
 		return -EINVAL;
 	}
 
+	//分配rsize 个内存空间
 	if (!(rdesc = kmalloc(rsize, GFP_KERNEL))) {
 		dbg_hid("couldn't allocate rdesc memory\n");
 		return -ENOMEM;
 	}
 
+	//重启设备? 向设备发送一条控制指令，重置设备默认超时时间为5000ms
 	hid_set_idle(dev, interface->desc.bInterfaceNumber, 0, 0);
 
+	//获取hid 设备描述符信息,这里是否存在潜在的bug 
 	ret = hid_get_class_descriptor(dev, interface->desc.bInterfaceNumber,
 			HID_DT_REPORT, rdesc, rsize);
 	if (ret < 0) {
@@ -1060,7 +1066,7 @@ static int usbhid_parse(struct hid_device *hid)
 		kfree(rdesc);
 		goto err;
 	}
-
+	//解析读取到的设备描述符信息
 	ret = hid_parse_report(hid, rdesc, rsize);
 	kfree(rdesc);
 	if (ret) {
@@ -1068,7 +1074,7 @@ static int usbhid_parse(struct hid_device *hid)
 		goto err;
 	}
 
-	hid->quirks |= quirks;
+	hid->quirks |= quirks;//保存查找到的特殊处理方式，非特殊为0
 
 	return 0;
 err:

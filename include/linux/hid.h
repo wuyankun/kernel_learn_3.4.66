@@ -81,38 +81,38 @@
  */
 
 struct hid_item {
-	unsigned  format;
-	__u8      size;
-	__u8      type;
-	__u8      tag;
+	unsigned  format;//指示条目的类型，长条目和短条目两种
+	__u8      size;//条目的大小信息
+	__u8      type;//类型，不同类型使用不同的解析器
+	__u8      tag;//标识，代表当前条目的类型
 	union {
 	    __u8   u8;
 	    __s8   s8;
 	    __u16  u16;
 	    __s16  s16;
 	    __u32  u32;
-	    __s32  s32;
-	    __u8  *longdata;
+	    __s32  s32;//短条目，采用联合填充为32 位的int 空间
+	    __u8  *longdata;//长条目，包含一个指针指向数据区域
 	} data;
 };
 
 /*
  * HID report item format
  */
-
+//条目的格式，长短两种
 #define HID_ITEM_FORMAT_SHORT	0
 #define HID_ITEM_FORMAT_LONG	1
 
 /*
  * Special tag indicating long items
  */
-
+//特殊条目长度
 #define HID_ITEM_TAG_LONG	15
 
 /*
  * HID report descriptor item type (prefix bit 2,3)
  */
-
+//条目的类型，对应不同的解析器
 #define HID_ITEM_TYPE_MAIN		0
 #define HID_ITEM_TYPE_GLOBAL		1
 #define HID_ITEM_TYPE_LOCAL		2
@@ -121,7 +121,7 @@ struct hid_item {
 /*
  * HID report descriptor main item tags
  */
-
+//Hid 报告描述符主条目的标识类型
 #define HID_MAIN_ITEM_TAG_INPUT			8
 #define HID_MAIN_ITEM_TAG_OUTPUT		9
 #define HID_MAIN_ITEM_TAG_FEATURE		11
@@ -153,7 +153,7 @@ struct hid_item {
 /*
  * HID report descriptor global item tags
  */
-
+//全局的报告描述符条目标识
 #define HID_GLOBAL_ITEM_TAG_USAGE_PAGE		0
 #define HID_GLOBAL_ITEM_TAG_LOGICAL_MINIMUM	1
 #define HID_GLOBAL_ITEM_TAG_LOGICAL_MAXIMUM	2
@@ -329,7 +329,7 @@ struct hid_item {
  * persistent for main-items. The global environment can be saved and
  * restored with PUSH/POP statements.
  */
-
+//全局环境变量解析器，对所有的主条目有效
 struct hid_global {
 	unsigned usage_page;
 	__s32    logical_minimum;
@@ -346,7 +346,7 @@ struct hid_global {
 /*
  * This is the local environment. It is persistent up the next main-item.
  */
-
+//局部变量解析器，有效期至下一条主条目
 #define HID_MAX_USAGES			12288
 #define HID_DEFAULT_NUM_COLLECTIONS	16
 
@@ -355,7 +355,7 @@ struct hid_local {
 	unsigned collection_index[HID_MAX_USAGES]; /* collection index array */
 	unsigned usage_index;
 	unsigned usage_minimum;
-	unsigned delimiter_depth;
+	unsigned delimiter_depth;//delimiter 定界符
 	unsigned delimiter_branch;
 };
 
@@ -363,7 +363,7 @@ struct hid_local {
  * This is the collection stack. We climb up the stack to determine
  * application and function of each field.
  */
-
+//决定应用场景和每个域的功能，非常重要
 struct hid_collection {
 	unsigned type;
 	unsigned usage;
@@ -552,6 +552,7 @@ static inline void hid_set_drvdata(struct hid_device *hdev, void *data)
 	dev_set_drvdata(&hdev->dev, data);
 }
 
+//描述符解析器的栈空间
 #define HID_GLOBAL_STACK_SIZE 4
 #define HID_COLLECTION_STACK_SIZE 4
 

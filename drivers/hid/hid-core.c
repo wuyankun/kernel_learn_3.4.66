@@ -651,13 +651,15 @@ static u8 *fetch_item(__u8 *start, __u8 *end, struct hid_item *item)
  * enumerated, fields are attached to these reports.
  * 0 returned on success, otherwise nonzero error value.
  */
+//解析hid 的报告描述符信息，描述符的开始和大小
 int hid_parse_report(struct hid_device *device, __u8 *start,
 		unsigned size)
 {
-	struct hid_parser *parser;
-	struct hid_item item;
+	struct hid_parser *parser;//描述符解析器上下文
+	struct hid_item item;//一条条目
 	__u8 *end;
 	int ret;
+	//函数指针数组，不同类型条目使用不同的解析器
 	static int (*dispatch_type[])(struct hid_parser *parser,
 				      struct hid_item *item) = {
 		hid_parser_main,
@@ -666,14 +668,19 @@ int hid_parse_report(struct hid_device *device, __u8 *start,
 		hid_parser_reserved
 	};
 
+	//驱动是否指定了hid 报告描述符的修正方法回调接口
+	//某些hid 报告的描述符存在bug?反正有一些这么强制修改的
+	//通用设备没有定义这样的接口
 	if (device->driver->report_fixup)
 		start = device->driver->report_fixup(device, start, &size);
-
+	
+	//拷贝报告描述符信息，保存在设备上下文中
 	device->rdesc = kmemdup(start, size, GFP_KERNEL);
 	if (device->rdesc == NULL)
 		return -ENOMEM;
-	device->rsize = size;
+	device->rsize = size;//保存报告描述符的大小信息到设备上下文中
 
+	//申请解析器的内存空间，存在若干栈空间(数组实现)
 	parser = vzalloc(sizeof(struct hid_parser));
 	if (!parser) {
 		ret = -ENOMEM;
@@ -682,28 +689,29 @@ int hid_parse_report(struct hid_device *device, __u8 *start,
 
 	parser->device = device;
 
+	//记录报告描述符的末尾
 	end = start + size;
 	ret = -EINVAL;
 	while ((start = fetch_item(start, end, &item)) != NULL) {
 
-		if (item.format != HID_ITEM_FORMAT_SHORT) {
+		if (item.format != HID_ITEM_FORMAT_SHORT) {//全部为短格式的条目
 			hid_err(device, "unexpected long global item\n");
 			goto err;
 		}
 
-		if (dispatch_type[item.type](parser, &item)) {
+		if (dispatch_type[item.type](parser, &item)) {//根据不同的条目类型，回调相应的解析器解析
 			hid_err(device, "item %u %u %u %u parsing failed\n",
 				item.format, (unsigned)item.size,
 				(unsigned)item.type, (unsigned)item.tag);
 			goto err;
 		}
 
-		if (start == end) {
-			if (parser->collection_stack_ptr) {
+		if (start == end) {//解析条目时fetch_item 是破坏性的
+			if (parser->collection_stack_ptr) {//栈指针不为零，报错? 待分析
 				hid_err(device, "unbalanced collection at end of report description\n");
 				goto err;
 			}
-			if (parser->local.delimiter_depth) {
+			if (parser->local.delimiter_depth) {//local 解析器的定界符不为零，俗称标识位不为0
 				hid_err(device, "unbalanced delimiter at end of report description\n");
 				goto err;
 			}
@@ -711,7 +719,7 @@ int hid_parse_report(struct hid_device *device, __u8 *start,
 			return 0;
 		}
 	}
-
+	//获取条目内存出错，在具体某个位置
 	hid_err(device, "item fetching failed at offset %d\n", (int)(end - start));
 err:
 	vfree(parser);
