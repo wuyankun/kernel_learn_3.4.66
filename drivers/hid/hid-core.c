@@ -283,7 +283,7 @@ static int hid_add_field(struct hid_parser *parser, unsigned report_type, unsign
 /*
  * Read data value from item.
  */
-
+//读取条目的数据，分别使用u 和s 来读取
 static u32 item_udata(struct hid_item *item)
 {
 	switch (item->size) {
@@ -307,11 +307,11 @@ static s32 item_sdata(struct hid_item *item)
 /*
  * Process a global item.
  */
-
+//全局Hid 描述符解析器
 static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 {
 	switch (item->tag) {
-	case HID_GLOBAL_ITEM_TAG_PUSH:
+	case HID_GLOBAL_ITEM_TAG_PUSH://压入一个全局解析器
 
 		if (parser->global_stack_ptr == HID_GLOBAL_STACK_SIZE) {
 			hid_err(parser->device, "global environment stack overflow\n");
@@ -322,7 +322,7 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 			&parser->global, sizeof(struct hid_global));
 		return 0;
 
-	case HID_GLOBAL_ITEM_TAG_POP:
+	case HID_GLOBAL_ITEM_TAG_POP://弹出一个全局解析器
 
 		if (!parser->global_stack_ptr) {
 			hid_err(parser->device, "global environment stack underflow\n");
@@ -333,22 +333,22 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 			--parser->global_stack_ptr, sizeof(struct hid_global));
 		return 0;
 
-	case HID_GLOBAL_ITEM_TAG_USAGE_PAGE:
+	case HID_GLOBAL_ITEM_TAG_USAGE_PAGE://弹出定义的struct hid_global 中的各个成员，分别赋值
 		parser->global.usage_page = item_udata(item);
 		return 0;
 
 	case HID_GLOBAL_ITEM_TAG_LOGICAL_MINIMUM:
-		parser->global.logical_minimum = item_sdata(item);
+		parser->global.logical_minimum = item_sdata(item);//最小值为有符号数
 		return 0;
 
-	case HID_GLOBAL_ITEM_TAG_LOGICAL_MAXIMUM:
-		if (parser->global.logical_minimum < 0)
+	case HID_GLOBAL_ITEM_TAG_LOGICAL_MAXIMUM://逻辑,得看协议，不明白具体含义
+		if (parser->global.logical_minimum < 0)//最小值小于0, 则最大值采用有符号数
 			parser->global.logical_maximum = item_sdata(item);
 		else
-			parser->global.logical_maximum = item_udata(item);
+			parser->global.logical_maximum = item_udata(item);//否则取无符号数
 		return 0;
 
-	case HID_GLOBAL_ITEM_TAG_PHYSICAL_MINIMUM:
+	case HID_GLOBAL_ITEM_TAG_PHYSICAL_MINIMUM://物理,不明白具体含义
 		parser->global.physical_minimum = item_sdata(item);
 		return 0;
 
@@ -359,7 +359,7 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 			parser->global.physical_maximum = item_udata(item);
 		return 0;
 
-	case HID_GLOBAL_ITEM_TAG_UNIT_EXPONENT:
+	case HID_GLOBAL_ITEM_TAG_UNIT_EXPONENT://查看协议
 		parser->global.unit_exponent = item_sdata(item);
 		return 0;
 
@@ -369,7 +369,7 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 
 	case HID_GLOBAL_ITEM_TAG_REPORT_SIZE:
 		parser->global.report_size = item_udata(item);
-		if (parser->global.report_size > 96) {
+		if (parser->global.report_size > 96) {//report 的大小不能大于96
 			hid_err(parser->device, "invalid report_size %d\n",
 					parser->global.report_size);
 			return -1;
@@ -378,7 +378,7 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 
 	case HID_GLOBAL_ITEM_TAG_REPORT_COUNT:
 		parser->global.report_count = item_udata(item);
-		if (parser->global.report_count > HID_MAX_USAGES) {
+		if (parser->global.report_count > HID_MAX_USAGES) {//report 的个数不能大于12288
 			hid_err(parser->device, "invalid report_count %d\n",
 					parser->global.report_count);
 			return -1;
@@ -386,7 +386,7 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 		return 0;
 
 	case HID_GLOBAL_ITEM_TAG_REPORT_ID:
-		parser->global.report_id = item_udata(item);
+		parser->global.report_id = item_udata(item);//report 的id 值为1-255 ,其他非法
 		if (parser->global.report_id == 0 ||
 		    parser->global.report_id >= HID_MAX_IDS) {
 			hid_err(parser->device, "report_id %u is invalid\n",
@@ -396,7 +396,8 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 		return 0;
 
 	default:
-		hid_err(parser->device, "unknown global tag 0x%x\n", item->tag);
+		hid_err(parser->device, "unknown global tag 0x%x\n", item->tag);//其他 的tag类型表示未识别的tag
+																		//基本确定传入的数据发送了错误
 		return -1;
 	}
 }
@@ -404,7 +405,7 @@ static int hid_parser_global(struct hid_parser *parser, struct hid_item *item)
 /*
  * Process a local item.
  */
-
+//局部Hid 描述符解析器，关联usage
 static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 {
 	__u32 data;
@@ -413,7 +414,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 	data = item_udata(item);
 
 	switch (item->tag) {
-	case HID_LOCAL_ITEM_TAG_DELIMITER:
+	case HID_LOCAL_ITEM_TAG_DELIMITER://delimiter 标识位，定位符
 
 		if (data) {
 			/*
@@ -422,25 +423,25 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 			 * In the moment we process only these global
 			 * items and the first delimiter set.
 			 */
-			if (parser->local.delimiter_depth != 0) {
-				hid_err(parser->device, "nested delimiters\n");
+			if (parser->local.delimiter_depth != 0) {//如果定位符的深度不为0，则表示出错
+				hid_err(parser->device, "nested delimiters\n");//一个加操作，必须对应一个减操作
 				return -1;
 			}
-			parser->local.delimiter_depth++;
-			parser->local.delimiter_branch++;
+			parser->local.delimiter_depth++;//加操作，此时条目的数据不为空
+			parser->local.delimiter_branch++;//分支加操作
 		} else {
-			if (parser->local.delimiter_depth < 1) {
+			if (parser->local.delimiter_depth < 1) {//进行减操作前，确保深度大于1,深度为正数
 				hid_err(parser->device, "bogus close delimiter\n");
 				return -1;
 			}
-			parser->local.delimiter_depth--;
+			parser->local.delimiter_depth--;//减操作，此时条目的数据为空
 		}
 		return 1;
 
 	case HID_LOCAL_ITEM_TAG_USAGE:
 
-		if (parser->local.delimiter_branch > 1) {
-			dbg_hid("alternative usage ignored\n");
+		if (parser->local.delimiter_branch > 1) {//分支大于1 ,表示出错
+			dbg_hid("alternative usage ignored\n");//无符号数，则可取值0 和1
 			return 0;
 		}
 
@@ -451,7 +452,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 
 	case HID_LOCAL_ITEM_TAG_USAGE_MINIMUM:
 
-		if (parser->local.delimiter_branch > 1) {
+		if (parser->local.delimiter_branch > 1) {//无符号数，则可取值0 和1
 			dbg_hid("alternative usage ignored\n");
 			return 0;
 		}
@@ -464,7 +465,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 
 	case HID_LOCAL_ITEM_TAG_USAGE_MAXIMUM:
 
-		if (parser->local.delimiter_branch > 1) {
+		if (parser->local.delimiter_branch > 1) {//无符号数，则可取值0 和1
 			dbg_hid("alternative usage ignored\n");
 			return 0;
 		}
@@ -473,7 +474,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 			data = (parser->global.usage_page << 16) + data;
 
 		for (n = parser->local.usage_minimum; n <= data; n++)
-			if (hid_add_usage(parser, n)) {
+			if (hid_add_usage(parser, n)) {//添加一个usage ,具体含义未知
 				dbg_hid("hid_add_usage failed\n");
 				return -1;
 			}
@@ -481,7 +482,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 
 	default:
 
-		dbg_hid("unknown local item tag 0x%x\n", item->tag);
+		dbg_hid("unknown local item tag 0x%x\n", item->tag);//非法的，不识别的tag 值
 		return 0;
 	}
 	return 0;
@@ -490,7 +491,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 /*
  * Process a main item.
  */
-
+//Hid 描述符主条目解析器，关联collection 和field
 static int hid_parser_main(struct hid_parser *parser, struct hid_item *item)
 {
 	__u32 data;
@@ -499,26 +500,27 @@ static int hid_parser_main(struct hid_parser *parser, struct hid_item *item)
 	data = item_udata(item);
 
 	switch (item->tag) {
-	case HID_MAIN_ITEM_TAG_BEGIN_COLLECTION:
-		ret = open_collection(parser, data & 0xff);
+	case HID_MAIN_ITEM_TAG_BEGIN_COLLECTION://collection(采集器) 开始标识
+		ret = open_collection(parser, data & 0xff);//创建一个新的collection
 		break;
-	case HID_MAIN_ITEM_TAG_END_COLLECTION:
-		ret = close_collection(parser);
+	case HID_MAIN_ITEM_TAG_END_COLLECTION://collection 结束标识
+		ret = close_collection(parser);//关闭一个采集器
 		break;
-	case HID_MAIN_ITEM_TAG_INPUT:
-		ret = hid_add_field(parser, HID_INPUT_REPORT, data);
+	case HID_MAIN_ITEM_TAG_INPUT://input 标识
+		ret = hid_add_field(parser, HID_INPUT_REPORT, data);//增加field(字段)
 		break;
-	case HID_MAIN_ITEM_TAG_OUTPUT:
-		ret = hid_add_field(parser, HID_OUTPUT_REPORT, data);
+	case HID_MAIN_ITEM_TAG_OUTPUT://output 标识
+		ret = hid_add_field(parser, HID_OUTPUT_REPORT, data);//增加field
 		break;
-	case HID_MAIN_ITEM_TAG_FEATURE:
-		ret = hid_add_field(parser, HID_FEATURE_REPORT, data);
+	case HID_MAIN_ITEM_TAG_FEATURE://feature 标识
+		ret = hid_add_field(parser, HID_FEATURE_REPORT, data);//增加field
 		break;
 	default:
-		hid_err(parser->device, "unknown main item tag 0x%x\n", item->tag);
+		hid_err(parser->device, "unknown main item tag 0x%x\n", item->tag);//未识别的tag 值，代表出错
 		ret = 0;
 	}
 
+	//local 解析器有效期到下一条解析器开始，即当前条结束
 	memset(&parser->local, 0, sizeof(parser->local));	/* Reset the local parser environment */
 
 	return ret;
@@ -527,7 +529,7 @@ static int hid_parser_main(struct hid_parser *parser, struct hid_item *item)
 /*
  * Process a reserved item.
  */
-
+//Hid 描述符预留的解析器
 static int hid_parser_reserved(struct hid_parser *parser, struct hid_item *item)
 {
 	dbg_hid("reserved item type, tag 0x%x\n", item->tag);
