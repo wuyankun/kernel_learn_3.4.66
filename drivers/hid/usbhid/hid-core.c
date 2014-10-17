@@ -999,17 +999,19 @@ static void hid_free_buffers(struct usb_device *dev, struct hid_device *hid)
 	usb_free_coherent(dev, usbhid->bufsize, usbhid->ctrlbuf, usbhid->ctrlbuf_dma);
 }
 
+//usbhid 设备的入口函数2 ,解析报文数据，进一步初始化设备
 static int usbhid_parse(struct hid_device *hid)
 {
-	struct usb_interface *intf = to_usb_interface(hid->dev.parent);
-	struct usb_host_interface *interface = intf->cur_altsetting;
-	struct usb_device *dev = interface_to_usbdev (intf);
-	struct hid_descriptor *hdesc;
+	struct usb_interface *intf = to_usb_interface(hid->dev.parent);//找到设备关联的接口
+	struct usb_host_interface *interface = intf->cur_altsetting;//host 主控端的接口设置
+	struct usb_device *dev = interface_to_usbdev (intf);//usb 设备的上下文环境
+	struct hid_descriptor *hdesc;//hid 设备描述符
 	u32 quirks = 0;
 	unsigned int rsize = 0;
 	char *rdesc;
 	int ret, n;
 
+	//查找是否为需特殊处理的usbhid 设备
 	quirks = usbhid_lookup_quirk(le16_to_cpu(dev->descriptor.idVendor),
 			le16_to_cpu(dev->descriptor.idProduct));
 
@@ -1031,6 +1033,7 @@ static int usbhid_parse(struct hid_device *hid)
 		return -ENODEV;
 	}
 
+	//设备的hid 的版本信息，国家码信息
 	hid->version = le16_to_cpu(hdesc->bcdHID);
 	hid->country = hdesc->bCountryCode;
 
@@ -1243,12 +1246,14 @@ static struct hid_ll_driver usb_hid_driver = {
 	.hidinput_input_event = usb_hidinput_input_event,
 };
 
+//usb kerboard and mouse devices probe here
+//常见的usb  接口的键盘和鼠标的入口函数
 static int usbhid_probe(struct usb_interface *intf, const struct usb_device_id *id)
 {
 	struct usb_host_interface *interface = intf->cur_altsetting;
-	struct usb_device *dev = interface_to_usbdev(intf);
-	struct usbhid_device *usbhid;
-	struct hid_device *hid;
+	struct usb_device *dev = interface_to_usbdev(intf);//从接口找到结构体入口,usb 设备的上下文环境
+	struct usbhid_device *usbhid;//从接口上划分，设备为一个usb 接口的hid 设备
+	struct hid_device *hid;//从功能上划分,设备为一个hid 设备
 	unsigned int n, has_in = 0;
 	size_t len;
 	int ret;
@@ -1256,6 +1261,7 @@ static int usbhid_probe(struct usb_interface *intf, const struct usb_device_id *
 	dbg_hid("HID probe called for ifnum %d\n",
 			intf->altsetting->desc.bInterfaceNumber);
 
+	//usb hid 设备必须至少包含一个中断的输出端点
 	for (n = 0; n < interface->desc.bNumEndpoints; n++)
 		if (usb_endpoint_is_int_in(&interface->endpoint[n].desc))
 			has_in++;
@@ -1264,67 +1270,78 @@ static int usbhid_probe(struct usb_interface *intf, const struct usb_device_id *
 		return -ENODEV;
 	}
 
+	//分配一个hid 设备的上下文环境空间
 	hid = hid_allocate_device();
 	if (IS_ERR(hid))
 		return PTR_ERR(hid);
 
+	//关联到usb 设备的上下文环境中
+	//如果传递的函数参数为hid 时，可以方便找到usb 设备上下文
 	usb_set_intfdata(intf, hid);
-	hid->ll_driver = &usb_hid_driver;
+	hid->ll_driver = &usb_hid_driver;//关联hid 设备的底层驱动
 	hid->hid_get_raw_report = usbhid_get_raw_report;
 	hid->hid_output_raw_report = usbhid_output_raw_report;
 	hid->ff_init = hid_pidff_init;
+	//如果选择了usb 接口的hid 设备支持
+	//常见的usb 接口键盘和鼠标，必须打开支持
+	//这里是关联回调函数入口
 #ifdef CONFIG_USB_HIDDEV
 	hid->hiddev_connect = hiddev_connect;
 	hid->hiddev_disconnect = hiddev_disconnect;
 	hid->hiddev_hid_event = hiddev_hid_event;
 	hid->hiddev_report_event = hiddev_report_event;
 #endif
+	//sysfs 中hid 设备的父设备，这里为usb 设备
 	hid->dev.parent = &intf->dev;
-	hid->bus = BUS_USB;
-	hid->vendor = le16_to_cpu(dev->descriptor.idVendor);
+	hid->bus = BUS_USB;//总线类型
+	hid->vendor = le16_to_cpu(dev->descriptor.idVendor);//从usb设备上下文中获得vid 和pid
 	hid->product = le16_to_cpu(dev->descriptor.idProduct);
 	hid->name[0] = 0;
+	//查询设备是否需要做一些特殊处理
 	hid->quirks = usbhid_lookup_quirk(hid->vendor, hid->product);
+	//查询设备的协议声明
 	if (intf->cur_altsetting->desc.bInterfaceProtocol ==
 			USB_INTERFACE_PROTOCOL_MOUSE)
 		hid->type = HID_TYPE_USBMOUSE;
 	else if (intf->cur_altsetting->desc.bInterfaceProtocol == 0)
 		hid->type = HID_TYPE_USBNONE;
-
+	//usb 设备是否填充了自己的厂商信息
 	if (dev->manufacturer)
 		strlcpy(hid->name, dev->manufacturer, sizeof(hid->name));
-
+	//usb 设备是否填充了自己的产品信息
 	if (dev->product) {
 		if (dev->manufacturer)
 			strlcat(hid->name, " ", sizeof(hid->name));
 		strlcat(hid->name, dev->product, sizeof(hid->name));
 	}
-
+	//如果usb 设备没有填充设备的标识信息，用vid 和pid 来初始化设备名称
 	if (!strlen(hid->name))
 		snprintf(hid->name, sizeof(hid->name), "HID %04x:%04x",
 			 le16_to_cpu(dev->descriptor.idVendor),
 			 le16_to_cpu(dev->descriptor.idProduct));
-
+	
+	//构建usbfs 设备的路径
 	usb_make_path(dev, hid->phys, sizeof(hid->phys));
-	strlcat(hid->phys, "/input", sizeof(hid->phys));
+	strlcat(hid->phys, "/input", sizeof(hid->phys));//标识子类型为input
 	len = strlen(hid->phys);
 	if (len < sizeof(hid->phys) - 1)
 		snprintf(hid->phys + len, sizeof(hid->phys) - len,
-			 "%d", intf->altsetting[0].desc.bInterfaceNumber);
+			 "%d", intf->altsetting[0].desc.bInterfaceNumber);//把分配到的配置端点号加入到路径信息中
 
-	if (usb_string(dev, dev->descriptor.iSerialNumber, hid->uniq, 64) <= 0)
+	if (usb_string(dev, dev->descriptor.iSerialNumber, hid->uniq, 64) <= 0)//判断设备的序列号信息
 		hid->uniq[0] = 0;
 
+	//分配usbhid 设备的上下文环境
 	usbhid = kzalloc(sizeof(*usbhid), GFP_KERNEL);
 	if (usbhid == NULL) {
 		ret = -ENOMEM;
 		goto err;
 	}
-
-	hid->driver_data = usbhid;
+	
+	hid->driver_data = usbhid;//usbhid 和hid  上下文环境相互关联起来
 	usbhid->hid = hid;
-	usbhid->intf = intf;
-	usbhid->ifnum = interface->desc.bInterfaceNumber;
+	usbhid->intf = intf;//接口
+	usbhid->ifnum = interface->desc.bInterfaceNumber;//接口分配的端点号，由usb host 端驱动分配
 
 	init_waitqueue_head(&usbhid->wait);
 	INIT_WORK(&usbhid->reset_work, hid_reset);
@@ -1333,6 +1350,8 @@ static int usbhid_probe(struct usb_interface *intf, const struct usb_device_id *
 
 	INIT_WORK(&usbhid->led_work, hid_led);
 
+	//完成sysfs 结构体的注册
+	//设备驱动的进一步的入口
 	ret = hid_add_device(hid);
 	if (ret) {
 		if (ret != -ENODEV)

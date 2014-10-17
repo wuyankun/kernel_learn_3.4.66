@@ -570,6 +570,7 @@ struct hid_class_descriptor {
 	__le16 wDescriptorLength;
 } __attribute__ ((packed));
 
+//hid 设备的描述符结构体
 struct hid_descriptor {
 	__u8  bLength;
 	__u8  bDescriptorType;
@@ -577,7 +578,7 @@ struct hid_descriptor {
 	__u8  bCountryCode;
 	__u8  bNumDescriptors;
 
-	struct hid_class_descriptor desc[1];
+	struct hid_class_descriptor desc[1];//包含一个类型描述符
 } __attribute__ ((packed));
 
 #define HID_DEVICE(b, ven, prod) \
