@@ -796,7 +796,7 @@ void usbhid_close(struct hid_device *hid)
 /*
  * Initialize all reports
  */
-
+//初始化报告，并提交urb
 void usbhid_init_reports(struct hid_device *hid)
 {
 	struct hid_report *report;
@@ -1081,19 +1081,20 @@ err:
 	return ret;
 }
 
+//usbhid 设备的开始，即探测，解析之后，这里完成urb 的填充步骤
 static int usbhid_start(struct hid_device *hid)
 {
-	struct usb_interface *intf = to_usb_interface(hid->dev.parent);
-	struct usb_host_interface *interface = intf->cur_altsetting;
-	struct usb_device *dev = interface_to_usbdev(intf);
-	struct usbhid_device *usbhid = hid->driver_data;
+	struct usb_interface *intf = to_usb_interface(hid->dev.parent);//得到接口
+	struct usb_host_interface *interface = intf->cur_altsetting;//得到usb host 的配置
+	struct usb_device *dev = interface_to_usbdev(intf);//得到usb 设备上下文
+	struct usbhid_device *usbhid = hid->driver_data;//得到usbhid 设备上下文
 	unsigned int n, insize = 0;
 	int ret;
 
-	clear_bit(HID_DISCONNECTED, &usbhid->iofl);
+	clear_bit(HID_DISCONNECTED, &usbhid->iofl);//清除标识位,没有HID_CONNECTED标识定义
 
 	usbhid->bufsize = HID_MIN_BUFFER_SIZE;
-	hid_find_max_report(hid, HID_INPUT_REPORT, &usbhid->bufsize);
+	hid_find_max_report(hid, HID_INPUT_REPORT, &usbhid->bufsize);//在解析完的三种report 中查找最长report
 	hid_find_max_report(hid, HID_OUTPUT_REPORT, &usbhid->bufsize);
 	hid_find_max_report(hid, HID_FEATURE_REPORT, &usbhid->bufsize);
 
@@ -1105,20 +1106,23 @@ static int usbhid_start(struct hid_device *hid)
 	if (insize > HID_MAX_BUFFER_SIZE)
 		insize = HID_MAX_BUFFER_SIZE;
 
+	//分配三种urb 的缓冲区in out ctrl 
 	if (hid_alloc_buffers(dev, hid)) {
 		ret = -ENOMEM;
 		goto fail;
 	}
 
+	//为每一个端点分配urb ,填充urb
 	for (n = 0; n < interface->desc.bNumEndpoints; n++) {
 		struct usb_endpoint_descriptor *endpoint;
 		int pipe;
 		int interval;
 
 		endpoint = &interface->endpoint[n].desc;
-		if (!usb_endpoint_xfer_int(endpoint))
+		if (!usb_endpoint_xfer_int(endpoint))//非中断端点则跳过下面设置超时时间
 			continue;
 
+		//修正一些特殊设备的超时时间设置
 		interval = endpoint->bInterval;
 
 		/* Some vendors give fullspeed interval on highspeed devides */
@@ -1137,41 +1141,42 @@ static int usbhid_start(struct hid_device *hid)
 		if (usb_endpoint_dir_in(endpoint)) {
 			if (usbhid->urbin)
 				continue;
-			if (!(usbhid->urbin = usb_alloc_urb(0, GFP_KERNEL)))
+			if (!(usbhid->urbin = usb_alloc_urb(0, GFP_KERNEL)))//分配urb
 				goto fail;
-			pipe = usb_rcvintpipe(dev, endpoint->bEndpointAddress);
+			pipe = usb_rcvintpipe(dev, endpoint->bEndpointAddress);//分配接收中断管道
 			usb_fill_int_urb(usbhid->urbin, dev, pipe, usbhid->inbuf, insize,
-					 hid_irq_in, hid, interval);
-			usbhid->urbin->transfer_dma = usbhid->inbuf_dma;
+					 hid_irq_in, hid, interval);//填充urb,注意urb处理完成的回调函数 hid_irq_in
+			usbhid->urbin->transfer_dma = usbhid->inbuf_dma;//采用dma的方式传输数据
 			usbhid->urbin->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 		} else {
 			if (usbhid->urbout)
 				continue;
-			if (!(usbhid->urbout = usb_alloc_urb(0, GFP_KERNEL)))
+			if (!(usbhid->urbout = usb_alloc_urb(0, GFP_KERNEL)))//分配urb
 				goto fail;
-			pipe = usb_sndintpipe(dev, endpoint->bEndpointAddress);
+			pipe = usb_sndintpipe(dev, endpoint->bEndpointAddress);//分配发送中断管道
 			usb_fill_int_urb(usbhid->urbout, dev, pipe, usbhid->outbuf, 0,
-					 hid_irq_out, hid, interval);
-			usbhid->urbout->transfer_dma = usbhid->outbuf_dma;
+					 hid_irq_out, hid, interval);//填充urb ，注意urb 处理完成的回调函数 hid_irq_out
+			usbhid->urbout->transfer_dma = usbhid->outbuf_dma;//采用dma 的方式传输数据
 			usbhid->urbout->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 		}
 	}
 
+	//为控制urb 分配urb缓冲，填充urb
 	usbhid->urbctrl = usb_alloc_urb(0, GFP_KERNEL);
 	if (!usbhid->urbctrl) {
 		ret = -ENOMEM;
 		goto fail;
 	}
-
+	//控制urb 的管道需要自己填充，不同于其他urb
 	usb_fill_control_urb(usbhid->urbctrl, dev, 0, (void *) usbhid->cr,
 			     usbhid->ctrlbuf, 1, hid_ctrl, hid);
-	usbhid->urbctrl->transfer_dma = usbhid->ctrlbuf_dma;
+	usbhid->urbctrl->transfer_dma = usbhid->ctrlbuf_dma;//dma 方式
 	usbhid->urbctrl->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
 	if (!(hid->quirks & HID_QUIRK_NO_INIT_REPORTS))
 		usbhid_init_reports(hid);
 
-	set_bit(HID_STARTED, &usbhid->iofl);
+	set_bit(HID_STARTED, &usbhid->iofl);//设置启动的标识
 
 	/* Some keyboards don't work until their LEDs have been set.
 	 * Since BIOSes do set the LEDs, it must be safe for any device
@@ -1242,12 +1247,13 @@ static int usbhid_power(struct hid_device *hid, int lvl)
 	return r;
 }
 
+//usb 接口的hid 设备的low leverl 的驱动实现
 static struct hid_ll_driver usb_hid_driver = {
-	.parse = usbhid_parse,
-	.start = usbhid_start,
+	.parse = usbhid_parse,//第二步解析
+	.start = usbhid_start,//第三步开始
 	.stop = usbhid_stop,
-	.open = usbhid_open,
-	.close = usbhid_close,
+	.open = usbhid_open,//第四步打开设备
+	.close = usbhid_close,//第五步关闭设备
 	.power = usbhid_power,
 	.hidinput_input_event = usb_hidinput_input_event,
 };
@@ -1565,7 +1571,7 @@ MODULE_DEVICE_TABLE (usb, hid_usb_ids);
 
 static struct usb_driver hid_driver = {
 	.name =		"usbhid",
-	.probe =	usbhid_probe,
+	.probe =	usbhid_probe,//第一步探测
 	.disconnect =	usbhid_disconnect,
 #ifdef CONFIG_PM
 	.suspend =	hid_suspend,

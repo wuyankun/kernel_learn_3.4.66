@@ -1784,6 +1784,7 @@ static int hid_bus_match(struct device *dev, struct device_driver *drv)
 	return 1;
 }
 
+//hid 设备开始探测，无论何种类似的hid 设备的入口
 static int hid_device_probe(struct device *dev)
 {
 	struct hid_driver *hdrv = container_of(dev->driver,
@@ -1795,8 +1796,8 @@ static int hid_device_probe(struct device *dev)
 	if (down_interruptible(&hdev->driver_lock))
 		return -EINTR;
 
-	if (!hdev->driver) {
-		id = hid_match_device(hdev, hdrv);
+	if (!hdev->driver) {//如果没有指明驱动
+		id = hid_match_device(hdev, hdrv);//到设备列表中搜索
 		if (id == NULL) {
 			if (!((hdev->quirks & HID_QUIRK_MULTITOUCH) &&
 				!strncmp(hdrv->name, "hid-multitouch", 14))) {
@@ -1806,12 +1807,12 @@ static int hid_device_probe(struct device *dev)
 		}
 
 		hdev->driver = hdrv;
-		if (hdrv->probe) {
+		if (hdrv->probe) {//找到对应驱动，则使用驱动的探测函数
 			ret = hdrv->probe(hdev, id);
 		} else { /* default probe */
-			ret = hid_parse(hdev);
+			ret = hid_parse(hdev);//否则使用默认的探测函数
 			if (!ret)
-				ret = hid_hw_start(hdev, HID_CONNECT_DEFAULT);
+				ret = hid_hw_start(hdev, HID_CONNECT_DEFAULT);//使用默认的开始函数
 		}
 		if (ret)
 			hdev->driver = NULL;

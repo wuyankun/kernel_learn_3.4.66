@@ -818,7 +818,8 @@ static inline int __must_check hid_parse(struct hid_device *hdev)
 	if (hdev->status & HID_STAT_PARSED)
 		return 0;
 
-	ret = hdev->ll_driver->parse(hdev);
+	ret = hdev->ll_driver->parse(hdev);//采用low leverl 驱动的探测函数
+									   //如果是usbhid 设备，则使用usb_hid_driver->usbhid_parse
 	if (!ret)
 		hdev->status |= HID_STAT_PARSED;
 
@@ -838,7 +839,8 @@ static inline int __must_check hid_parse(struct hid_device *hdev)
 static inline int __must_check hid_hw_start(struct hid_device *hdev,
 		unsigned int connect_mask)
 {
-	int ret = hdev->ll_driver->start(hdev);
+	int ret = hdev->ll_driver->start(hdev);//采用low level 驱动的开始函数
+										   //如果是usbhid 设备，则使用usb_hid_driver->usbhid_start
 	if (ret || !connect_mask)
 		return ret;
 	ret = hid_connect(hdev, connect_mask);
