@@ -577,19 +577,23 @@ static void hid_device_release(struct device *dev)
  * Fetch a report description item from the data stream. We support long
  * items, though they are not used yet.
  */
-
+//从数据流中获取一个描述条目
+//支持长条目，但目前保留未用
+//传递为指针类型，对数据流是破坏性的
 static u8 *fetch_item(__u8 *start, __u8 *end, struct hid_item *item)
 {
 	u8 b;
-
+	//每次解析的返回值重新赋值给start 
+	//每次调用时的start 值不同，表现为跳跃
 	if ((end - start) <= 0)
-		return NULL;
+		return NULL;//解析到数据流末尾时，返回空指针，标识解析完成
 
-	b = *start++;
+	b = *start++;//新条目的起始
 
-	item->type = (b >> 2) & 3;
-	item->tag  = (b >> 4) & 15;
+	item->type = (b >> 2) & 3;//取bit[32] 为条目类型
+	item->tag  = (b >> 4) & 15;//取bit[7654] 为条目标识
 
+	//目前长条目不支持，这里提前支持，跳过
 	if (item->tag == HID_ITEM_TAG_LONG) {
 
 		item->format = HID_ITEM_FORMAT_LONG;
@@ -608,33 +612,36 @@ static u8 *fetch_item(__u8 *start, __u8 *end, struct hid_item *item)
 		return start;
 	}
 
+	//条目类型赋值为短条目类型
 	item->format = HID_ITEM_FORMAT_SHORT;
-	item->size = b & 3;
+	item->size = b & 3;//取bit[10] 为条目的数据字节个数
 
 	switch (item->size) {
-	case 0:
-		return start;
+	case 0://条目数据字节大小为0 ，由于start自增1，这里跳过一个字节
+		return start;//将数据流中的下一个字节赋值为新的start ,再次解析
 
-	case 1:
+	case 1://如果条目的数据为1个字节大小
 		if ((end - start) < 1)
 			return NULL;
-		item->data.u8 = *start++;
-		return start;
+		item->data.u8 = *start++;//将当期start的指向赋值为数据(u8),start指针指向下一个字节
+		return start;//跳过一个数据字节，再次解析
 
-	case 2:
+	case 2://数据占用两个字节大小
 		if ((end - start) < 2)
 			return NULL;
-		item->data.u16 = get_unaligned_le16(start);
-		start = (__u8 *)((__le16 *)start + 1);
-		return start;
+		item->data.u16 = get_unaligned_le16(start);//组数u16
+		start = (__u8 *)((__le16 *)start + 1);//将start 强制转换为u16指针，并跳过一个u16指针长度
+											  //再强制转换为u8 指针，即跳过2个字节
+											  
+		return start;//跳过两个数据字节，再次解析
 
-	case 3:
-		item->size++;
+	case 3://数据占用3个字节大小
+		item->size++;//数据占用的字节大小加1，即置为4个字节
 		if ((end - start) < 4)
 			return NULL;
-		item->data.u32 = get_unaligned_le32(start);
-		start = (__u8 *)((__le32 *)start + 1);
-		return start;
+		item->data.u32 = get_unaligned_le32(start);//组数u32
+		start = (__u8 *)((__le32 *)start + 1);//跳过4 个字节
+		return start;//跳过四个数据字节，再次解析
 	}
 
 	return NULL;
