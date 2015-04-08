@@ -1,14 +1,14 @@
 00-INDEX
 	- this file
 MSI-HOWTO.txt
-	- the Message Signaled Interrupts (MSI) Driver Guide HOWTO and FAQ.
+	- the Message Signaled(信号，标识) Interrupts (MSI) Driver Guide HOWTO and FAQ.
 PCI-DMA-mapping.txt
-	- info for PCI drivers using DMA portably across all platforms
+	- info for PCI drivers using DMA portably(可移植的) across all platforms
 PCIEBUS-HOWTO.txt
-	- a guide describing the PCI Express Port Bus driver
+	- a guide describing the PCI Express Port Bus(总线) driver
 pci-error-recovery.txt
 	- info on PCI error recovery
 pci.txt
 	- info on the PCI subsystem for device driver authors
-pcieaer-howto.txt
+pcieaer-howto.txt----高级错误报告
 	- the PCI Express Advanced Error Reporting Driver Guide HOWTO
