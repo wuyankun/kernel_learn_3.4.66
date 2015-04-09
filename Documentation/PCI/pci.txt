@@ -386,42 +386,42 @@ All interrupt handlers for IRQ lines should be registered with IRQF_SHARED
 and use the devid to map IRQs to devices (remember that all PCI IRQ lines
 can be shared).
 
-request_irq() will associate an interrupt handler and device handle
+request_irq() will associate an interrupt handler and device handle//普通中断，中断线
 with an interrupt number. Historically interrupt numbers represent
 IRQ lines which run from the PCI device to the Interrupt controller.
-With MSI and MSI-X (more below) the interrupt number is a CPU "vector".
+With MSI and MSI-X (more below) the interrupt number is a CPU "vector".//使用MSI中断时，中断是向量
 
 request_irq() also enables the interrupt. Make sure the device is
-quiesced and does not have any interrupts pending before registering
+quiesced(停止) and does not have any interrupts pending(待定，还未确定) before registering
 the interrupt handler.
 
 MSI and MSI-X are PCI capabilities. Both are "Message Signaled Interrupts"
 which deliver interrupts to the CPU via a DMA write to a Local APIC.
-The fundamental difference between MSI and MSI-X is how multiple
+The fundamental difference between MSI and MSI-X is how multiple(多重的)
 "vectors" get allocated. MSI requires contiguous blocks of vectors
-while MSI-X can allocate several individual ones.
+while MSI-X can allocate several individual ones.//一个分配的向量是连续的，一个是非连续的
 
 MSI capability can be enabled by calling pci_enable_msi() or
 pci_enable_msix() before calling request_irq(). This causes
 the PCI support to program CPU vector data into the PCI device
-capability registers.
+capability registers.//在使能中断之前调用pci_enable_msi()激活msi中断模式，再调用request_irq()
 
-If your PCI device supports both, try to enable MSI-X first.
+If your PCI device supports both, try to enable MSI-X first.//两种向量中断只能注册其中的一种
 Only one can be enabled at a time.  Many architectures, chip-sets,
 or BIOSes do NOT support MSI or MSI-X and the call to pci_enable_msi/msix
-will fail. This is important to note since many drivers have
+will fail. This is important to note since many drivers have//某些体系架构不支持向量中断
 two (or more) interrupt handlers: one for MSI/MSI-X and another for IRQs.
-They choose which handler to register with request_irq() based on the
+They choose which handler to register with request_irq() based on the//一些设备支持两种中断类型，必须先判断msi中断的返回值
 return value from pci_enable_msi/msix().
 
 There are (at least) two really good reasons for using MSI:
-1) MSI is an exclusive interrupt vector by definition.
+1) MSI is an exclusive(独特的) interrupt vector by definition.
    This means the interrupt handler doesn't have to verify
    its device caused the interrupt.
 
-2) MSI avoids DMA/IRQ race conditions. DMA to host memory is guaranteed
+2) MSI avoids DMA/IRQ race conditions. DMA to host memory is guaranteed(有保证的)
    to be visible to the host CPU(s) when the MSI is delivered. This
-   is important for both data coherency and avoiding stale control data.
+   is important for both data coherency(相连) and avoiding stale(变旧) control data.
    This guarantee allows the driver to omit MMIO reads to flush
    the DMA stream.
 
@@ -502,7 +502,7 @@ See Documentation/DMA-API.txt for details on unmapping interfaces.
 Most low level PCI device drivers support some other subsystem
 like USB, ALSA, SCSI, NetDev, Infiniband, etc. Make sure your
 driver isn't losing resources from that other subsystem.
-If this happens, typically the symptom is an Oops (panic) when
+If this happens, typically the symptom(症状) is an Oops (panic) when
 the subsystem attempts to call into a driver that has been unloaded.
 
 
@@ -510,13 +510,13 @@ the subsystem attempts to call into a driver that has been unloaded.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 io_unmap() MMIO or IO Port resources and then call pci_disable_device().
 This is the symmetric opposite of pci_enable_device().
-Do not access device registers after calling pci_disable_device().
+Do not access device registers after calling pci_disable_device().//解除映射，失能pci设备
 
 
 4.7 Release MMIO/IO Port Resource(s)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Call pci_release_region() to mark the MMIO or IO Port range as available.
-Failure to do so usually results in the inability to reload the driver.
+Failure to do so usually results in the inability to reload the driver.//释放占用的资源
 
 
 

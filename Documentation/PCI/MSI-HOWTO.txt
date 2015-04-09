@@ -11,87 +11,87 @@
 
 This guide describes the basics of Message Signaled Interrupts (MSIs),
 the advantages of using MSI over traditional interrupt mechanisms, how
-to change your driver to use MSI or MSI-X and some basic diagnostics to
+to change your driver to use MSI or MSI-X and some basic diagnostics(诊断) to
 try if a device doesn't support MSIs.
 
 
 2. What are MSIs?
 
 A Message Signaled Interrupt is a write from the device to a special
-address which causes an interrupt to be received by the CPU.
+address which causes an interrupt to be received by the CPU.//设备向一个特定的地址写，将会触发一个中断，被CPU接收
 
 The MSI capability was first specified in PCI 2.2 and was later enhanced
-in PCI 3.0 to allow each interrupt to be masked individually.  The MSI-X
+in PCI 3.0 to allow each interrupt to be masked individually.  The MSI-X//使得每个中断被独立分发
 capability was also introduced with PCI 3.0.  It supports more interrupts
-per device than MSI and allows interrupts to be independently configured.
+per device than MSI and allows interrupts to be independently configured.//MSI-X中断支持更多的中断线，并且容许每项单独配置
 
-Devices may support both MSI and MSI-X, but only one can be enabled at
+Devices may support both MSI and MSI-X, but only one can be enabled at//MSI中断和MSI-X中断每次只能使能其中一个
 a time.
 
 
 3. Why use MSIs?
 
 There are three reasons why using MSIs can give an advantage over
-traditional pin-based interrupts.
+traditional pin-based interrupts.//相对传统的管脚中断存在3个优势
 
-Pin-based PCI interrupts are often shared amongst several devices.
-To support this, the kernel must call each interrupt handler associated
-with an interrupt, which leads to reduced performance for the system as
+Pin-based PCI interrupts are often shared amongst several devices.//传统中断线往往是设备间共享中断，系统判定时需要
+To support this, the kernel must call each interrupt handler associated//调用各个中断处理，影响系统效率，MSI中断不是
+with an interrupt, which leads to reduced performance for the system as//设备间共享的中断
 a whole.  MSIs are never shared, so this problem cannot arise.
 
 When a device writes data to memory, then raises a pin-based interrupt,
 it is possible that the interrupt may arrive before all the data has
-arrived in memory (this becomes more likely with devices behind PCI-PCI
-bridges).  In order to ensure that all the data has arrived in memory,
+arrived in memory (this becomes more likely with devices behind PCI-PCI//传统中断当设备写入内存时，会存在中断到来快于写入内存完成的情况
+bridges).  In order to ensure that all the data has arrived in memory,//特别是设备在PCI桥之后更容易发生
 the interrupt handler must read a register on the device which raised
 the interrupt.  PCI transaction ordering rules require that all the data
-arrive in memory before the value may be returned from the register.
-Using MSIs avoids this problem as the interrupt-generating write cannot
+arrive in memory before the value may be returned from the register.//为了避免存在这种问题，寄存器位必须等到写完内存后，才能改变状态
+Using MSIs avoids this problem as the interrupt-generating write cannot//MSI中断则不存在这种问题，因为中断生成的写动作不会传递在数据写内存的过程中
 pass the data writes, so by the time the interrupt is raised, the driver
 knows that all the data has arrived in memory.
 
 PCI devices can only support a single pin-based interrupt per function.
-Often drivers have to query the device to find out what event has
-occurred, slowing down interrupt handling for the common case.  With
+Often drivers have to query the device to find out what event has//往往一个功能只能拥有一个中断，中断处理程序必须查询当前发生了何种事件
+occurred, slowing down interrupt handling for the common case.  With//这也会影响到系统的性能
 MSIs, a device can support more interrupts, allowing each interrupt
-to be specialised to a different purpose.  One possible design gives
+to be specialised to a different purpose.  One possible design gives//MSI中断提供更多的中断，每个事件可以单独提供一项中断，提高了中断处理效能
 infrequent conditions (such as errors) their own interrupt which allows
 the driver to handle the normal interrupt handling path more efficiently.
-Other possible designs include giving one interrupt to each packet queue
+Other possible designs include giving one interrupt to each packet queue//如网络设备中，可以为包队里中每个包提供一个中断，或者每个端口单独提供一个中断
 in a network card or each port in a storage controller.
 
 
 4. How to use MSIs
 
-PCI devices are initialised to use pin-based interrupts.  The device
+PCI devices are initialised to use pin-based interrupts.  The device//默认情况会使用管脚中断，并不是每个机器都是支持MSI中断的
 driver has to set up the device to use MSI or MSI-X.  Not all machines
 support MSIs correctly, and for those machines, the APIs described below
-will simply fail and the device will continue to use pin-based interrupts.
+will simply fail and the device will continue to use pin-based interrupts.//如果不支持MSI中断，仍然可以继续使用管脚中断
 
 4.1 Include kernel support for MSIs
 
 To support MSI or MSI-X, the kernel must be built with the CONFIG_PCI_MSI
 option enabled.  This option is only available on some architectures,
-and it may depend on some other options also being set.  For example,
-on x86, you must also enable X86_UP_APIC or SMP in order to see the
+and it may depend on some other options also being set.  For example,//首选在内核配置上，必须使能MSI中断，但并不是每种体系架构
+on x86, you must also enable X86_UP_APIC or SMP in order to see the//均支持MSI中断
 CONFIG_PCI_MSI option.
 
 4.2 Using MSI
 
 Most of the hard work is done for the driver in the PCI layer.  It simply
-has to request that the PCI layer set up the MSI capability for this
+has to request that the PCI layer set up the MSI capability for this//大部分的工作都是PCI层实现，驱动仅仅需要声明设备支持这种能力即可
 device.
 
 4.2.1 pci_enable_msi
 
 int pci_enable_msi(struct pci_dev *dev)
 
-A successful call allocates ONE interrupt to the device, regardless
+A successful call allocates ONE interrupt to the device, regardless//调用后会返回一个中断，不管设备究竟支持多少个中断
 of how many MSIs the device supports.  The device is switched from
 pin-based interrupt mode to MSI mode.  The dev->irq number is changed
-to a new number which represents the message signaled interrupt;
+to a new number which represents the message signaled interrupt;//设备的中断计数会发生改变，指代究竟支持多少个MSI中断向量
 consequently, this function should be called before the driver calls
-request_irq(), because an MSI is delivered via a vector that is
+request_irq(), because an MSI is delivered via a vector that is//这个必须在调用request_irq()之前，因为MSI是向量中断，区别于传统的管脚的向量中断列表
 different from the vector of a pin-based interrupt.
 
 4.2.2 pci_enable_msi_block
@@ -100,31 +100,31 @@ int pci_enable_msi_block(struct pci_dev *dev, int count)
 
 This variation on the above call allows a device driver to request multiple
 MSIs.  The MSI specification only allows interrupts to be allocated in
-powers of two, up to a maximum of 2^5 (32).
+powers of two, up to a maximum of 2^5 (32).//请求获取的中断数，必须是2的整数幂，最大为32个
 
 If this function returns 0, it has succeeded in allocating at least as many
 interrupts as the driver requested (it may have allocated more in order
-to satisfy the power-of-two requirement).  In this case, the function
-enables MSI on this device and updates dev->irq to be the lowest of
+to satisfy the power-of-two requirement).  In this case, the function//如果返回值为0则表明已成功分别了要求数量的中断，甚至更多，已保证是2的幂对齐数量
+enables MSI on this device and updates dev->irq to be the lowest of//会更新dev->irq指代分配到的最小的中断号，中断偏移的范围为+[0,count-1]
 the new interrupts assigned to it.  The other interrupts assigned to
 the device are in the range dev->irq to dev->irq + count - 1.
 
-If this function returns a negative number, it indicates an error and
+If this function returns a negative number, it indicates an error and//如果返回一个负数，则指代发生了某种错误，驱动应该放弃尝试使用MSI中断
 the driver should not attempt to request any more MSI interrupts for
 this device.  If this function returns a positive number, it is
-less than 'count' and indicates the number of interrupts that could have
+less than 'count' and indicates the number of interrupts that could have//函数应该返回一个正值，指代成功分配到的中断数，并且中断模式切换到MSI模式
 been allocated.  In neither case is the irq value updated or the device
 switched into MSI mode.
 
 The device driver must decide what action to take if
-pci_enable_msi_block() returns a value less than the number requested.
-For instance, the driver could still make use of fewer interrupts;
-in this case the driver should call pci_enable_msi_block()
+pci_enable_msi_block() returns a value less than the number requested.//驱动必须能够处理分别到的中断数小于请求的数量的情况
+For instance, the driver could still make use of fewer interrupts;//驱动必须能够正常运行，使用较少的中断
+in this case the driver should call pci_enable_msi_block()//可以尝试再次调用这个方法，但返回值的中断个数甚至会小于上次调用的情况
 again.  Note that it is not guaranteed to succeed, even when the
 'count' has been reduced to the value returned from a previous call to
 pci_enable_msi_block().  This is because there are multiple constraints
 on the number of vectors that can be allocated; pci_enable_msi_block()
-returns as soon as it finds any constraint that doesn't allow the
+returns as soon as it finds any constraint that doesn't allow the//因为可能存在其他的设备也在请求中断分配
 call to succeed.
 
 4.2.3 pci_disable_msi
@@ -134,11 +134,11 @@ void pci_disable_msi(struct pci_dev *dev)
 This function should be used to undo the effect of pci_enable_msi() or
 pci_enable_msi_block().  Calling it restores dev->irq to the pin-based
 interrupt number and frees the previously allocated message signaled
-interrupt(s).  The interrupt may subsequently be assigned to another
-device, so drivers should not cache the value of dev->irq.
+interrupt(s).  The interrupt may subsequently be assigned to another//释放MSI占用的资源，将中断模式切换到传统的管脚中断模式
+device, so drivers should not cache the value of dev->irq.//更新中断号的值为传统的分别的管脚计数
 
 Before calling this function, a device driver must always call free_irq()
-on any interrupt for which it previously called request_irq().
+on any interrupt for which it previously called request_irq().//必须在这之前调用free_irq()函数，之后释放MSI占用的中断
 Failure to do so results in a BUG_ON(), leaving the device with
 MSI enabled and thus leaking its vector.
 
@@ -146,7 +146,7 @@ MSI enabled and thus leaking its vector.
 
 The MSI-X capability is much more flexible than the MSI capability.
 It supports up to 2048 interrupts, each of which can be controlled
-independently.  To support this flexibility, drivers must use an array of
+independently.  To support this flexibility(灵活性，适应性), drivers must use an array of//MSI-X提供了更多的中断数量，也增加了灵活性
 `struct msix_entry':
 
 struct msix_entry {
@@ -154,7 +154,7 @@ struct msix_entry {
 	u16	entry; /* driver uses to specify entry */
 };
 
-This allows for the device to use these interrupts in a sparse fashion;
+This allows for the device to use these interrupts in a sparse(稀疏的) fashion;
 for example, it could use interrupts 3 and 1027 and yet allocate only a
 two-element array.  The driver is expected to fill in the 'entry' value
 in each element of the array to indicate for which entries the kernel
@@ -168,7 +168,7 @@ int pci_enable_msix(struct pci_dev *dev, struct msix_entry *entries, int nvec)
 Calling this function asks the PCI subsystem to allocate 'nvec' MSIs.
 The 'entries' argument is a pointer to an array of msix_entry structs
 which should be at least 'nvec' entries in size.  On success, the
-device is switched into MSI-X mode and the function returns 0.
+device is switched into MSI-X mode and the function returns 0.//如果申请成功，中断模式将切换成MSI-X模式
 The 'vector' member in each entry is populated with the interrupt number;
 the driver should then call request_irq() for each 'vector' that it
 decides to use.  The device driver is responsible for keeping track of the
@@ -180,8 +180,8 @@ this device.  If it returns a positive number, it indicates the maximum
 number of interrupt vectors that could have been allocated. See example
 below.
 
-This function, in contrast with pci_enable_msi(), does not adjust
-dev->irq.  The device will not generate interrupts for this interrupt
+This function, in contrast with(和对照) pci_enable_msi(), does not adjust
+dev->irq.  The device will not generate interrupts for this interrupt//不调整中断号，这点和MSI中断不一样
 number once MSI-X is enabled.
 
 Device drivers should normally call this function once per device
@@ -231,12 +231,12 @@ mask or unmask an interrupt, it should call disable_irq() / enable_irq().
 4.4 Handling devices implementing both MSI and MSI-X capabilities
 
 If a device implements both MSI and MSI-X capabilities, it can
-run in either MSI mode or MSI-X mode, but not both simultaneously.
-This is a requirement of the PCI spec, and it is enforced by the
+run in either MSI mode or MSI-X mode, but not both simultaneously(同时地).
+This is a requirement of the PCI spec, and it is enforced(强制执行的) by the
 PCI layer.  Calling pci_enable_msi() when MSI-X is already enabled or
 pci_enable_msix() when MSI is already enabled results in an error.
 If a device driver wishes to switch between MSI and MSI-X at runtime,
-it must first quiesce the device, then switch it back to pin-interrupt
+it must first quiesce(静默) the device, then switch it back to pin-interrupt//在运行时切换MSI和MSIX模式，必须首先静默设备，切换到管脚中断模型，进行中转切换
 mode, before calling pci_enable_msi() or pci_enable_msix() and resuming
 operation.  This is not expected to be a common operation but may be
 useful for debugging or testing during development.
@@ -245,48 +245,48 @@ useful for debugging or testing during development.
 
 4.5.1 Choosing between MSI-X and MSI
 
-If your device supports both MSI-X and MSI capabilities, you should use
-the MSI-X facilities in preference to the MSI facilities.  As mentioned
+If your device supports both MSI-X and MSI capabilities, you should use//优化使用MSIX模式，因为MSI的中断个数限制
+the MSI-X facilities in preference to the MSI facilities.  As mentioned//以及由于分配的计数是连续的，所以分配个数不一定满足要求
 above, MSI-X supports any number of interrupts between 1 and 2048.
 In constrast, MSI is restricted to a maximum of 32 interrupts (and
 must be a power of two).  In addition, the MSI interrupt vectors must
-be allocated consecutively, so the system might not be able to allocate
+be allocated consecutively(连续的), so the system might not be able to allocate
 as many vectors for MSI as it could for MSI-X.  On some platforms, MSI
-interrupts must all be targeted at the same set of CPUs whereas MSI-X
+interrupts must all be targeted at the same set of CPUs whereas MSI-X//在一些平台，MSI中断必须绑定在同样一套的CPU上，而MSIX没有这样的限制
 interrupts can all be targeted at different CPUs.
 
 4.5.2 Spinlocks
 
-Most device drivers have a per-device spinlock which is taken in the
+Most device drivers have a per-device spinlock which is taken in the//大部分驱动每个设备有一个独立的自旋锁来处理中断处理
 interrupt handler.  With pin-based interrupts or a single MSI, it is not
 necessary to disable interrupts (Linux guarantees the same interrupt will
-not be re-entered).  If a device uses multiple interrupts, the driver
+not be re-entered).  If a device uses multiple interrupts, the driver//在管脚中断和单MSI中断的情况，不是必须的，Linux保证同样的中断不会重入
 must disable interrupts while the lock is held.  If the device sends
-a different interrupt, the driver will deadlock trying to recursively
+a different interrupt, the driver will deadlock trying to recursively//如果在多中断的情况下，进入中断处理后，必须关闭掉中断，在拥有锁的情况，避免死锁发生
 acquire the spinlock.
 
-There are two solutions.  The first is to take the lock with
+There are two solutions.  The first is to take the lock with//第一种解决方案，是用自旋锁，并关闭中断
 spin_lock_irqsave() or spin_lock_irq() (see
 Documentation/DocBook/kernel-locking).  The second is to specify
-IRQF_DISABLED to request_irq() so that the kernel runs the entire
+IRQF_DISABLED to request_irq() so that the kernel runs the entire//第二种方案时在请求中断时，加入关中断的标识
 interrupt routine with interrupts disabled.
 
-If your MSI interrupt routine does not hold the lock for the whole time
+If your MSI interrupt routine(程序) does not hold the lock for the whole time//如果中断处理程序整个生命周期没有拥有锁，则推荐使用第一种方式
 it is running, the first solution may be best.  The second solution is
-normally preferred as it avoids making two transitions from interrupt
+normally preferred as it avoids making two transitions from interrupt//其他情况则使用第二种方式更好
 disabled to enabled and back again.
 
 4.6 How to tell whether MSI/MSI-X is enabled on a device
 
 Using 'lspci -v' (as root) may show some devices with "MSI", "Message
 Signalled Interrupts" or "MSI-X" capabilities.  Each of these capabilities
-has an 'Enable' flag which is followed with either "+" (enabled)
+has an 'Enable' flag which is followed with either "+" (enabled)//通过命令来查看设备是否支持MSI的能力 如果支持后面跟着一个+号
 or "-" (disabled).
 
 
 5. MSI quirks
 
-Several PCI chipsets or devices are known not to support MSIs.
+Several PCI chipsets or devices are known not to support MSIs.//一些设备不支持MSI系列中断模式，该如何关闭掉
 The PCI stack provides three ways to disable MSIs:
 
 1. globally
@@ -302,7 +302,7 @@ Some boards don't include this information in the table and so we have
 to detect them ourselves.  The complete list of these is found near the
 quirk_disable_all_msi() function in drivers/pci/quirks.c.
 
-If you have a board which has problems with MSIs, you can pass pci=nomsi
+If you have a board which has problems with MSIs, you can pass pci=nomsi//如果主板在MSI存在问题，可以把pci=nomsi加入到启动的内核参数中
 on the kernel command line to disable MSIs on all devices.  It would be
 in your best interests to report the problem to linux-pci@vger.kernel.org
 including a full 'lspci -v' so we can add the quirks to the kernel.
@@ -310,13 +310,13 @@ including a full 'lspci -v' so we can add the quirks to the kernel.
 5.2. Disabling MSIs below a bridge
 
 Some PCI bridges are not able to route MSIs between busses properly.
-In this case, MSIs must be disabled on all devices behind the bridge.
+In this case, MSIs must be disabled on all devices behind the bridge.//一些pci桥设备不能支持MSI，则桥之后的设备需要禁止掉MSI支持
 
 Some bridges allow you to enable MSIs by changing some bits in their
 PCI configuration space (especially the Hypertransport chipsets such
 as the nVidia nForce and Serverworks HT2000).  As with host chipsets,
-Linux mostly knows about them and automatically enables MSIs if it can.
-If you have a bridge unknown to Linux, you can enable
+Linux mostly knows about them and automatically enables MSIs if it can.//一些桥可以通过修改配置区域使能MSI,一般内核会自动尝试打开支持
+If you have a bridge unknown to Linux, you can enable//如果内核未知的桥，则可手动尝试打开MSI的支持
 MSIs in configuration space using whatever method you know works, then
 enable MSIs on that bridge by doing:
 
@@ -338,21 +338,21 @@ Some devices are known to have faulty MSI implementations.  Usually this
 is handled in the individual device driver, but occasionally it's necessary
 to handle this with a quirk.  Some drivers have an option to disable use
 of MSI.  While this is a convenient workaround for the driver author,
-it is not good practise, and should not be emulated.
+it is not good practise, and should not be emulated.//一些特殊设备不支持MSI中断模式，需要驱动作者关注的区域
 
 5.4. Finding why MSIs are disabled on a device
 
 From the above three sections, you can see that there are many reasons
 why MSIs may not be enabled for a given device.  Your first step should
-be to examine your dmesg carefully to determine whether MSIs are enabled
+be to examine your dmesg carefully to determine whether MSIs are enabled//因为内核配置问题导致不支持MSI
 for your machine.  You should also check your .config to be sure you
 have enabled CONFIG_PCI_MSI.
 
 Then, 'lspci -t' gives the list of bridges above a device.  Reading
-/sys/bus/pci/devices/*/msi_bus will tell you whether MSIs are enabled (1)
+/sys/bus/pci/devices/*/msi_bus will tell you whether MSIs are enabled (1)//因为桥的原因不支持MSI
 or disabled (0).  If 0 is found in any of the msi_bus files belonging
 to bridges between the PCI root and the device, MSIs are disabled.
 
-It is also worth checking the device driver to see whether it supports MSIs.
+It is also worth checking the device driver to see whether it supports MSIs.//检查驱动代码是否支持MSI
 For example, it may contain calls to pci_enable_msi(), pci_enable_msix() or
 pci_enable_msi_block().
