@@ -613,8 +613,8 @@ static const struct i2c_algorithm smbus_algorithm = {
 	.functionality	= i801_func,
 };
 
-static DEFINE_PCI_DEVICE_TABLE(i801_ids) = {
-	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_3) },
+static DEFINE_PCI_DEVICE_TABLE(i801_ids) = {//支持的设备列表
+	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_3) },//vid +pid 宏
 	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_3) },
 	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_2) },
 	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_3) },
@@ -639,10 +639,10 @@ static DEFINE_PCI_DEVICE_TABLE(i801_ids) = {
 	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_PANTHERPOINT_SMBUS) },
 	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_LYNXPOINT_SMBUS) },
 	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_LYNXPOINT_LP_SMBUS) },
-	{ 0, }
+	{ 0, }//末尾需要加入这个
 };
 
-MODULE_DEVICE_TABLE(pci, i801_ids);
+MODULE_DEVICE_TABLE(pci, i801_ids);//将该驱动的支持列表加入到系统pci级别参见/lib/modules/kernel_version/modules.pcimap文件
 
 #if defined CONFIG_X86 && defined CONFIG_DMI
 static unsigned char apanel_addr;
@@ -772,16 +772,16 @@ static int __devinit i801_probe(struct pci_dev *dev,
 	int err, i;
 	struct i801_priv *priv;
 
-	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);//申请驱动上下文环境的内存区域
 	if (!priv)
 		return -ENOMEM;
 
-	i2c_set_adapdata(&priv->adapter, priv);
+	i2c_set_adapdata(&priv->adapter, priv);//关联i2c驱动的结构
 	priv->adapter.owner = THIS_MODULE;
 	priv->adapter.class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
 	priv->adapter.algo = &smbus_algorithm;
 
-	priv->pci_dev = dev;
+	priv->pci_dev = dev;//关联pci驱动的结构体
 	switch (dev->device) {
 	case PCI_DEVICE_ID_INTEL_PATSBURG_SMBUS_IDF0:
 	case PCI_DEVICE_ID_INTEL_PATSBURG_SMBUS_IDF1:
@@ -810,7 +810,7 @@ static int __devinit i801_probe(struct pci_dev *dev,
 	}
 	priv->features &= ~disable_features;
 
-	err = pci_enable_device(dev);
+	err = pci_enable_device(dev);//使能pci设备，在这之前，硬件应该满足，只有配置区域可访问，中断等均处关闭状态
 	if (err) {
 		dev_err(&dev->dev, "Failed to enable SMBus PCI device (%d)\n",
 			err);
@@ -826,7 +826,7 @@ static int __devinit i801_probe(struct pci_dev *dev,
 		goto exit;
 	}
 
-	err = acpi_check_resource_conflict(&dev->resource[SMBBAR]);
+	err = acpi_check_resource_conflict(&dev->resource[SMBBAR]);//电源管理模块，X86体系架构的
 	if (err) {
 		err = -ENODEV;
 		goto exit;
@@ -840,14 +840,14 @@ static int __devinit i801_probe(struct pci_dev *dev,
 		goto exit;
 	}
 
-	pci_read_config_byte(priv->pci_dev, SMBHSTCFG, &temp);
+	pci_read_config_byte(priv->pci_dev, SMBHSTCFG, &temp);//读写配置文件，特有的函数接口
 	priv->original_hstcfg = temp;
 	temp &= ~SMBHSTCFG_I2C_EN;	/* SMBus timing */
 	if (!(temp & SMBHSTCFG_HST_EN)) {
 		dev_info(&dev->dev, "Enabling SMBus device\n");
 		temp |= SMBHSTCFG_HST_EN;
 	}
-	pci_write_config_byte(priv->pci_dev, SMBHSTCFG, temp);
+	pci_write_config_byte(priv->pci_dev, SMBHSTCFG, temp);//读写配置文件，特有的函数接口
 
 	if (temp & SMBHSTCFG_SMB_SMI_EN)
 		dev_dbg(&dev->dev, "SMBus using interrupt SMI#\n");
@@ -875,7 +875,7 @@ static int __devinit i801_probe(struct pci_dev *dev,
 
 	i801_probe_optional_slaves(priv);
 
-	pci_set_drvdata(dev, priv);
+	pci_set_drvdata(dev, priv);//驱动上下文关联到pci设备驱动上去
 	return 0;
 
 exit_release:
@@ -922,11 +922,11 @@ static int i801_resume(struct pci_dev *dev)
 #define i801_resume NULL
 #endif
 
-static struct pci_driver i801_driver = {
-	.name		= "i801_smbus",
-	.id_table	= i801_ids,
-	.probe		= i801_probe,
-	.remove		= __devexit_p(i801_remove),
+static struct pci_driver i801_driver = {//pci设备的结构
+	.name		= "i801_smbus",//模块名称，必须唯一性
+	.id_table	= i801_ids,//兼容列表
+	.probe		= i801_probe,//探测函数，新加入设备，热插拔均支持，不能加入init的前缀
+	.remove		= __devexit_p(i801_remove),//卸载设备时调用
 	.suspend	= i801_suspend,
 	.resume		= i801_resume,
 };
@@ -935,12 +935,12 @@ static int __init i2c_i801_init(void)
 {
 	if (dmi_name_in_vendors("FUJITSU"))
 		input_apanel_init();
-	return pci_register_driver(&i801_driver);
+	return pci_register_driver(&i801_driver);//注册pci驱动
 }
 
 static void __exit i2c_i801_exit(void)
 {
-	pci_unregister_driver(&i801_driver);
+	pci_unregister_driver(&i801_driver);//卸载pci驱动
 }
 
 MODULE_AUTHOR("Mark D. Studebaker <mdsxyz123@yahoo.com>, "

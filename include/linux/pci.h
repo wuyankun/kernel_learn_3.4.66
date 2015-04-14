@@ -190,7 +190,7 @@ enum pci_bus_flags {
 };
 
 /* Based on the PCI Hotplug Spec, but some values are made up by us */
-enum pci_bus_speed {
+enum pci_bus_speed {//总线速度模式
 	PCI_SPEED_33MHz			= 0x00,
 	PCI_SPEED_66MHz			= 0x01,
 	PCI_SPEED_66MHz_PCIX		= 0x02,
@@ -235,7 +235,7 @@ struct pci_ats;
 /*
  * The pci_dev structure is used to describe PCI devices.
  */
-struct pci_dev {
+struct pci_dev {//pci设备的总的结构体
 	struct list_head bus_list;	/* node in per-bus list */
 	struct pci_bus	*bus;		/* bus this device is on */
 	struct pci_bus	*subordinate;	/* bus this device bridges to */
@@ -268,7 +268,7 @@ struct pci_dev {
 	struct device_dma_parameters dma_parms;
 
 	pci_power_t     current_state;  /* Current operating state. In ACPI-speak,
-					   this is D0-D3, D0 being fully functional,
+					   this is D0-D3, D0 being fully functional,//D0代表全功能，D3代表正在关闭
 					   and D3 being off. */
 	int		pm_cap;		/* PM capability offset in the
 					   configuration space */
@@ -276,13 +276,13 @@ struct pci_dev {
 					   can be generated */
 	unsigned int	pme_interrupt:1;
 	unsigned int	pme_poll:1;	/* Poll device's PME status bit */
-	unsigned int	d1_support:1;	/* Low power state D1 is supported */
+	unsigned int	d1_support:1;	/* Low power state D1 is supported *///D1和D2代表两种低功耗状态
 	unsigned int	d2_support:1;	/* Low power state D2 is supported */
 	unsigned int	no_d1d2:1;	/* Only allow D0 and D3 */
 	unsigned int	mmio_always_on:1;	/* disallow turning off io/mem
 						   decoding during bar sizing */
 	unsigned int	wakeup_prepared:1;
-	unsigned int	d3_delay;	/* D3->D0 transition time in ms */
+	unsigned int	d3_delay;	/* D3->D0 transition time in ms *///开关之间的延时设置
 
 #ifdef CONFIG_PCIEASPM
 	struct pcie_link_state	*link_state;	/* ASPM link state. */
@@ -541,7 +541,7 @@ struct pci_error_handlers {
 /* ---------------------------------------------------------------- */
 
 struct module;
-struct pci_driver {
+struct pci_driver {//pci设备驱动的结构体
 	struct list_head node;
 	const char *name;
 	const struct pci_device_id *id_table;	/* must be non-NULL for probe to be called */
@@ -1011,7 +1011,7 @@ struct msix_entry {
 };
 
 
-#ifndef CONFIG_PCI_MSI
+#ifndef CONFIG_PCI_MSI//配置是否支持MSI，否则实现为空的实现
 static inline int pci_enable_msi_block(struct pci_dev *dev, unsigned int nvec)
 {
 	return -1;
