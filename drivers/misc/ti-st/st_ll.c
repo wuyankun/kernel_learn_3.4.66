@@ -32,7 +32,7 @@ static void send_ll_cmd(struct st_data_s *st_data,
 {
 
 	pr_debug("%s: writing %x", __func__, cmd);
-	st_int_write(st_data, &cmd, 1);
+	st_int_write(st_data, &cmd, 1);//最总全都调用这个api
 	return;
 }
 
@@ -155,10 +155,10 @@ unsigned long st_ll_sleep_state(struct st_data_s *st_data,
 }
 
 /* Called from ST CORE to initialize ST LL */
-long st_ll_init(struct st_data_s *ll)
+long st_ll_init(struct st_data_s *ll)//入口函数，初始化线路规程的状态结构体
 {
 	/* set state to invalid */
-	ll->ll_state = ST_LL_INVALID;
+	ll->ll_state = ST_LL_INVALID;//初始化线路规程当前的状态为不可用的
 	return 0;
 }
 

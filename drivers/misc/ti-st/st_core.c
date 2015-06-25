@@ -80,7 +80,7 @@ int st_get_uart_wr_room(struct st_data_s *st_gdata)
  *  to tty->ops->write
  */
 int st_int_write(struct st_data_s *st_gdata,
-	const unsigned char *data, int count)
+	const unsigned char *data, int count)//进行串口的写
 {
 	struct tty_struct *tty;
 	if (unlikely(st_gdata == NULL || st_gdata->tty == NULL)) {
@@ -92,7 +92,7 @@ int st_int_write(struct st_data_s *st_gdata,
 	print_hex_dump(KERN_DEBUG, "<out<", DUMP_PREFIX_NONE,
 		16, 1, data, count, 0);
 #endif
-	return tty->ops->write(tty, data, count);
+	return tty->ops->write(tty, data, count);//调用st_write
 
 }
 
@@ -462,7 +462,7 @@ void st_tx_wakeup(struct st_data_s *st_data)
 			/* enable wake-up from TTY */
 			set_bit(TTY_DO_WRITE_WAKEUP, &st_data->tty->flags);
 			len = st_int_write(st_data, skb->data, skb->len);
-			skb_pull(skb, len);
+			skb_pull(skb, len);//调用这个接口就写进去了
 			/* if skb->len = len as expected, skb->len=0 */
 			if (skb->len) {
 				/* would be the next skb to be sent */
@@ -497,15 +497,15 @@ void kim_st_list_protocols(struct st_data_s *st_gdata, void *buf)
  * functions called from protocol stack drivers
  * to be EXPORT-ed
  */
-long st_register(struct st_proto_s *new_proto)
+long st_register(struct st_proto_s *new_proto)//入口函数五，将会被协议栈驱动调用
 {
-	struct st_data_s	*st_gdata;
+	struct st_data_s	*st_gdata;//协议状态的指针
 	long err = 0;
 	unsigned long flags = 0;
 
-	st_kim_ref(&st_gdata, 0);
+	st_kim_ref(&st_gdata, 0);//得到协议当前的状态的结构体
 	pr_info("%s(%d) ", __func__, new_proto->chnl_id);
-	if (st_gdata == NULL || new_proto == NULL || new_proto->recv == NULL
+	if (st_gdata == NULL || new_proto == NULL || new_proto->recv == NULL//参数校验
 	    || new_proto->reg_complete_cb == NULL) {
 		pr_err("gdata/new_proto/recv or reg_complete_cb not ready");
 		return -EINVAL;
@@ -522,7 +522,7 @@ long st_register(struct st_proto_s *new_proto)
 	}
 
 	/* can be from process context only */
-	spin_lock_irqsave(&st_gdata->lock, flags);
+	spin_lock_irqsave(&st_gdata->lock, flags);//只能来自进程上下文环境调用，不懂
 
 	if (test_bit(ST_REG_IN_PROGRESS, &st_gdata->st_state)) {
 		pr_info(" ST_REG_IN_PROGRESS:%d ", new_proto->chnl_id);
@@ -530,26 +530,26 @@ long st_register(struct st_proto_s *new_proto)
 
 		add_channel_to_table(st_gdata, new_proto);
 		st_gdata->protos_registered++;
-		new_proto->write = st_write;
+		new_proto->write = st_write;//这里注册了写的函数
 
 		set_bit(ST_REG_PENDING, &st_gdata->st_state);
 		spin_unlock_irqrestore(&st_gdata->lock, flags);
 		return -EINPROGRESS;
-	} else if (st_gdata->protos_registered == ST_EMPTY) {
+	} else if (st_gdata->protos_registered == ST_EMPTY) {//首次注册的入口
 		pr_info(" chnl_id list empty :%d ", new_proto->chnl_id);
-		set_bit(ST_REG_IN_PROGRESS, &st_gdata->st_state);
-		st_recv = st_kim_recv;
+		set_bit(ST_REG_IN_PROGRESS, &st_gdata->st_state);//状态更改为进行中
+		st_recv = st_kim_recv;//全局保存的一个函数指针
 
 		/* enable the ST LL - to set default chip state */
-		st_ll_enable(st_gdata);
+		st_ll_enable(st_gdata);//更改线路规程的状态为使能
 
 		/* release lock previously held - re-locked below */
-		spin_unlock_irqrestore(&st_gdata->lock, flags);
+		spin_unlock_irqrestore(&st_gdata->lock, flags);//关闭自旋锁
 
 		/* this may take a while to complete
 		 * since it involves BT fw download
 		 */
-		err = st_kim_start(st_gdata->kim_data);
+		err = st_kim_start(st_gdata->kim_data);//开始进行实质通信
 		if (err != 0) {
 			clear_bit(ST_REG_IN_PROGRESS, &st_gdata->st_state);
 			if ((st_gdata->protos_registered != ST_EMPTY) &&
@@ -586,7 +586,7 @@ long st_register(struct st_proto_s *new_proto)
 			return -EALREADY;
 		}
 
-		add_channel_to_table(st_gdata, new_proto);
+		add_channel_to_table(st_gdata, new_proto);//分配通道号
 		st_gdata->protos_registered++;
 		new_proto->write = st_write;
 		spin_unlock_irqrestore(&st_gdata->lock, flags);
@@ -677,9 +677,9 @@ long st_write(struct sk_buff *skb)
 	len = skb->len;
 
 	/* st_ll to decide where to enqueue the skb */
-	st_int_enqueue(st_gdata, skb);
+	st_int_enqueue(st_gdata, skb);//初始化写队列
 	/* wake up */
-	st_tx_wakeup(st_gdata);
+	st_tx_wakeup(st_gdata);//写
 
 	/* return number of bytes written */
 	return len;
@@ -695,11 +695,11 @@ EXPORT_SYMBOL_GPL(st_unregister);
 static int st_tty_open(struct tty_struct *tty)
 {
 	int err = 0;
-	struct st_data_s *st_gdata;
+	struct st_data_s *st_gdata;//线路规程的状态指针
 	pr_info("%s ", __func__);
 
 	st_kim_ref(&st_gdata, 0);
-	st_gdata->tty = tty;
+	st_gdata->tty = tty;//保存tty到上下文环境中
 	tty->disc_data = st_gdata;
 
 	/* don't do an wakeup for now */
@@ -715,7 +715,7 @@ static int st_tty_open(struct tty_struct *tty)
 	 * signal to UIM via KIM that -
 	 * installation of N_TI_WL ldisc is complete
 	 */
-	st_kim_complete(st_gdata->kim_data);
+	st_kim_complete(st_gdata->kim_data);//完成数据的绑定，tty已经和平台设备，线路规程完成绑定
 	pr_debug("done %s", __func__);
 	return err;
 }
@@ -807,10 +807,10 @@ static void st_tty_flush_buffer(struct tty_struct *tty)
 	return;
 }
 
-static struct tty_ldisc_ops st_ldisc_ops = {
+static struct tty_ldisc_ops st_ldisc_ops = {//第四个入口
 	.magic = TTY_LDISC_MAGIC,
 	.name = "n_st",
-	.open = st_tty_open,
+	.open = st_tty_open,//串口被打开时会调用
 	.close = st_tty_close,
 	.receive_buf = st_tty_receive,
 	.write_wakeup = st_tty_wakeup,
@@ -819,13 +819,13 @@ static struct tty_ldisc_ops st_ldisc_ops = {
 };
 
 /********************************************************************/
-int st_core_init(struct st_data_s **core_data)
+int st_core_init(struct st_data_s **core_data)//核心数据的初始化，入口函数
 {
-	struct st_data_s *st_gdata;
+	struct st_data_s *st_gdata;//协议注册的状态结构体
 	long err;
 
-	err = tty_register_ldisc(N_TI_WL, &st_ldisc_ops);
-	if (err) {
+	err = tty_register_ldisc(N_TI_WL, &st_ldisc_ops);//tty设备注册线路规程,参数:编号，操作函数指针结构体
+	if (err) {//这里的注册总是成功，只是进行简单的赋值
 		pr_err("error registering %d line discipline %ld",
 			   N_TI_WL, err);
 		return err;
@@ -835,7 +835,7 @@ int st_core_init(struct st_data_s **core_data)
 	st_gdata = kzalloc(sizeof(struct st_data_s), GFP_KERNEL);
 	if (!st_gdata) {
 		pr_err("memory allocation failed");
-		err = tty_unregister_ldisc(N_TI_WL);
+		err = tty_unregister_ldisc(N_TI_WL);//未分配到数据，执行去注册
 		if (err)
 			pr_err("unable to un-register ldisc %ld", err);
 		err = -ENOMEM;
@@ -845,13 +845,13 @@ int st_core_init(struct st_data_s **core_data)
 	/* Initialize ST TxQ and Tx waitQ queue head. All BT/FM/GPS module skb's
 	 * will be pushed in this queue for actual transmission.
 	 */
-	skb_queue_head_init(&st_gdata->txq);
-	skb_queue_head_init(&st_gdata->tx_waitq);
+	skb_queue_head_init(&st_gdata->txq);//发送数据的队列
+	skb_queue_head_init(&st_gdata->tx_waitq);//发送数据的等待状态队列
 
 	/* Locking used in st_int_enqueue() to avoid multiple execution */
-	spin_lock_init(&st_gdata->lock);
+	spin_lock_init(&st_gdata->lock);//初始化自选锁，避免多次执行
 
-	err = st_ll_init(st_gdata);
+	err = st_ll_init(st_gdata);//第三个入口，初始化线路规程的状态结构体
 	if (err) {
 		pr_err("error during st_ll initialization(%ld)", err);
 		kfree(st_gdata);
@@ -864,7 +864,7 @@ int st_core_init(struct st_data_s **core_data)
 	return 0;
 }
 
-void st_core_exit(struct st_data_s *st_gdata)
+void st_core_exit(struct st_data_s *st_gdata)//去注册，释放一些资源
 {
 	long err;
 	/* internal module cleanup */

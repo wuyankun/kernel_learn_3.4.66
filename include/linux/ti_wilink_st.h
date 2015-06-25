@@ -29,7 +29,7 @@
  * enum proto-type - The protocol on WiLink chips which share a
  *	common physical interface like UART.
  */
-enum proto_type {
+enum proto_type {//协议类型
 	ST_BT,
 	ST_FM,
 	ST_GPS,
@@ -65,12 +65,12 @@ enum proto_type {
  * @reserve: the number of bytes ST needs to reserve in the skb being
  *	prepared for the protocol driver.
  */
-struct st_proto_s {
-	enum proto_type type;
-	long (*recv) (void *, struct sk_buff *);
-	unsigned char (*match_packet) (const unsigned char *data);
+struct st_proto_s {//协议的结构体定义
+	enum proto_type type;//协议类型
+	long (*recv) (void *, struct sk_buff *);//如何接收数据
+	unsigned char (*match_packet) (const unsigned char *data);//是否数据匹配
 	void (*reg_complete_cb) (void *, char data);
-	long (*write) (struct sk_buff *skb);
+	long (*write) (struct sk_buff *skb);//如何发送数据
 	void *priv_data;
 
 	unsigned char chnl_id;
@@ -80,7 +80,7 @@ struct st_proto_s {
 	unsigned char len_size;
 	unsigned char reserve;
 };
-
+//协议的注册和去注册接口
 extern long st_register(struct st_proto_s *);
 extern long st_unregister(struct st_proto_s *);
 
@@ -139,23 +139,23 @@ extern long st_unregister(struct st_proto_s *);
  *
  */
 struct st_data_s {
-	unsigned long st_state;
-	struct sk_buff *tx_skb;
+	unsigned long st_state;//线路规程当前状态标识
+	struct sk_buff *tx_skb;//发送数据缓存
 #define ST_TX_SENDING	1
 #define ST_TX_WAKEUP	2
-	unsigned long tx_state;
+	unsigned long tx_state;//发送数据的状态
 	struct st_proto_s *list[ST_MAX_CHANNELS];
 	bool is_registered[ST_MAX_CHANNELS];
 	unsigned long rx_state;
 	unsigned long rx_count;
-	struct sk_buff *rx_skb;
+	struct sk_buff *rx_skb;//接收数据缓存
 	unsigned char rx_chnl;
 	struct sk_buff_head txq, tx_waitq;
-	spinlock_t lock;
+	spinlock_t lock;//带一个自旋锁
 	unsigned char	protos_registered;
 	unsigned long ll_state;
 	void *kim_data;
-	struct tty_struct *tty;
+	struct tty_struct *tty;//从功能划分为一个tty设备
 };
 
 /*
@@ -253,22 +253,22 @@ struct chip_version {
  * @version: chip version available via a sysfs entry.
  *
  */
-struct kim_data_s {
-	long uim_pid;
-	struct platform_device *kim_pdev;
-	struct completion kim_rcvd, ldisc_installed;
+struct kim_data_s {//驱动的上下文结构体定义
+	long uim_pid;//设备的pid值
+	struct platform_device *kim_pdev;//从总线类型划分为总线设备
+	struct completion kim_rcvd, ldisc_installed;//线路规程注册完成量和通信时的接收量
 	char resp_buffer[30];
 	const struct firmware *fw_entry;
-	long nshutdown;
+	long nshutdown;//模块的GPIO的开关值，电源的GPIO的线号
 	unsigned long rx_state;
 	unsigned long rx_count;
 	struct sk_buff *rx_skb;
-	struct st_data_s *core_data;
+	struct st_data_s *core_data;//核心数据，引出另外一个比较重要的结构体
 	struct chip_version version;
 	unsigned char ldisc_install;
 	unsigned char dev_name[UART_DEV_NAME_LEN];
-	unsigned char flow_cntrl;
-	unsigned long baud_rate;
+	unsigned char flow_cntrl;//uart是否支持流控制
+	unsigned long baud_rate;//uart设备的串口波特率
 };
 
 /**
@@ -300,7 +300,7 @@ void kim_st_list_protocols(struct st_data_s *, void *);
  *	Each such action needs to be parsed by the KIM and
  *	relevant procedure to be called.
  */
-struct bts_header {
+struct bts_header {//bts文件不是个二进制数据，更像是个脚本文件，需要解析后依次执行
 	u32 magic;
 	u32 version;
 	u8 future[24];
@@ -311,7 +311,7 @@ struct bts_header {
  * struct bts_action - Each .bts action has its own type of
  *	data.
  */
-struct bts_action {
+struct bts_action {//每种动作拥有自己的数据结构，具体不开源，不再分析
 	u16 type;
 	u16 size;
 	u8 data[0];
@@ -432,11 +432,12 @@ struct gps_event_hdr {
  *	asleep or run host faster when chip awake etc..
  *
  */
+ //平台数据的结构体，板级初始化时通过硬编码时的结构体
 struct ti_st_plat_data {
-	long nshutdown_gpio;
-	unsigned char dev_name[UART_DEV_NAME_LEN]; /* uart name */
-	unsigned char flow_cntrl; /* flow control flag */
-	unsigned long baud_rate;
+	long nshutdown_gpio;//模块上电的GPIO的值
+	unsigned char dev_name[UART_DEV_NAME_LEN]; /* uart name *///串口名称，对应的串口结点
+	unsigned char flow_cntrl; /* flow control flag *///uart流控制
+	unsigned long baud_rate;//uart的波特率
 	int (*suspend)(struct platform_device *, pm_message_t);
 	int (*resume)(struct platform_device *);
 	int (*chip_enable) (struct kim_data_s *);

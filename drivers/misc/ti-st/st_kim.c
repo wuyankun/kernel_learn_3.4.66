@@ -54,7 +54,7 @@ static struct platform_device *st_kim_devices[MAX_ST_DEVICES];
  */
 static struct platform_device *st_get_plat_device(int id)
 {
-	return st_kim_devices[id];
+	return st_kim_devices[id];//获取设备数据中的pid值
 }
 
 /**
@@ -186,7 +186,7 @@ void kim_int_recv(struct kim_data_s *kim_gdata,
 			kim_gdata->rx_count = 0;
 			return;
 		}
-		skb_reserve(kim_gdata->rx_skb, 8);
+		skb_reserve(kim_gdata->rx_skb, 8);//最终调用这个接口函数去接收数据
 		kim_gdata->rx_skb->cb[0] = 4;
 		kim_gdata->rx_skb->cb[1] = 0;
 
@@ -197,11 +197,11 @@ void kim_int_recv(struct kim_data_s *kim_gdata,
 static long read_local_version(struct kim_data_s *kim_gdata, char *bts_scr_name)
 {
 	unsigned short version = 0, chip = 0, min_ver = 0, maj_ver = 0;
-	const char read_ver_cmd[] = { 0x01, 0x01, 0x10, 0x00 };
+	const char read_ver_cmd[] = { 0x01, 0x01, 0x10, 0x00 };//读取版本信息的命令序列
 
 	pr_debug("%s", __func__);
 
-	INIT_COMPLETION(kim_gdata->kim_rcvd);
+	INIT_COMPLETION(kim_gdata->kim_rcvd);//初始化接收到数据的完成量为0
 	if (4 != st_int_write(kim_gdata->core_data, read_ver_cmd, 4)) {
 		pr_err("kim: couldn't write 4 bytes");
 		return -EIO;
@@ -212,7 +212,7 @@ static long read_local_version(struct kim_data_s *kim_gdata, char *bts_scr_name)
 		pr_err(" waiting for ver info- timed out ");
 		return -ETIMEDOUT;
 	}
-	INIT_COMPLETION(kim_gdata->kim_rcvd);
+	INIT_COMPLETION(kim_gdata->kim_rcvd);//得到版本信息，再次初始化完成量为0
 
 	version =
 		MAKEWORD(kim_gdata->resp_buffer[13],
@@ -224,7 +224,7 @@ static long read_local_version(struct kim_data_s *kim_gdata, char *bts_scr_name)
 	if (version & 0x8000)
 		maj_ver |= 0x0008;
 
-	sprintf(bts_scr_name, "TIInit_%d.%d.%d.bts", chip, maj_ver, min_ver);
+	sprintf(bts_scr_name, "TIInit_%d.%d.%d.bts", chip, maj_ver, min_ver);//组合为需要的固件名称
 
 	/* to be accessed later via sysfs entry */
 	kim_gdata->version.full = version;
@@ -261,7 +261,7 @@ void skip_change_remote_baud(unsigned char **ptr, long *len)
  *	internal function which parses through the .bts firmware
  *	script file intreprets SEND, DELAY actions only as of now
  */
-static long download_firmware(struct kim_data_s *kim_gdata)
+static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 {
 	long err = 0;
 	long len = 0;
@@ -279,7 +279,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)
 	}
 	err =
 	    request_firmware(&kim_gdata->fw_entry, bts_scr_name,
-			     &kim_gdata->kim_pdev->dev);
+			     &kim_gdata->kim_pdev->dev);//调用通用接口去打开固件文件
 	if (unlikely((err != 0) || (kim_gdata->fw_entry->data == NULL) ||
 		     (kim_gdata->fw_entry->size == 0))) {
 		pr_err(" request_firmware failed(errno %ld) for %s", err,
@@ -287,11 +287,11 @@ static long download_firmware(struct kim_data_s *kim_gdata)
 		return -EINVAL;
 	}
 	ptr = (void *)kim_gdata->fw_entry->data;
-	len = kim_gdata->fw_entry->size;
+	len = kim_gdata->fw_entry->size;//得到固件文件的指针和文件大小信息
 	/* bts_header to remove out magic number and
 	 * version
 	 */
-	ptr += sizeof(struct bts_header);
+	ptr += sizeof(struct bts_header);//跳过文件魔数字段
 	len -= sizeof(struct bts_header);
 
 	while (len > 0 && ptr) {
@@ -345,7 +345,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)
 			INIT_COMPLETION(kim_gdata->kim_rcvd);
 
 			/*
-			 * Free space found in uart buffer, call st_int_write
+			 * Free space found in uart buffer, call 4
 			 * to send current firmware command to the uart tx
 			 * buffer.
 			 */
@@ -439,36 +439,36 @@ void st_kim_complete(void *kim_data)
  *	based on the chip version, requesting the fw, parsing it
  *	and perform download(send/recv).
  */
-long st_kim_start(void *kim_data)
+long st_kim_start(void *kim_data)//开始进行实际的芯片通信
 {
 	long err = 0;
-	long retry = POR_RETRY_COUNT;
+	long retry = POR_RETRY_COUNT;//通信尝试次数
 	struct ti_st_plat_data	*pdata;
 	struct kim_data_s	*kim_gdata = (struct kim_data_s *)kim_data;
 
 	pr_info(" %s", __func__);
-	pdata = kim_gdata->kim_pdev->dev.platform_data;
+	pdata = kim_gdata->kim_pdev->dev.platform_data;//全局的上下文环境
 
 	do {
 		/* platform specific enabling code here */
 		if (pdata->chip_enable)
-			pdata->chip_enable(kim_gdata);
+			pdata->chip_enable(kim_gdata);//平台特殊的启动芯片的方式
 
 		/* Configure BT nShutdown to HIGH state */
-		gpio_set_value(kim_gdata->nshutdown, GPIO_LOW);
+		gpio_set_value(kim_gdata->nshutdown, GPIO_LOW);//控制gpio来产生上电时序要求
 		mdelay(5);	/* FIXME: a proper toggle */
 		gpio_set_value(kim_gdata->nshutdown, GPIO_HIGH);
 		mdelay(100);
 		/* re-initialize the completion */
-		INIT_COMPLETION(kim_gdata->ldisc_installed);
+		INIT_COMPLETION(kim_gdata->ldisc_installed);//再次初始化线路规程的安装完成量为未完成
 		/* send notification to UIM */
-		kim_gdata->ldisc_install = 1;
+		kim_gdata->ldisc_install = 1;//更改完成量，更新到sysfs中去
 		pr_info("ldisc_install = 1");
 		sysfs_notify(&kim_gdata->kim_pdev->dev.kobj,
-				NULL, "install");
+				NULL, "install");//这个值比较关键
 		/* wait for ldisc to be installed */
 		err = wait_for_completion_timeout(&kim_gdata->ldisc_installed,
-				msecs_to_jiffies(LDISC_TIME));
+				msecs_to_jiffies(LDISC_TIME));//等待完成量的值变为完成，看来需要应用层的程序配合
 		if (!err) {
 			/* ldisc installation timeout,
 			 * flush uart, power cycle BT_EN */
@@ -478,7 +478,7 @@ long st_kim_start(void *kim_data)
 		} else {
 			/* ldisc installed now */
 			pr_info("line discipline installed");
-			err = download_firmware(kim_gdata);
+			err = download_firmware(kim_gdata);//开始下载固件
 			if (err != 0) {
 				/* ldisc installed but fw download failed,
 				 * flush uart & power cycle BT_EN */
@@ -503,7 +503,7 @@ long st_kim_start(void *kim_data)
  *	(c) reset BT_EN - pull down nshutdown at the end.
  *	(d) invoke platform's chip disabling routine.
  */
-long st_kim_stop(void *kim_data)
+long st_kim_stop(void *kim_data)//关闭和芯片之间的通信，关闭供电脚
 {
 	long err = 0;
 	struct kim_data_s	*kim_gdata = (struct kim_data_s *)kim_data;
@@ -552,7 +552,7 @@ long st_kim_stop(void *kim_data)
 
 static int show_version(struct seq_file *s, void *unused)
 {
-	struct kim_data_s *kim_gdata = (struct kim_data_s *)s->private;
+	struct kim_data_s *kim_gdata = (struct kim_data_s *)s->private;//通过结点做为桥梁得到上下文环境
 	seq_printf(s, "%04X %d.%d.%d\n", kim_gdata->version.full,
 			kim_gdata->version.chip, kim_gdata->version.maj_ver,
 			kim_gdata->version.min_ver);
@@ -661,18 +661,19 @@ void st_kim_ref(struct st_data_s **core_data, int id)
 	struct platform_device	*pdev;
 	struct kim_data_s	*kim_gdata;
 	/* get kim_gdata reference from platform device */
-	pdev = st_get_plat_device(id);
+	pdev = st_get_plat_device(id);//得到关联的平台设备结构体指针
 	if (!pdev) {
 		*core_data = NULL;
 		return;
 	}
-	kim_gdata = dev_get_drvdata(&pdev->dev);
-	*core_data = kim_gdata->core_data;
+	kim_gdata = dev_get_drvdata(&pdev->dev);//获取上下文环境
+	*core_data = kim_gdata->core_data;//得到核心数据
 }
 
+////////////////////////第一部分////////////////////////////////////
 static int kim_version_open(struct inode *i, struct file *f)
 {
-	return single_open(f, show_version, i->i_private);
+	return single_open(f, show_version, i->i_private);//再次封装一次
 }
 
 static int kim_list_open(struct inode *i, struct file *f)
@@ -680,14 +681,14 @@ static int kim_list_open(struct inode *i, struct file *f)
 	return single_open(f, show_list, i->i_private);
 }
 
-static const struct file_operations version_debugfs_fops = {
+static const struct file_operations version_debugfs_fops = {//实现version的文件操作的实现f_ops
 	/* version info */
 	.open = kim_version_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = single_release,
+	.read = seq_read,//通用的实现
+	.llseek = seq_lseek,//通用的实现
+	.release = single_release,//通用的实现
 };
-static const struct file_operations list_debugfs_fops = {
+static const struct file_operations list_debugfs_fops = {//实现protocols的文件操作的实现f_ops
 	/* protocols info */
 	.open = kim_list_open,
 	.read = seq_read,
@@ -706,79 +707,79 @@ static int kim_probe(struct platform_device *pdev)
 {
 	long status;
 	struct kim_data_s	*kim_gdata;
-	struct ti_st_plat_data	*pdata = pdev->dev.platform_data;
+	struct ti_st_plat_data	*pdata = pdev->dev.platform_data;//拿到总线数据
 
 	if ((pdev->id != -1) && (pdev->id < MAX_ST_DEVICES)) {
 		/* multiple devices could exist */
-		st_kim_devices[pdev->id] = pdev;
+		st_kim_devices[pdev->id] = pdev;//根据总线驱动定义的pid来区分不同种类的设备
 	} else {
 		/* platform's sure about existence of 1 device */
 		st_kim_devices[0] = pdev;
 	}
 
-	kim_gdata = kzalloc(sizeof(struct kim_data_s), GFP_ATOMIC);
+	kim_gdata = kzalloc(sizeof(struct kim_data_s), GFP_ATOMIC);//分配设备上下文数据结构，linux/ti_wilink_st.h中定义
 	if (!kim_gdata) {
 		pr_err("no mem to allocate");
 		return -ENOMEM;
 	}
-	dev_set_drvdata(&pdev->dev, kim_gdata);
+	dev_set_drvdata(&pdev->dev, kim_gdata);//将数据上下文跟这个平台设备关联，保存起来
 
-	status = st_core_init(&kim_gdata->core_data);
+	status = st_core_init(&kim_gdata->core_data);//突然冒出一个调用函数，先分析这个核心数据的结构体定义//第二个切入点
 	if (status != 0) {
 		pr_err(" ST core init failed");
 		return -EIO;
 	}
 	/* refer to itself */
-	kim_gdata->core_data->kim_data = kim_gdata;
+	kim_gdata->core_data->kim_data = kim_gdata;//将上下文环境关联到这个核心数据的结构体中，有结构体就有完备的上下文环境
 
 	/* Claim the chip enable nShutdown gpio from the system */
-	kim_gdata->nshutdown = pdata->nshutdown_gpio;
-	status = gpio_request(kim_gdata->nshutdown, "kim");
+	kim_gdata->nshutdown = pdata->nshutdown_gpio;//模块的上电的GPIO的号码值
+	status = gpio_request(kim_gdata->nshutdown, "kim");//将这条物理连线申请为GPIO使用
 	if (unlikely(status)) {
 		pr_err(" gpio %ld request failed ", kim_gdata->nshutdown);
 		return status;
 	}
 
 	/* Configure nShutdown GPIO as output=0 */
-	status = gpio_direction_output(kim_gdata->nshutdown, 0);
+	status = gpio_direction_output(kim_gdata->nshutdown, 0);//上电拉低
 	if (unlikely(status)) {
 		pr_err(" unable to configure gpio %ld", kim_gdata->nshutdown);
 		return status;
 	}
 	/* get reference of pdev for request_firmware
 	 */
-	kim_gdata->kim_pdev = pdev;
-	init_completion(&kim_gdata->kim_rcvd);
+	kim_gdata->kim_pdev = pdev;//将平台设备的结点保存在上下文环境中
+	init_completion(&kim_gdata->kim_rcvd);//初始化两个完成量的值
 	init_completion(&kim_gdata->ldisc_installed);
-
-	status = sysfs_create_group(&pdev->dev.kobj, &uim_attr_grp);
+	
+	status = sysfs_create_group(&pdev->dev.kobj, &uim_attr_grp);//创建sysfs的结点信息
 	if (status) {
 		pr_err("failed to create sysfs entries");
 		return status;
 	}
 
 	/* copying platform data */
-	strncpy(kim_gdata->dev_name, pdata->dev_name, UART_DEV_NAME_LEN);
-	kim_gdata->flow_cntrl = pdata->flow_cntrl;
+	strncpy(kim_gdata->dev_name, pdata->dev_name, UART_DEV_NAME_LEN);//设备名字从平台数据中获得，并保存在上下文环境中
+	kim_gdata->flow_cntrl = pdata->flow_cntrl;//流控制和波特率保存到上下文环境中
 	kim_gdata->baud_rate = pdata->baud_rate;
 	pr_info("sysfs entries created\n");
 
-	kim_debugfs_dir = debugfs_create_dir("ti-st", NULL);
+	kim_debugfs_dir = debugfs_create_dir("ti-st", NULL);//创建sysfs目录结构，目录的名字为ti-st
 	if (IS_ERR(kim_debugfs_dir)) {
 		pr_err(" debugfs entries creation failed ");
 		kim_debugfs_dir = NULL;
 		return -EIO;
 	}
 
-	debugfs_create_file("version", S_IRUGO, kim_debugfs_dir,
+	debugfs_create_file("version", S_IRUGO, kim_debugfs_dir,//在目录下创建两个文件结点，名字为version和protocols
 				kim_gdata, &version_debugfs_fops);
-	debugfs_create_file("protocols", S_IRUGO, kim_debugfs_dir,
+	debugfs_create_file("protocols", S_IRUGO, kim_debugfs_dir,//并实现他们的读写方法
 				kim_gdata, &list_debugfs_fops);
 	pr_info(" debugfs entries created ");
 	return 0;
 }
 
-static int kim_remove(struct platform_device *pdev)
+static int kim_remove(struct platform_device *pdev)//主要是释放上下文环境中申请的资源(gpio口 申请的内存 sysfs创建的结点)
 {
 	/* free the GPIOs requested */
 	struct ti_st_plat_data	*pdata = pdev->dev.platform_data;
@@ -803,7 +804,7 @@ static int kim_remove(struct platform_device *pdev)
 	kim_gdata = NULL;
 	return 0;
 }
-
+//关于中断和休眠的实现，主要用于省电设计
 int kim_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	struct ti_st_plat_data	*pdata = pdev->dev.platform_data;
@@ -832,12 +833,12 @@ static struct platform_driver kim_platform_driver = {
 	.suspend = kim_suspend,
 	.resume = kim_resume,
 	.driver = {
-		.name = "kim",
+		.name = "kim",//平台设备的总线match方式是根据设备的名字和驱动的名字是否一致来判定的
 		.owner = THIS_MODULE,
 	},
 };
 
-module_platform_driver(kim_platform_driver);
+module_platform_driver(kim_platform_driver);//平台设备，利用平台设备来传递跟板子特定的数据
 
 MODULE_AUTHOR("Pavan Savoy <pavan_savoy@ti.com>");
 MODULE_DESCRIPTION("Shared Transport Driver for TI BT/FM/GPS combo chips ");
