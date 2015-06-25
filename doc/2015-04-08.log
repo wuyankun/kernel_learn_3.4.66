@@ -1,0 +1,80 @@
+1.测试fedora18服务器，被用户误操作情况下，将所有文件改为了777,
+重启后发现root用户无法登陆，普通用户可以正常登陆。
+
+2.选择更改grub ，具体是加入single的启动参数到grub语句中，以单用户的模式
+登陆到服务器上，修改root的密码。
+
+3.再次尝试用root用户登陆，发现依然无法登陆。之后进行备份/etc/passwd 文件，再次passwd发现文件/etc/passwd-没有更新，
+passwd命令有无执行成功未知，/etc/shadow也并没有更新
+
+
+4.准备保存数据，重装系统，但由于服务器上存在httpd服务，重装后配置较多，这种方案被否。
+
+
+5.于是选择手动更改文件权限，修复文件权限，使系统复活。对照另外一台服务器，将文件的权限
+改为644 ，将文件的权限改为755
+
+6.此外某些命令需要使用到S权限位，tmp文件修改T权限位等，再更改过程中，除了sudo su ping 等文件
+具有这样的属性外，意外发现了unix_chkpwd,这个文件是否和passwd相关，还是只和路径相关，不得而知。
+
+
+7.文件和目录很多，手动修改未免太耗时间，过程中发现了，使用如下命令
+find -type f |xargs chmod 755  更改文件夹下所有普通文件权限为755
+find -type d |xargs chmod 644  更改文件夹下所有目录权限为644
+
+8.在操作中，不小心把/bin文件下的文件权限修改为644，这下很多命令无法使用，
+即ls和chmod等很多常见的命令无法正常使用，root用户提示没有权限执行。
+
+9.由于无法mount磁盘，mv命令无法使用，当前环境已经无法操作了。
+
+10.使用启动u盘来挂载磁盘进行修改，这时发现/boot是ext2等分区，但/root确实lvm分区的，使用mount挂载时
+无法挂载，到此如何挂载lvm成为了最大障碍
+
+
+11.挂载lvm分区，
+
+[inbi@debian ~]#fdisk -l
+...略
+#查看系统检测到的硬盘个数，及其分区情况。
+[inbi@debian ~]#vgscan
+Reading all physical volumes. This may take a while...
+Found volume group "VolGroup00" using metadata type lvm2
+Found volume group "VolGroup00" using metadata type lvm2
+#查找系统中存在的LVM卷组，并显示找到的卷组列表。
+[inbi@debian ~]#lvscan
+lvscan '/dev/VolGroup00/LogVol00' [465.76 GB] inherit
+ACTIVE '/dev/VolGroup00/LogVol00' [465.76 GB] inherit
+#查看卷组激活状态，及卷组中有哪些逻辑卷。
+[inbi@debian ~]#vgdisplay VolGroup00 | more
+...略
+#显示所有名为VolGroup00卷组的详细信息，请记住你将要挂载卷组的 VG UUID。
+[inbi@debian ~]#vgrename o236o6-MGAQ-erKG-k6cH-12Zs-8NwX-CCqPG3 vg001
+#卷组重命名，只有未激活的卷组才可重命名！
+#为什么要重命令？因为两个卷组名一样，其中一个是无法挂载的。
+[inbi@debian ~]#vgscan
+..略
+#看看是否已重命名。
+[inbi@debian ~]#vgchange -ay /dev/vg001
+#激活卷组 vg001
+[inbi@debian ~]#lvscan
+#查看是否已激活
+[inbi@debian ~]#mount -t ext3 /dev/vg001/LogVol00 /mnt
+#把卷组的一个逻辑卷挂载到 /mnt 目录上。
+
+
+在操作过程中发现不改名字，是无法激活卷标。
+
+12.执行修改chmod文件的权限后，再次启动系统，机器无法进入系统，而是进入了ramdisk 最小系统中去，
+初步判定root分区没有正常挂载，导致猜测，lvm挂载后，还必须手动卸载掉后才行。
+
+
+13.执行卸载lvm，再次使用u盘系统启动，执行再次更改lvm的名称，更改回去后，再次启动后，可以成功启动系统
+root用户可以成功登陆。
+
+[inbi@debian ~]#umount /mnt
+#卸载挂载到 /mnt 目录的分区。
+[inbi@debian ~]#vgchange -an /dev/vg001
+#把卷组修改成不激活状态。
+
+14.sshd和httpd和mysqld的状态，使用service xxx status 来查看，修改具体文件的权限，使得满足服务的要求即可。
+

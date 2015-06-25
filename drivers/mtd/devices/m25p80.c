@@ -596,6 +596,7 @@ struct flash_info {
 #define	M25P_NO_ERASE	0x02		/* No erase command needed */
 };
 
+//指明设备的一些关键信息
 #define INFO(_jedec_id, _ext_id, _sector_size, _n_sectors, _flags)	\
 	((kernel_ulong_t)&(struct flash_info) {				\
 		.jedec_id = (_jedec_id),				\
@@ -615,6 +616,7 @@ struct flash_info {
 		.flags = M25P_NO_ERASE,					\
 	})
 
+//支持的设备列表，如果需要新添加，请确认包含这些命令序列
 /* NOTE: double check command sets and memory organization when you add
  * more flash chips.  This current list focusses on newer chips, which
  * have been converging on command sets which including JEDEC ID.
@@ -787,8 +789,8 @@ static const struct spi_device_id *__devinit jedec_probe(struct spi_device *spi)
 static int __devinit m25p_probe(struct spi_device *spi)
 {
 	const struct spi_device_id	*id = spi_get_device_id(spi);
-	struct flash_platform_data	*data;
-	struct m25p			*flash;
+	struct flash_platform_data	*data;//平台数据，在board 文件中指定
+	struct m25p			*flash;//上下文环境结构体
 	struct flash_info		*info;
 	unsigned			i;
 	struct mtd_part_parser_data	ppdata;
@@ -798,6 +800,9 @@ static int __devinit m25p_probe(struct spi_device *spi)
 		return -ENODEV;
 #endif
 
+	//平台数据帮助区分了我们的芯片类型和分区信息
+	//如果没有芯片id 信息，将会尝试是否支持jedec 标准
+	//很多新生产的芯片是兼容jedec 标准的
 	/* Platform data helps sort out which chip type we have, as
 	 * well as how this board partitions it.  If we don't have
 	 * a chip ID, try the JEDEC id commands; they'll work for most
@@ -809,7 +814,7 @@ static int __devinit m25p_probe(struct spi_device *spi)
 
 		for (i = 0; i < ARRAY_SIZE(m25p_ids) - 1; i++) {
 			plat_id = &m25p_ids[i];
-			if (strcmp(data->type, plat_id->name))
+			if (strcmp(data->type, plat_id->name))//通过判断指明的名字是否相同
 				continue;
 			break;
 		}
@@ -822,7 +827,7 @@ static int __devinit m25p_probe(struct spi_device *spi)
 
 	info = (void *)id->driver_data;
 
-	if (info->jedec_id) {
+	if (info->jedec_id) {//如果设备列表里存在jedec id 信息
 		const struct spi_device_id *jid;
 
 		jid = jedec_probe(spi);
@@ -958,22 +963,22 @@ static int __devexit m25p_remove(struct spi_device *spi)
 	return 0;
 }
 
-
+//m25p80 是一类spi-nor flash 的驱动，特别是一些容量较小的norflash
 static struct spi_driver m25p80_driver = {
 	.driver = {
-		.name	= "m25p80",
+		.name	= "m25p80",//spi 驱动和设备的关联(match )是通过这个名字判断的
 		.owner	= THIS_MODULE,
 	},
 	.id_table	= m25p_ids,
 	.probe	= m25p_probe,
-	.remove	= __devexit_p(m25p_remove),
+	.remove	= __devexit_p(m25p_remove),//devexit_p判断是否支持热插拔，热插拔支持才需要remove 实现
 
 	/* REVISIT: many of these chips have deep power-down modes, which
 	 * should clearly be entered on suspend() to minimize power use.
 	 * And also when they're otherwise idle...
 	 */
 };
-
+//简化版的注册方式
 module_spi_driver(m25p80_driver);
 
 MODULE_LICENSE("GPL");

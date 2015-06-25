@@ -23,12 +23,12 @@
 #define LINUX_PCI_REGS_H
 
 /*
- * Under PCI, each device has 256 bytes of configuration address space,
+ * Under PCI, each device has 256 bytes of configuration address space,//每个设备拥有256个字节的配置地址空间，前64个字节是标准的
  * of which the first 64 bytes are standardized as follows:
  */
-#define PCI_VENDOR_ID		0x00	/* 16 bits */
-#define PCI_DEVICE_ID		0x02	/* 16 bits */
-#define PCI_COMMAND		0x04	/* 16 bits */
+#define PCI_VENDOR_ID		0x00	/* 16 bits *///厂商
+#define PCI_DEVICE_ID		0x02	/* 16 bits *///设备
+#define PCI_COMMAND		0x04	/* 16 bits *///命令状态寄存器，每一位代表功能是否打开
 #define  PCI_COMMAND_IO		0x1	/* Enable response in I/O space */
 #define  PCI_COMMAND_MEMORY	0x2	/* Enable response in Memory space */
 #define  PCI_COMMAND_MASTER	0x4	/* Enable bus mastering */
@@ -41,7 +41,7 @@
 #define  PCI_COMMAND_FAST_BACK	0x200	/* Enable back-to-back writes */
 #define  PCI_COMMAND_INTX_DISABLE 0x400 /* INTx Emulation Disable */
 
-#define PCI_STATUS		0x06	/* 16 bits */
+#define PCI_STATUS		0x06	/* 16 bits *///状态寄存器
 #define  PCI_STATUS_INTERRUPT	0x08	/* Interrupt status */
 #define  PCI_STATUS_CAP_LIST	0x10	/* Support Capability List */
 #define  PCI_STATUS_66MHZ	0x20	/* Support 66 Mhz PCI 2.1 bus */
@@ -58,17 +58,17 @@
 #define  PCI_STATUS_SIG_SYSTEM_ERROR	0x4000 /* Set when we drive SERR */
 #define  PCI_STATUS_DETECTED_PARITY	0x8000 /* Set on parity error */
 
-#define PCI_CLASS_REVISION	0x08	/* High 24 bits are class, low 8 revision */
+#define PCI_CLASS_REVISION	0x08	/* High 24 bits are class, low 8 revision *///24位，版本信息和类代号信息
 #define PCI_REVISION_ID		0x08	/* Revision ID */
 #define PCI_CLASS_PROG		0x09	/* Reg. Level Programming Interface */
 #define PCI_CLASS_DEVICE	0x0a	/* Device class */
 
-#define PCI_CACHE_LINE_SIZE	0x0c	/* 8 bits */
-#define PCI_LATENCY_TIMER	0x0d	/* 8 bits */
-#define PCI_HEADER_TYPE		0x0e	/* 8 bits */
-#define  PCI_HEADER_TYPE_NORMAL		0
-#define  PCI_HEADER_TYPE_BRIDGE		1
-#define  PCI_HEADER_TYPE_CARDBUS	2
+#define PCI_CACHE_LINE_SIZE	0x0c	/* 8 bits *///高速缓存线
+#define PCI_LATENCY_TIMER	0x0d	/* 8 bits *///延时定时器
+#define PCI_HEADER_TYPE		0x0e	/* 8 bits *///头类型
+#define  PCI_HEADER_TYPE_NORMAL		0//正常的
+#define  PCI_HEADER_TYPE_BRIDGE		1//桥接
+#define  PCI_HEADER_TYPE_CARDBUS	2//？
 
 #define PCI_BIST		0x0f	/* 8 bits */
 #define  PCI_BIST_CODE_MASK	0x0f	/* Return result */
@@ -81,7 +81,7 @@
  * 0xffffffff to the register, and reading it back.  Only
  * 1 bits are decoded.
  */
-#define PCI_BASE_ADDRESS_0	0x10	/* 32 bits */
+#define PCI_BASE_ADDRESS_0	0x10	/* 32 bits *///6个基地址空间，每个32位
 #define PCI_BASE_ADDRESS_1	0x14	/* 32 bits [htype 0,1 only] */
 #define PCI_BASE_ADDRESS_2	0x18	/* 32 bits [htype 0 only] */
 #define PCI_BASE_ADDRESS_3	0x1c	/* 32 bits */
@@ -100,20 +100,20 @@
 /* bit 1 is reserved if address_space = 1 */
 
 /* Header type 0 (normal devices) */
-#define PCI_CARDBUS_CIS		0x28
-#define PCI_SUBSYSTEM_VENDOR_ID	0x2c
-#define PCI_SUBSYSTEM_ID	0x2e
-#define PCI_ROM_ADDRESS		0x30	/* Bits 31..11 are address, 10..1 reserved */
+#define PCI_CARDBUS_CIS		0x28//普通设备CIS区域24bit
+#define PCI_SUBSYSTEM_VENDOR_ID	0x2c//子系统厂商
+#define PCI_SUBSYSTEM_ID	0x2e//子系统设备
+#define PCI_ROM_ADDRESS		0x30	/* Bits 31..11 are address, 10..1 reserved *///扩展ROM的基地址32位
 #define  PCI_ROM_ADDRESS_ENABLE	0x01
 #define PCI_ROM_ADDRESS_MASK	(~0x7ffUL)
 
-#define PCI_CAPABILITY_LIST	0x34	/* Offset of first capability list entry */
+#define PCI_CAPABILITY_LIST	0x34	/* Offset of first capability list entry *///PCI设备的能力状态位8位
 
-/* 0x35-0x3b are reserved */
-#define PCI_INTERRUPT_LINE	0x3c	/* 8 bits */
-#define PCI_INTERRUPT_PIN	0x3d	/* 8 bits */
-#define PCI_MIN_GNT		0x3e	/* 8 bits */
-#define PCI_MAX_LAT		0x3f	/* 8 bits */
+/* 0x35-0x3b are reserved *///0x35-0x3b保留未使用
+#define PCI_INTERRUPT_LINE	0x3c	/* 8 bits *///中断线
+#define PCI_INTERRUPT_PIN	0x3d	/* 8 bits *///中断引脚
+#define PCI_MIN_GNT		0x3e	/* 8 bits *///Min_Gnt
+#define PCI_MAX_LAT		0x3f	/* 8 bits *///Max_Lat
 
 /* Header type 1 (PCI-to-PCI bridges) */
 #define PCI_PRIMARY_BUS		0x18	/* Primary bus number */
@@ -192,14 +192,14 @@
 #define PCI_CB_LEGACY_MODE_BASE		0x44	/* 16-bit PC Card legacy mode base address (ExCa) */
 /* 0x48-0x7f reserved */
 
-/* Capability lists */
+/* Capability lists *///支持的功能列表
 
 #define PCI_CAP_LIST_ID		0	/* Capability ID */
-#define  PCI_CAP_ID_PM		0x01	/* Power Management */
+#define  PCI_CAP_ID_PM		0x01	/* Power Management *///电源管理
 #define  PCI_CAP_ID_AGP		0x02	/* Accelerated Graphics Port */
 #define  PCI_CAP_ID_VPD		0x03	/* Vital Product Data */
 #define  PCI_CAP_ID_SLOTID	0x04	/* Slot Identification */
-#define  PCI_CAP_ID_MSI		0x05	/* Message Signalled Interrupts */
+#define  PCI_CAP_ID_MSI		0x05	/* Message Signalled Interrupts *///消息标识中断MSI
 #define  PCI_CAP_ID_CHSWP	0x06	/* CompactPCI HotSwap */
 #define  PCI_CAP_ID_PCIX	0x07	/* PCI-X */
 #define  PCI_CAP_ID_HT		0x08	/* HyperTransport */
@@ -210,7 +210,7 @@
 #define  PCI_CAP_ID_SSVID	0x0D	/* Bridge subsystem vendor/device ID */
 #define  PCI_CAP_ID_AGP3	0x0E	/* AGP Target PCI-PCI bridge */
 #define  PCI_CAP_ID_EXP 	0x10	/* PCI Express */
-#define  PCI_CAP_ID_MSIX	0x11	/* MSI-X */
+#define  PCI_CAP_ID_MSIX	0x11	/* MSI-X *///MSI-X的支持
 #define  PCI_CAP_ID_AF		0x13	/* PCI Advanced Features */
 #define PCI_CAP_LIST_NEXT	1	/* Next capability in the list */
 #define PCI_CAP_FLAGS		2	/* Capability defined flags (16 bits) */
@@ -224,7 +224,7 @@
 #define  PCI_PM_CAP_RESERVED    0x0010  /* Reserved field */
 #define  PCI_PM_CAP_DSI		0x0020	/* Device specific initialization */
 #define  PCI_PM_CAP_AUX_POWER	0x01C0	/* Auxiliary power support mask */
-#define  PCI_PM_CAP_D1		0x0200	/* D1 power state support */
+#define  PCI_PM_CAP_D1		0x0200	/* D1 power state support *///D1和D2的状态代表是什么含义？
 #define  PCI_PM_CAP_D2		0x0400	/* D2 power state support */
 #define  PCI_PM_CAP_PME		0x0800	/* PME pin supported */
 #define  PCI_PM_CAP_PME_MASK	0xF800	/* PME Mask of all supported states */

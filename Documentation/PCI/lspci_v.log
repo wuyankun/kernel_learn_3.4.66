@@ -1,0 +1,847 @@
+00:00.0 Host bridge: Intel Corporation Sandy Bridge DMI2 (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+	Capabilities: [90] Express Root Port (Slot-), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [144] Vendor Specific Information: ID=0004 Rev=1 Len=03c <?>
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+
+00:01.0 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 1a (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=02, subordinate=02, sec-latency=0
+	Memory behind bridge: dc000000-dc7fffff
+	Prefetchable memory behind bridge: 00000000d9000000-00000000d90fffff
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot-), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:01.1 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 1b (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=01, subordinate=01, sec-latency=0
+	Memory behind bridge: dc800000-dcffffff
+	Prefetchable memory behind bridge: 00000000d9100000-00000000d91fffff
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot-), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:02.0 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 2a (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=04, subordinate=04, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:02.2 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 2c (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=03, subordinate=03, sec-latency=0
+	I/O behind bridge: 0000f000-0000ffff
+	Memory behind bridge: dd000000-ddffffff
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot-), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:03.0 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 3a in PCI Express Mode (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=05, subordinate=05, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:03.2 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 3c (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=06, subordinate=06, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:05.0 System peripheral: Intel Corporation Sandy Bridge Address Map, VTd_Misc, System Management (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+00:05.2 System peripheral: Intel Corporation Sandy Bridge Control Status and Global Errors (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+00:11.0 PCI bridge: Intel Corporation Patsburg PCI Express Virtual Root Port (rev 05) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=07, subordinate=07, sec-latency=0
+	Capabilities: [40] Express Root Port (Slot-), MSI 00
+	Capabilities: [80] Power Management version 3
+	Capabilities: [88] Subsystem: Dell Device 048c
+	Capabilities: [90] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [138] Access Control Services
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:16.0 Communication controller: Intel Corporation X79 series chipset HECI Controller #2 (rev 05)
+	Subsystem: Dell Device 048c
+	Flags: bus master, fast devsel, latency 0
+	Memory at df8fb000 (64-bit, non-prefetchable) [size=16]
+	Capabilities: [50] Power Management version 3
+	Capabilities: [8c] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Kernel modules: mei
+
+00:16.1 Communication controller: Intel Corporation X79 series chipset IDE-r Controller (rev 05)
+	Subsystem: Dell Device 048c
+	Flags: bus master, fast devsel, latency 0
+	Memory at df8fc000 (64-bit, non-prefetchable) [size=16]
+	Capabilities: [50] Power Management version 3
+	Capabilities: [8c] MSI: Enable- Count=1/1 Maskable- 64bit+
+
+00:1a.0 USB controller: Intel Corporation X79 series chipset USB2 Enhanced Host Controller #2 (rev 05) (prog-if 20 [EHCI])
+	Subsystem: Dell Device 048c
+	Flags: bus master, medium devsel, latency 0, IRQ 23
+	Memory at df8fd000 (32-bit, non-prefetchable) [size=1K]
+	Capabilities: [50] Power Management version 2
+	Capabilities: [58] Debug port: BAR=1 offset=00a0
+	Capabilities: [98] PCI Advanced Features
+	Kernel driver in use: ehci_hcd
+
+00:1c.0 PCI bridge: Intel Corporation X79 series chipset PCI Express Root Port 1 (rev b5) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=08, subordinate=08, sec-latency=0
+	Capabilities: [40] Express Root Port (Slot-), MSI 00
+	Capabilities: [80] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [90] Subsystem: Dell Device 048c
+	Capabilities: [a0] Power Management version 2
+	Capabilities: [100] Advanced Error Reporting
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:1c.7 PCI bridge: Intel Corporation X79 series chipset PCI Express Root Port 8 (rev b5) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=09, subordinate=0d, sec-latency=0
+	Memory behind bridge: de000000-df7fffff
+	Prefetchable memory behind bridge: 00000000d8000000-00000000d8ffffff
+	Capabilities: [40] Express Root Port (Slot-), MSI 00
+	Capabilities: [80] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [90] Subsystem: Dell Device 048c
+	Capabilities: [a0] Power Management version 2
+	Capabilities: [100] Advanced Error Reporting
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+00:1d.0 USB controller: Intel Corporation X79 series chipset USB2 Enhanced Host Controller #1 (rev 05) (prog-if 20 [EHCI])
+	Subsystem: Dell Device 048c
+	Flags: bus master, medium devsel, latency 0, IRQ 22
+	Memory at df8fe000 (32-bit, non-prefetchable) [size=1K]
+	Capabilities: [50] Power Management version 2
+	Capabilities: [58] Debug port: BAR=1 offset=00a0
+	Capabilities: [98] PCI Advanced Features
+	Kernel driver in use: ehci_hcd
+
+00:1e.0 PCI bridge: Intel Corporation 82801 PCI Bridge (rev a5) (prog-if 01 [Subtractive decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=00, secondary=0e, subordinate=0e, sec-latency=32
+	Capabilities: [50] Subsystem: Dell Device 048c
+
+00:1f.0 ISA bridge: Intel Corporation X79 series chipset LPC Controller (rev 05)
+	Subsystem: Dell Device 048c
+	Flags: bus master, medium devsel, latency 0
+	Capabilities: [e0] Vendor Specific Information: Len=0c <?>
+	Kernel modules: iTCO_wdt
+
+00:1f.2 SATA controller: Intel Corporation X79 series chipset 6-Port SATA AHCI Controller (rev 05) (prog-if 01 [AHCI 1.0])
+	Subsystem: Dell Device 048c
+	Flags: bus master, 66MHz, medium devsel, latency 0, IRQ 117
+	I/O ports at ece8 [size=8]
+	I/O ports at ecf8 [size=4]
+	I/O ports at ecf0 [size=8]
+	I/O ports at ecfc [size=4]
+	I/O ports at ecc0 [size=32]
+	Memory at df8ff000 (32-bit, non-prefetchable) [size=2K]
+	Capabilities: [80] MSI: Enable+ Count=1/1 Maskable- 64bit-
+	Capabilities: [70] Power Management version 3
+	Capabilities: [a8] SATA HBA v1.0
+	Capabilities: [b0] PCI Advanced Features
+	Kernel driver in use: ahci
+
+01:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM5720 Gigabit Ethernet PCIe
+	Subsystem: Dell Device 1f5b
+	Flags: bus master, fast devsel, latency 0, IRQ 35
+	Memory at d91a0000 (64-bit, prefetchable) [size=64K]
+	Memory at d91b0000 (64-bit, prefetchable) [size=64K]
+	Memory at d91c0000 (64-bit, prefetchable) [size=64K]
+	Expansion ROM at dc800000 [disabled] [size=256K]
+	Capabilities: [48] Power Management version 3
+	Capabilities: [50] Vital Product Data
+	Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+	Capabilities: [a0] MSI-X: Enable+ Count=17 Masked-
+	Capabilities: [ac] Express Endpoint, MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [13c] Device Serial Number 00-00-90-b1-1c-20-ce-1f
+	Capabilities: [150] Power Budgeting <?>
+	Capabilities: [160] Virtual Channel
+	Kernel driver in use: tg3
+	Kernel modules: tg3
+
+01:00.1 Ethernet controller: Broadcom Corporation NetXtreme BCM5720 Gigabit Ethernet PCIe
+	Subsystem: Dell Device 1f5b
+	Flags: bus master, fast devsel, latency 0, IRQ 38
+	Memory at d91d0000 (64-bit, prefetchable) [size=64K]
+	Memory at d91e0000 (64-bit, prefetchable) [size=64K]
+	Memory at d91f0000 (64-bit, prefetchable) [size=64K]
+	Expansion ROM at d9100000 [disabled] [size=256K]
+	Capabilities: [48] Power Management version 3
+	Capabilities: [50] Vital Product Data
+	Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+	Capabilities: [a0] MSI-X: Enable+ Count=17 Masked-
+	Capabilities: [ac] Express Endpoint, MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [13c] Device Serial Number 00-00-90-b1-1c-20-ce-20
+	Capabilities: [150] Power Budgeting <?>
+	Capabilities: [160] Virtual Channel
+	Kernel driver in use: tg3
+	Kernel modules: tg3
+
+02:00.0 Ethernet controller: Broadcom Corporation NetXtreme BCM5720 Gigabit Ethernet PCIe
+	Subsystem: Dell Device 1f5b
+	Flags: bus master, fast devsel, latency 0, IRQ 34
+	Memory at d90a0000 (64-bit, prefetchable) [size=64K]
+	Memory at d90b0000 (64-bit, prefetchable) [size=64K]
+	Memory at d90c0000 (64-bit, prefetchable) [size=64K]
+	Expansion ROM at dc000000 [disabled] [size=256K]
+	Capabilities: [48] Power Management version 3
+	Capabilities: [50] Vital Product Data
+	Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+	Capabilities: [a0] MSI-X: Enable+ Count=17 Masked-
+	Capabilities: [ac] Express Endpoint, MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [13c] Device Serial Number 00-00-90-b1-1c-20-ce-21
+	Capabilities: [150] Power Budgeting <?>
+	Capabilities: [160] Virtual Channel
+	Kernel driver in use: tg3
+	Kernel modules: tg3
+
+02:00.1 Ethernet controller: Broadcom Corporation NetXtreme BCM5720 Gigabit Ethernet PCIe
+	Subsystem: Dell Device 1f5b
+	Flags: bus master, fast devsel, latency 0, IRQ 36
+	Memory at d90d0000 (64-bit, prefetchable) [size=64K]
+	Memory at d90e0000 (64-bit, prefetchable) [size=64K]
+	Memory at d90f0000 (64-bit, prefetchable) [size=64K]
+	Expansion ROM at d9000000 [disabled] [size=256K]
+	Capabilities: [48] Power Management version 3
+	Capabilities: [50] Vital Product Data
+	Capabilities: [58] MSI: Enable- Count=1/8 Maskable- 64bit+
+	Capabilities: [a0] MSI-X: Enable+ Count=17 Masked-
+	Capabilities: [ac] Express Endpoint, MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [13c] Device Serial Number 00-00-90-b1-1c-20-ce-22
+	Capabilities: [150] Power Budgeting <?>
+	Capabilities: [160] Virtual Channel
+	Kernel driver in use: tg3
+	Kernel modules: tg3
+
+03:00.0 RAID bus controller: LSI Logic / Symbios Logic MegaRAID SAS 2208 [Thunderbolt] (rev 01)
+	Subsystem: Dell PERC H710 Mini (for monolithics)
+	Flags: bus master, fast devsel, latency 0, IRQ 42
+	I/O ports at fc00 [size=256]
+	Memory at ddffc000 (64-bit, non-prefetchable) [size=16K]
+	Memory at ddf80000 (64-bit, non-prefetchable) [size=256K]
+	Expansion ROM at dd000000 [disabled] [size=128K]
+	Capabilities: [50] Power Management version 3
+	Capabilities: [68] Express Endpoint, MSI 00
+	Capabilities: [d0] Vital Product Data
+	Capabilities: [a8] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [c0] MSI-X: Enable+ Count=16 Masked-
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [1e0] #19
+	Capabilities: [1c0] Power Budgeting <?>
+	Capabilities: [190] #16
+	Capabilities: [148] Alternative Routing-ID Interpretation (ARI)
+	Kernel driver in use: megaraid_sas
+	Kernel modules: megaraid_sas
+
+09:00.0 PCI bridge: Renesas Technology Corp. SH7757 PCIe Switch [PS] (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	BIST result: 00
+	Bus: primary=09, secondary=0a, subordinate=0d, sec-latency=0
+	Memory behind bridge: de000000-df7fffff
+	Prefetchable memory behind bridge: 00000000d8000000-00000000d8ffffff
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [70] Express Upstream Port, MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+0a:00.0 PCI bridge: Renesas Technology Corp. SH7757 PCIe Switch [PS] (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	BIST result: 00
+	Bus: primary=0a, secondary=0b, subordinate=0c, sec-latency=0
+	Memory behind bridge: de000000-deffffff
+	Prefetchable memory behind bridge: 00000000d8000000-00000000d8ffffff
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [70] Express Downstream Port (Slot-), MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+0a:01.0 PCI bridge: Renesas Technology Corp. SH7757 PCIe Switch [PS] (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	BIST result: 00
+	Bus: primary=0a, secondary=0d, subordinate=0d, sec-latency=0
+	Memory behind bridge: df700000-df7fffff
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [70] Express Downstream Port (Slot-), MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Capabilities: [150] Access Control Services
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+0b:00.0 PCI bridge: Renesas Technology Corp. SH7757 PCIe-PCI Bridge [PPB] (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	BIST result: 00
+	Bus: primary=0b, secondary=0c, subordinate=0c, sec-latency=0
+	Memory behind bridge: de000000-deffffff
+	Prefetchable memory behind bridge: 00000000d8000000-00000000d8ffffff
+	Capabilities: [40] Power Management version 3
+	Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit+
+	Capabilities: [70] Express PCI/PCI-X Bridge, MSI 00
+	Capabilities: [100] Advanced Error Reporting
+	Kernel modules: shpchp
+
+0c:00.0 VGA compatible controller: Matrox Graphics, Inc. G200eR2 (prog-if 00 [VGA controller])
+	Subsystem: Dell Device 048c
+	Flags: bus master, medium devsel, latency 64, IRQ 11
+	Memory at d8000000 (32-bit, prefetchable) [size=16M]
+	Memory at deffc000 (32-bit, non-prefetchable) [size=16K]
+	Memory at de000000 (32-bit, non-prefetchable) [size=8M]
+	Expansion ROM at <unassigned> [disabled]
+	Capabilities: [dc] Power Management version 1
+
+3f:08.0 System peripheral: Intel Corporation Sandy Bridge QPI Link 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:09.0 System peripheral: Intel Corporation Sandy Bridge QPI Link 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0a.0 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0a.1 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0a.2 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0a.3 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0b.0 System peripheral: Intel Corporation Sandy Bridge Interrupt Control Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0b.3 System peripheral: Intel Corporation Sandy Bridge Semaphore and Scratchpad Configuration Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0c.0 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0c.1 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0c.2 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0c.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller System Address Decoder 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0c.7 System peripheral: Intel Corporation Sandy Bridge System Address Decoder (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0d.0 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0d.1 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0d.2 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0d.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller System Address Decoder 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:0e.0 System peripheral: Intel Corporation Sandy Bridge Processor Home Agent (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+3f:0e.1 Performance counters: Intel Corporation Sandy Bridge Processor Home Agent Performance Monitoring (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+3f:0f.0 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:0f.1 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller RAS Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:0f.2 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:0f.3 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:0f.4 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:0f.5 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:0f.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 4 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:10.0 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.1 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.2 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.3 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.4 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.5 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:10.7 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+3f:11.0 System peripheral: Intel Corporation Sandy Bridge DDRIO (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:13.0 System peripheral: Intel Corporation Sandy Bridge R2PCIe (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+3f:13.1 Performance counters: Intel Corporation Sandy Bridge Ring to PCI Express Performance Monitor (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+3f:13.4 Performance counters: Intel Corporation Sandy Bridge QuickPath Interconnect Agent Ring Registers (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+3f:13.5 Performance counters: Intel Corporation Sandy Bridge Ring to QuickPath Interconnect Link 0 Performance Monitor (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+3f:13.6 System peripheral: Intel Corporation Sandy Bridge Ring to QuickPath Interconnect Link 1 Performance Monitor (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+40:01.0 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 1a (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=40, secondary=41, subordinate=41, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+40:02.0 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 2a (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=40, secondary=42, subordinate=42, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+40:03.0 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 3a in PCI Express Mode (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=40, secondary=43, subordinate=43, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+40:03.2 PCI bridge: Intel Corporation Sandy Bridge IIO PCI Express Root Port 3c (rev 07) (prog-if 00 [Normal decode])
+	Flags: bus master, fast devsel, latency 0
+	Bus: primary=40, secondary=44, subordinate=44, sec-latency=0
+	Capabilities: [40] Subsystem: Dell Device 048c
+	Capabilities: [60] MSI: Enable+ Count=1/2 Maskable+ 64bit-
+	Capabilities: [90] Express Root Port (Slot+), MSI 00
+	Capabilities: [e0] Power Management version 3
+	Capabilities: [100] Vendor Specific Information: ID=0002 Rev=0 Len=00c <?>
+	Capabilities: [110] Access Control Services
+	Capabilities: [148] Advanced Error Reporting
+	Capabilities: [1d0] Vendor Specific Information: ID=0003 Rev=1 Len=00a <?>
+	Capabilities: [250] #19
+	Capabilities: [280] Vendor Specific Information: ID=0004 Rev=2 Len=018 <?>
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+
+40:05.0 System peripheral: Intel Corporation Sandy Bridge Address Map, VTd_Misc, System Management (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+40:05.2 System peripheral: Intel Corporation Sandy Bridge Control Status and Global Errors (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:08.0 System peripheral: Intel Corporation Sandy Bridge QPI Link 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:09.0 System peripheral: Intel Corporation Sandy Bridge QPI Link 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0a.0 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0a.1 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0a.2 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0a.3 System peripheral: Intel Corporation Sandy Bridge Power Control Unit 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0b.0 System peripheral: Intel Corporation Sandy Bridge Interrupt Control Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0b.3 System peripheral: Intel Corporation Sandy Bridge Semaphore and Scratchpad Configuration Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0c.0 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0c.1 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0c.2 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0c.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller System Address Decoder 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0c.7 System peripheral: Intel Corporation Sandy Bridge System Address Decoder (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0d.0 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0d.1 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0d.2 System peripheral: Intel Corporation Sandy Bridge Unicast Register 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0d.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller System Address Decoder 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:0e.0 System peripheral: Intel Corporation Sandy Bridge Processor Home Agent (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+7f:0e.1 Performance counters: Intel Corporation Sandy Bridge Processor Home Agent Performance Monitoring (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+7f:0f.0 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:0f.1 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller RAS Registers (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:0f.2 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:0f.3 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:0f.4 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:0f.5 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:0f.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Target Address Decoder 4 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:10.0 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.1 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.2 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 0 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.3 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 1 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.4 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.5 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller Channel 0-3 Thermal Control 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.6 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 2 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:10.7 System peripheral: Intel Corporation Sandy Bridge Integrated Memory Controller ERROR Registers 3 (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+	Capabilities: [40] Express Root Complex Integrated Endpoint, MSI 00
+
+7f:11.0 System peripheral: Intel Corporation Sandy Bridge DDRIO (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:13.0 System peripheral: Intel Corporation Sandy Bridge R2PCIe (rev 07)
+	Subsystem: Intel Corporation Device 0000
+	Flags: fast devsel
+
+7f:13.1 Performance counters: Intel Corporation Sandy Bridge Ring to PCI Express Performance Monitor (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+7f:13.4 Performance counters: Intel Corporation Sandy Bridge QuickPath Interconnect Agent Ring Registers (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+7f:13.5 Performance counters: Intel Corporation Sandy Bridge Ring to QuickPath Interconnect Link 0 Performance Monitor (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+7f:13.6 System peripheral: Intel Corporation Sandy Bridge Ring to QuickPath Interconnect Link 1 Performance Monitor (rev 07)
+	Subsystem: Dell Device 048c
+	Flags: fast devsel
+
+
+dmesg |grep --color "MSI"
+[    2.969480] pcieport 0000:00:01.0: irq 104 for MSI/MSI-X
+[    2.969577] pcieport 0000:00:01.1: irq 105 for MSI/MSI-X
+[    2.969674] pcieport 0000:00:02.0: irq 106 for MSI/MSI-X
+[    2.969767] pcieport 0000:00:02.2: irq 107 for MSI/MSI-X
+[    2.969860] pcieport 0000:00:03.0: irq 108 for MSI/MSI-X
+[    2.969953] pcieport 0000:00:03.2: irq 109 for MSI/MSI-X
+[    2.970073] pcieport 0000:00:11.0: irq 110 for MSI/MSI-X
+[    2.970184] pcieport 0000:00:1c.0: irq 111 for MSI/MSI-X
+[    2.970288] pcieport 0000:00:1c.7: irq 112 for MSI/MSI-X
+[    2.974074] pcieport 0000:40:01.0: irq 113 for MSI/MSI-X
+[    2.974176] pcieport 0000:40:02.0: irq 114 for MSI/MSI-X
+[    2.974277] pcieport 0000:40:03.0: irq 115 for MSI/MSI-X
+[    2.974381] pcieport 0000:40:03.2: irq 116 for MSI/MSI-X
+[    5.277324] ahci 0000:00:1f.2: irq 117 for MSI/MSI-X
+[    5.741078] megaraid_sas 0000:03:00.0: irq 118 for MSI/MSI-X
+[    5.741101] megaraid_sas 0000:03:00.0: irq 119 for MSI/MSI-X
+[    5.741125] megaraid_sas 0000:03:00.0: irq 120 for MSI/MSI-X
+[    5.741152] megaraid_sas 0000:03:00.0: irq 121 for MSI/MSI-X
+[    5.741172] megaraid_sas 0000:03:00.0: irq 122 for MSI/MSI-X
+[    5.741206] megaraid_sas 0000:03:00.0: irq 123 for MSI/MSI-X
+[    5.741230] megaraid_sas 0000:03:00.0: irq 124 for MSI/MSI-X
+[    5.741248] megaraid_sas 0000:03:00.0: irq 125 for MSI/MSI-X
+[    5.741271] megaraid_sas 0000:03:00.0: irq 126 for MSI/MSI-X
+[    5.741294] megaraid_sas 0000:03:00.0: irq 127 for MSI/MSI-X
+[    5.741320] megaraid_sas 0000:03:00.0: irq 128 for MSI/MSI-X
+[    5.741339] megaraid_sas 0000:03:00.0: irq 129 for MSI/MSI-X
+[    5.741365] megaraid_sas 0000:03:00.0: irq 130 for MSI/MSI-X
+[    5.741389] megaraid_sas 0000:03:00.0: irq 131 for MSI/MSI-X
+[    5.741410] megaraid_sas 0000:03:00.0: irq 132 for MSI/MSI-X
+[    5.741445] megaraid_sas 0000:03:00.0: irq 133 for MSI/MSI-X
+[   11.922952] tg3 0000:01:00.0: irq 134 for MSI/MSI-X
+[   11.922969] tg3 0000:01:00.0: irq 135 for MSI/MSI-X
+[   11.922983] tg3 0000:01:00.0: irq 136 for MSI/MSI-X
+[   11.922997] tg3 0000:01:00.0: irq 137 for MSI/MSI-X
+[   11.923011] tg3 0000:01:00.0: irq 138 for MSI/MSI-X
+[   19.541751] tg3 0000:02:00.0: irq 139 for MSI/MSI-X
+[   19.541768] tg3 0000:02:00.0: irq 140 for MSI/MSI-X
+[   19.541782] tg3 0000:02:00.0: irq 141 for MSI/MSI-X
+[   19.541796] tg3 0000:02:00.0: irq 142 for MSI/MSI-X
+[   19.541811] tg3 0000:02:00.0: irq 143 for MSI/MSI-X
+[   20.617140] tg3 0000:02:00.1: irq 144 for MSI/MSI-X
+[   20.617149] tg3 0000:02:00.1: irq 145 for MSI/MSI-X
+[   20.617156] tg3 0000:02:00.1: irq 146 for MSI/MSI-X
+[   20.617163] tg3 0000:02:00.1: irq 147 for MSI/MSI-X
+[   20.617171] tg3 0000:02:00.1: irq 148 for MSI/MSI-X
+[   21.692051] tg3 0000:01:00.1: irq 149 for MSI/MSI-X
+[   21.692059] tg3 0000:01:00.1: irq 150 for MSI/MSI-X
+[   21.692066] tg3 0000:01:00.1: irq 151 for MSI/MSI-X
+[   21.692073] tg3 0000:01:00.1: irq 152 for MSI/MSI-X
+[   21.692080] tg3 0000:01:00.1: irq 153 for MSI/MSI-X
