@@ -319,7 +319,7 @@ static struct pci_device_id bt8xxgpio_pci_tbl[] = {
 };
 MODULE_DEVICE_TABLE(pci, bt8xxgpio_pci_tbl);
 
-static struct pci_driver bt8xxgpio_pci_driver = {
+static struct pci_driver bt8xxgpio_pci_driver = {//pci_driver demo
 	.name		= "bt8xxgpio",
 	.id_table	= bt8xxgpio_pci_tbl,
 	.probe		= bt8xxgpio_probe,

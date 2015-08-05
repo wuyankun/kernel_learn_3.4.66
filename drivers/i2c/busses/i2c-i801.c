@@ -818,7 +818,7 @@ static int __devinit i801_probe(struct pci_dev *dev,
 	}
 
 	/* Determine the address of the SMBus area */
-	priv->smba = pci_resource_start(dev, SMBBAR);
+	priv->smba = pci_resource_start(dev, SMBBAR);//返回一个Bar空间的起始位置
 	if (!priv->smba) {
 		dev_err(&dev->dev, "SMBus base address uninitialized, "
 			"upgrade BIOS\n");
@@ -832,11 +832,11 @@ static int __devinit i801_probe(struct pci_dev *dev,
 		goto exit;
 	}
 
-	err = pci_request_region(dev, SMBBAR, i801_driver.name);
+	err = pci_request_region(dev, SMBBAR, i801_driver.name);//请求使用整个Bar空间
 	if (err) {
 		dev_err(&dev->dev, "Failed to request SMBus region "
 			"0x%lx-0x%Lx\n", priv->smba,
-			(unsigned long long)pci_resource_end(dev, SMBBAR));
+			(unsigned long long)pci_resource_end(dev, SMBBAR));//返回一个Bar空间的结束位置
 		goto exit;
 	}
 
