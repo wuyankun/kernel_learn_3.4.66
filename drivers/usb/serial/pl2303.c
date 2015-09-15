@@ -40,7 +40,7 @@ static bool debug;
 
 #define PL2303_CLOSING_WAIT	(30*HZ)
 
-static const struct usb_device_id id_table[] = {
+static const struct usb_device_id id_table[] = {//兼容器件列表
 	{ USB_DEVICE(PL2303_VENDOR_ID, PL2303_PRODUCT_ID) },
 	{ USB_DEVICE(PL2303_VENDOR_ID, PL2303_PRODUCT_ID_RSAQ2) },
 	{ USB_DEVICE(PL2303_VENDOR_ID, PL2303_PRODUCT_ID_DCU11) },
@@ -97,7 +97,7 @@ static const struct usb_device_id id_table[] = {
 
 MODULE_DEVICE_TABLE(usb, id_table);
 
-static struct usb_driver pl2303_driver = {
+static struct usb_driver pl2303_driver = {//接口使用标准的函数实现
 	.name =		"pl2303",
 	.probe =	usb_serial_probe,
 	.disconnect =	usb_serial_disconnect,
@@ -155,6 +155,7 @@ struct pl2303_private {
 	enum pl2303_type type;
 };
 
+//以下是两个重要的接口函数，内部使用usb_control_msg接口函数，实现数据的读取和写入
 static int pl2303_vendor_read(__u16 value, __u16 index,
 		struct usb_serial *serial, unsigned char *buf)
 {
@@ -188,15 +189,15 @@ static int pl2303_startup(struct usb_serial *serial)
 	if (buf == NULL)
 		return -ENOMEM;
 
-	if (serial->dev->descriptor.bDeviceClass == 0x02)
+	if (serial->dev->descriptor.bDeviceClass == 0x02)//设备类型为0x02
 		type = type_0;
-	else if (serial->dev->descriptor.bMaxPacketSize0 == 0x40)
+	else if (serial->dev->descriptor.bMaxPacketSize0 == 0x40)//端点0最大使用的字节缓冲区为64Byte
 		type = HX;
-	else if (serial->dev->descriptor.bDeviceClass == 0x00)
+	else if (serial->dev->descriptor.bDeviceClass == 0x00)//设备类型为0x00或者0xff
 		type = type_1;
 	else if (serial->dev->descriptor.bDeviceClass == 0xFF)
 		type = type_1;
-	dbg("device type: %d", type);
+	dbg("device type: %d", type);//区分不同厂商类型，可能会存在细微的差异
 
 	for (i = 0; i < serial->num_ports; ++i) {
 		priv = kzalloc(sizeof(struct pl2303_private), GFP_KERNEL);
@@ -208,7 +209,7 @@ static int pl2303_startup(struct usb_serial *serial)
 		usb_set_serial_port_data(serial->port[i], priv);
 	}
 
-	pl2303_vendor_read(0x8484, 0, serial, buf);
+	pl2303_vendor_read(0x8484, 0, serial, buf);//硬编码，OMG
 	pl2303_vendor_write(0x0404, 0, serial);
 	pl2303_vendor_read(0x8484, 0, serial, buf);
 	pl2303_vendor_read(0x8383, 0, serial, buf);
@@ -334,7 +335,7 @@ static void pl2303_set_termios(struct tty_struct *tty,
 				break;
 			}
 		}
-		if (baud > 1228800) {
+		if (baud > 1228800) {//不同类型支持的波特率范围不同
 			/* type_0, type_1 only support up to 1228800 baud */
 			if (priv->type != HX)
 				baud = 1228800;
@@ -476,7 +477,7 @@ static void pl2303_close(struct usb_serial_port *port)
 	dbg("%s - port %d", __func__, port->number);
 
 	usb_serial_generic_close(port);
-	usb_kill_urb(port->interrupt_in_urb);
+	usb_kill_urb(port->interrupt_in_urb);//杀死未完成的urb
 }
 
 static int pl2303_open(struct tty_struct *tty, struct usb_serial_port *port)
@@ -502,7 +503,7 @@ static int pl2303_open(struct tty_struct *tty, struct usb_serial_port *port)
 		pl2303_set_termios(tty, port, &tmp_termios);
 
 	dbg("%s - submitting interrupt urb", __func__);
-	result = usb_submit_urb(port->interrupt_in_urb, GFP_KERNEL);
+	result = usb_submit_urb(port->interrupt_in_urb, GFP_KERNEL);//这个urb只看到提交，没看到创建的地方
 	if (result) {
 		dev_err(&port->dev, "%s - failed submitting interrupt urb,"
 			" error %d\n", __func__, result);
@@ -832,21 +833,30 @@ static struct usb_serial_driver pl2303_device = {
 		.owner =	THIS_MODULE,
 		.name =		"pl2303",
 	},
-	.id_table =		id_table,
+	
+	.id_table =		id_table,//分块
 	.num_ports =		1,
 	.bulk_in_size =		256,
 	.bulk_out_size =	256,
-	.open =			pl2303_open,
+	
+	.open =			pl2303_open,//打开关闭
 	.close =		pl2303_close,
+	
 	.dtr_rts = 		pl2303_dtr_rts,
+	
 	.carrier_raised =	pl2303_carrier_raised,
+	
 	.ioctl =		pl2303_ioctl,
 	.break_ctl =		pl2303_break_ctl,
+	
 	.set_termios =		pl2303_set_termios,
+	
 	.tiocmget =		pl2303_tiocmget,
 	.tiocmset =		pl2303_tiocmset,
+	
 	.process_read_urb =	pl2303_process_read_urb,
 	.read_int_callback =	pl2303_read_int_callback,
+	
 	.attach =		pl2303_startup,
 	.release =		pl2303_release,
 };

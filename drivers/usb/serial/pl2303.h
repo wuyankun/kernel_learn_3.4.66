@@ -7,7 +7,8 @@
  *	(at your option) any later version.
  *
  */
-
+//VID和PID兼容列表，宏定义
+ 
 #define BENQ_VENDOR_ID			0x04a5
 #define BENQ_PRODUCT_ID_S81		0x4027
 

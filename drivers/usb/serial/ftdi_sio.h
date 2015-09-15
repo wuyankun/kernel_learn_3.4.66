@@ -15,7 +15,7 @@
  *
  * Thanx to FTDI (http://www.ftdichip.com) for so kindly providing details
  * of the protocol required to talk to the device and ongoing assistence
- * during development.
+ * during development.//未来技术设备接口，这公司名字太霸气
  *
  * Bill Ryder - bryder@sgi.com formerly of Silicon Graphics, Inc.- wrote the
  * FTDI_SIO implementation.

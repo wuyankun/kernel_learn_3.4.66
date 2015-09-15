@@ -54,8 +54,8 @@ static void cp210x_dtr_rts(struct usb_serial_port *p, int on);
 
 static bool debug;
 
-static const struct usb_device_id id_table[] = {
-	{ USB_DEVICE(0x045B, 0x0053) }, /* Renesas RX610 RX-Stick */
+static const struct usb_device_id id_table[] = {//支持的设备列表
+	{ USB_DEVICE(0x045B, 0x0053) }, /* Renesas RX610 RX-Stick *///瑞萨汽车电子
 	{ USB_DEVICE(0x0471, 0x066A) }, /* AKTAKOM ACE-1001 cable */
 	{ USB_DEVICE(0x0489, 0xE000) }, /* Pirelli Broadband S.p.A, DP-L10 SIP/GSM Mobile */
 	{ USB_DEVICE(0x0489, 0xE003) }, /* Pirelli Broadband S.p.A, DP-L10 SIP/GSM Mobile */
@@ -69,8 +69,8 @@ static const struct usb_device_id id_table[] = {
 	{ USB_DEVICE(0x0FCF, 0x1004) }, /* Dynastream ANT2USB */
 	{ USB_DEVICE(0x0FCF, 0x1006) }, /* Dynastream ANT development board */
 	{ USB_DEVICE(0x10A6, 0xAA26) }, /* Knock-off DCU-11 cable */
-	{ USB_DEVICE(0x10AB, 0x10C5) }, /* Siemens MC60 Cable */
-	{ USB_DEVICE(0x10B5, 0xAC70) }, /* Nokia CA-42 USB */
+	{ USB_DEVICE(0x10AB, 0x10C5) }, /* Siemens MC60 Cable *///西门子
+	{ USB_DEVICE(0x10B5, 0xAC70) }, /* Nokia CA-42 USB *///诺基亚
 	{ USB_DEVICE(0x10C4, 0x0F91) }, /* Vstabi */
 	{ USB_DEVICE(0x10C4, 0x1101) }, /* Arkham Technology DS101 Bus Monitor */
 	{ USB_DEVICE(0x10C4, 0x1601) }, /* Arkham Technology DS101 Adapter */
@@ -193,9 +193,9 @@ struct cp210x_port_private {
 	__u8			bInterfaceNumber;
 };
 
-static struct usb_driver cp210x_driver = {
+static struct usb_driver cp210x_driver = {//usb接口驱动
 	.name		= "cp210x",
-	.probe		= usb_serial_probe,
+	.probe		= usb_serial_probe,//标准的探测和断开函数
 	.disconnect	= usb_serial_disconnect,
 	.id_table	= id_table,
 };
@@ -206,28 +206,34 @@ static struct usb_serial_driver cp210x_device = {
 		.name = 	"cp210x",
 	},
 	.id_table		= id_table,
-	.num_ports		= 1,
-	.bulk_in_size		= 256,
+	.num_ports		= 1,//支持的端口个数
+	.bulk_in_size		= 256,//批量输入和输出的缓冲区大小为256Byte
 	.bulk_out_size		= 256,
-	.open			= cp210x_open,
+	
+	.open			= cp210x_open,//打开和关闭
 	.close			= cp210x_close,
+	
 	.break_ctl		= cp210x_break_ctl,
-	.set_termios		= cp210x_set_termios,
-	.tiocmget 		= cp210x_tiocmget,
+	.set_termios		= cp210x_set_termios,//设置tty的一些属性
+	
+	.tiocmget 		= cp210x_tiocmget,//设置和查询管脚的电平
 	.tiocmset		= cp210x_tiocmset,
+	
 	.attach			= cp210x_startup,
 	.release		= cp210x_release,
-	.dtr_rts		= cp210x_dtr_rts
+	.dtr_rts		= cp210x_dtr_rts//不使用流控制
 };
 
 static struct usb_serial_driver * const serial_drivers[] = {
 	&cp210x_device, NULL
 };
 
+//内部的一些寄存器和命令字段
 /* Config request types */
 #define REQTYPE_HOST_TO_DEVICE	0x41
 #define REQTYPE_DEVICE_TO_HOST	0xc1
 
+//支持的全部的命令字段
 /* Config request codes */
 #define CP210X_IFC_ENABLE	0x00
 #define CP210X_SET_BAUDDIV	0x01
@@ -256,6 +262,7 @@ static struct usb_serial_driver * const serial_drivers[] = {
 #define CP210X_GET_BAUDRATE	0x1D
 #define CP210X_SET_BAUDRATE	0x1E
 
+//一些变量，使用bit位的区别
 /* CP210X_IFC_ENABLE */
 #define UART_ENABLE		0x0001
 #define UART_DISABLE		0x0000
@@ -299,7 +306,7 @@ static struct usb_serial_driver * const serial_drivers[] = {
 
 /*
  * cp210x_get_config
- * Reads from the CP210x configuration registers
+ * Reads from the CP210x configuration registers//去读cp210x的配置寄存器，重要的包装接口
  * 'size' is specified in bytes.
  * 'data' is a pointer to a pre-allocated array of integers large
  * enough to hold 'size' bytes (with 4 bytes to each integer)
@@ -321,11 +328,12 @@ static int cp210x_get_config(struct usb_serial_port *port, u8 request,
 		return -ENOMEM;
 	}
 
+	//使用usb_control_msg从usb设备的控制端点中读取一些数据
 	/* Issue the request, attempting to read 'size' bytes */
 	result = usb_control_msg(serial->dev, usb_rcvctrlpipe(serial->dev, 0),
 				request, REQTYPE_DEVICE_TO_HOST, 0x0000,
 				port_priv->bInterfaceNumber, buf, size,
-				USB_CTRL_GET_TIMEOUT);
+				USB_CTRL_GET_TIMEOUT);//为阻塞方法故设置超时时间，返回读取到的个数
 
 	/* Convert data into an array of integers */
 	for (i = 0; i < length; i++)
@@ -348,7 +356,7 @@ static int cp210x_get_config(struct usb_serial_port *port, u8 request,
 
 /*
  * cp210x_set_config
- * Writes to the CP210x configuration registers
+ * Writes to the CP210x configuration registers//设置cp210x的寄存器值，包装接口
  * Values less than 16 bits wide are sent directly
  * 'size' is specified in bytes.
  */
@@ -361,7 +369,7 @@ static int cp210x_set_config(struct usb_serial_port *port, u8 request,
 	int result, i, length;
 
 	/* Number of integers required to contain the array */
-	length = (((size - 1) | 3) + 1)/4;
+	length = (((size - 1) | 3) + 1)/4;//?这里怎么理解
 
 	buf = kmalloc(length * sizeof(__le32), GFP_KERNEL);
 	if (!buf) {
@@ -637,7 +645,7 @@ static void cp210x_get_termios_port(struct usb_serial_port *port,
 }
 
 /*
- * CP2101 supports the following baud rates:
+ * CP2101 supports the following baud rates://型号版本越高，支持的波特率越多，纠错能力也相应增强
  *
  *	300, 600, 1200, 1800, 2400, 4800, 7200, 9600, 14400, 19200, 28800,
  *	38400, 56000, 57600, 115200, 128000, 230400, 460800, 921600

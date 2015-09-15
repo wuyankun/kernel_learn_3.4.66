@@ -2370,7 +2370,7 @@ static int ftdi_tiocmget(struct tty_struct *tty)
 	case FT8U232AM:
 	case FT232BM:
 	case FT2232C:
-	case FT232RL:
+	case FT232RL://使用非常广泛的一种芯片种类
 	case FT2232H:
 	case FT4232H:
 	case FT232H:

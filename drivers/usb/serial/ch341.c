@@ -4,7 +4,7 @@
  * Copyright 2009, Boris Hajduk <boris@hajduk.org>
  *
  * ch341.c implements a serial port driver for the Winchiphead CH341.
- *
+ *南京沁恒电子有限公司产品
  * The CH341 device can be used to implement an RS232 asynchronous
  * serial port, an IEEE-1284 parallel printer port or a memory-like
  * interface. In all cases the CH341 supports an I2C interface as well.
@@ -25,8 +25,8 @@
 #include <linux/serial.h>
 #include <asm/unaligned.h>
 
-#define DEFAULT_BAUD_RATE 9600
-#define DEFAULT_TIMEOUT   1000
+#define DEFAULT_BAUD_RATE 9600//默认波特率
+#define DEFAULT_TIMEOUT   1000//urb传输超时时间，使用阻塞的usb_control_msg接口
 
 /* flags for IO-Bits */
 #define CH341_BIT_RTS (1 << 6)
@@ -53,7 +53,7 @@
 #define CH341_BITS_MODEM_STAT 0x0f /* all bits */
 
 /*******************************/
-/* baudrate calculation factor */
+/* baudrate calculation factor *///波特率计算因子
 /*******************************/
 #define CH341_BAUDBASE_FACTOR 1532620800
 #define CH341_BAUDBASE_DIVMAX 3
@@ -74,13 +74,13 @@ static bool debug;
 
 static const struct usb_device_id id_table[] = {
 	{ USB_DEVICE(0x4348, 0x5523) },
-	{ USB_DEVICE(0x1a86, 0x7523) },
+	{ USB_DEVICE(0x1a86, 0x7523) },//ch340厂商默认的vid和pid
 	{ USB_DEVICE(0x1a86, 0x5523) },
 	{ },
 };
 MODULE_DEVICE_TABLE(usb, id_table);
 
-struct ch341_private {
+struct ch341_private {//附加的驱动属性，驱动上下文
 	spinlock_t lock; /* access lock */
 	wait_queue_head_t delta_msr_wait; /* wait queue for modem status */
 	unsigned baud_rate; /* set baud rate */
@@ -96,7 +96,7 @@ static int ch341_control_out(struct usb_device *dev, u8 request,
 	dbg("ch341_control_out(%02x,%02x,%04x,%04x)", USB_DIR_OUT|0x40,
 		(int)request, (int)value, (int)index);
 
-	r = usb_control_msg(dev, usb_sndctrlpipe(dev, 0), request,
+	r = usb_control_msg(dev, usb_sndctrlpipe(dev, 0), request,//调用阻塞的方法，简化urb的使用
 			    USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_DIR_OUT,
 			    value, index, NULL, 0, DEFAULT_TIMEOUT);
 
@@ -129,7 +129,7 @@ static int ch341_set_baudrate(struct usb_device *dev,
 
 	if (!priv->baud_rate)
 		return -EINVAL;
-	factor = (CH341_BAUDBASE_FACTOR / priv->baud_rate);
+	factor = (CH341_BAUDBASE_FACTOR / priv->baud_rate);//波特率的内部算法
 	divisor = CH341_BAUDBASE_DIVMAX;
 
 	while ((factor > 0xfff0) && divisor) {
@@ -177,7 +177,7 @@ static int ch341_get_status(struct usb_device *dev, struct ch341_private *priv)
 	/* setup the private status if available */
 	if (r == 2) {
 		r = 0;
-		spin_lock_irqsave(&priv->lock, flags);
+		spin_lock_irqsave(&priv->lock, flags);//私有变量使用自旋锁保护
 		priv->line_status = (~(*buffer)) & CH341_BITS_MODEM_STAT;
 		priv->multi_status_change = 0;
 		spin_unlock_irqrestore(&priv->lock, flags);
@@ -257,7 +257,7 @@ static int ch341_attach(struct usb_serial *serial)
 	dbg("ch341_attach()");
 
 	/* private data */
-	priv = kzalloc(sizeof(struct ch341_private), GFP_KERNEL);
+	priv = kzalloc(sizeof(struct ch341_private), GFP_KERNEL);//为私有数据分布空间，初始化变量
 	if (!priv)
 		return -ENOMEM;
 
@@ -292,7 +292,7 @@ static void ch341_dtr_rts(struct usb_serial_port *port, int on)
 
 	dbg("%s - port %d", __func__, port->number);
 	/* drop DTR and RTS */
-	spin_lock_irqsave(&priv->lock, flags);
+	spin_lock_irqsave(&priv->lock, flags);//是否打开流控制的CTS/RTS
 	if (on)
 		priv->line_control |= CH341_BIT_RTS | CH341_BIT_DTR;
 	else
@@ -432,7 +432,7 @@ out:
 }
 
 static int ch341_tiocmset(struct tty_struct *tty,
-			  unsigned int set, unsigned int clear)
+			  unsigned int set, unsigned int clear)//设置IO管脚的电平状态
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct ch341_private *priv = usb_get_serial_port_data(port);
@@ -454,7 +454,7 @@ static int ch341_tiocmset(struct tty_struct *tty,
 	return ch341_set_handshake(port->serial->dev, control);
 }
 
-static void ch341_read_int_callback(struct urb *urb)
+static void ch341_read_int_callback(struct urb *urb)//中断回调函数
 {
 	struct usb_serial_port *port = (struct usb_serial_port *) urb->context;
 	unsigned char *data = urb->transfer_buffer;
@@ -463,11 +463,11 @@ static void ch341_read_int_callback(struct urb *urb)
 
 	dbg("%s (%d)", __func__, port->number);
 
-	switch (urb->status) {
+	switch (urb->status) {//每个urb的状态标识，代表执行结果
 	case 0:
 		/* success */
 		break;
-	case -ECONNRESET:
+	case -ECONNRESET://线路上的因素不代码错误，需要再次提交urb
 	case -ENOENT:
 	case -ESHUTDOWN:
 		/* this urb is terminated, clean up */
@@ -483,7 +483,7 @@ static void ch341_read_int_callback(struct urb *urb)
 	usb_serial_debug_data(debug, &port->dev, __func__,
 			      urb->actual_length, urb->transfer_buffer);
 
-	if (actual_length >= 4) {
+	if (actual_length >= 4) {//实际读取的中断urb的数据大于4个字节
 		struct ch341_private *priv = usb_get_serial_port_data(port);
 		unsigned long flags;
 		u8 prev_line_status = priv->line_status;
@@ -502,11 +502,11 @@ static void ch341_read_int_callback(struct urb *urb)
 			tty_kref_put(tty);
 		}
 
-		wake_up_interruptible(&priv->delta_msr_wait);
+		wake_up_interruptible(&priv->delta_msr_wait);//唤醒睡眠在这个信号量上的进程
 	}
 
 exit:
-	status = usb_submit_urb(urb, GFP_ATOMIC);
+	status = usb_submit_urb(urb, GFP_ATOMIC);//再次提交urb
 	if (status)
 		dev_err(&urb->dev->dev,
 			"%s - usb_submit_urb failed with result %d\n",
@@ -528,7 +528,7 @@ static int wait_modem_info(struct usb_serial_port *port, unsigned int arg)
 	spin_unlock_irqrestore(&priv->lock, flags);
 
 	while (!multi_change) {
-		interruptible_sleep_on(&priv->delta_msr_wait);
+		interruptible_sleep_on(&priv->delta_msr_wait);//睡眠在这个信号量上
 		/* see if a signal did it */
 		if (signal_pending(current))
 			return -ERESTARTSYS;
@@ -558,7 +558,7 @@ static int ch341_ioctl(struct tty_struct *tty,
 	struct usb_serial_port *port = tty->driver_data;
 	dbg("%s (%d) cmd = 0x%04x", __func__, port->number, cmd);
 
-	switch (cmd) {
+	switch (cmd) {//支持的ioctl命令为等待命令
 	case TIOCMIWAIT:
 		dbg("%s (%d) TIOCMIWAIT", __func__,  port->number);
 		return wait_modem_info(port, arg);
@@ -571,7 +571,7 @@ static int ch341_ioctl(struct tty_struct *tty,
 	return -ENOIOCTLCMD;
 }
 
-static int ch341_tiocmget(struct tty_struct *tty)
+static int ch341_tiocmget(struct tty_struct *tty)//获取io管脚的电平状态
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct ch341_private *priv = usb_get_serial_port_data(port);
@@ -617,14 +617,15 @@ static int ch341_reset_resume(struct usb_interface *intf)
 	return 0;
 }
 
+//USB的接口设备的驱动结构体，区别usb_device_driver
 static struct usb_driver ch341_driver = {
-	.name		= "ch341",
-	.probe		= usb_serial_probe,
-	.disconnect	= usb_serial_disconnect,
-	.suspend	= usb_serial_suspend,
-	.resume		= usb_serial_resume,
+	.name		= "ch341",//usb驱动不用名字来match总线上的设备和驱动
+	.probe		= usb_serial_probe,//标准的usb_serial的探测函数
+	.disconnect	= usb_serial_disconnect,//标准的函数实现
+	.suspend	= usb_serial_suspend,//标准的函数实现，后续版本直接集成到框架模板中
+	.resume		= usb_serial_resume,//标准
 	.reset_resume	= ch341_reset_resume,
-	.id_table	= id_table,
+	.id_table	= id_table,//可驱动的设备列表
 	.supports_autosuspend =	1,
 };
 
@@ -635,15 +636,18 @@ static struct usb_serial_driver ch341_device = {
 	},
 	.id_table          = id_table,
 	.num_ports         = 1,
-	.open              = ch341_open,
+	.open              = ch341_open,//打开
 	.dtr_rts	   = ch341_dtr_rts,
 	.carrier_raised	   = ch341_carrier_raised,
-	.close             = ch341_close,
-	.ioctl             = ch341_ioctl,
+	.close             = ch341_close,//关闭
+	.ioctl             = ch341_ioctl,//ioctl
+	
 	.set_termios       = ch341_set_termios,
 	.break_ctl         = ch341_break_ctl,
-	.tiocmget          = ch341_tiocmget,
+	
+	.tiocmget          = ch341_tiocmget,//获取和设置管脚的电平状态
 	.tiocmset          = ch341_tiocmset,
+	
 	.read_int_callback = ch341_read_int_callback,
 	.attach            = ch341_attach,
 };
