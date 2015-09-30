@@ -128,9 +128,9 @@ unsigned int kmem_cache_size(struct kmem_cache *);
  * ensure proper constant folding.
  */
 #define KMALLOC_SHIFT_HIGH	((MAX_ORDER + PAGE_SHIFT - 1) <= 25 ? \
-				(MAX_ORDER + PAGE_SHIFT - 1) : 25)
+				(MAX_ORDER + PAGE_SHIFT - 1) : 25)//取决于这两个变量的取值，决定kmalloc可分配区域的上限值2^25=32MB
 
-#define KMALLOC_MAX_SIZE	(1UL << KMALLOC_SHIFT_HIGH)
+#define KMALLOC_MAX_SIZE	(1UL << KMALLOC_SHIFT_HIGH)//MAX_ORDER默认值为11 PAGE_SHIFT默认值为12
 #define KMALLOC_MAX_ORDER	(KMALLOC_SHIFT_HIGH - PAGE_SHIFT)
 
 /*

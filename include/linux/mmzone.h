@@ -21,7 +21,7 @@
 
 /* Free memory management - zoned buddy allocator.  */
 #ifndef CONFIG_FORCE_MAX_ZONEORDER
-#define MAX_ORDER 11
+#define MAX_ORDER 11//改变这个定义，可以修改kmalloc可以分配的最大内存，默认为4MB
 #else
 #define MAX_ORDER CONFIG_FORCE_MAX_ZONEORDER
 #endif
