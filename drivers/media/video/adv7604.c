@@ -101,7 +101,7 @@ struct adv76xx_format_info {//格式信息
 struct adv76xx_chip_info {//芯片信息上下文
 	enum adv76xx_type type;//类型是7604还是7611
 
-	bool has_afe;
+	bool has_afe; //模拟特征使能，7611不支持
 	unsigned int max_port;//最大的端口号
 	unsigned int num_dv_ports;
 
@@ -144,7 +144,7 @@ struct adv76xx_state {//芯片的状态上下文，为驱动的上下文环境
 	struct gpio_desc *hpd_gpio[4];//热插拔的gpio管脚，最多支持到4个管脚
 
 	struct v4l2_subdev sd;//在功能上划分为一个V4L2设备
-	struct media_pad pads[ADV76XX_PAD_MAX];//？
+	struct media_pad pads[ADV76XX_PAD_MAX];//支持的输入端个数，7611为1个
 	unsigned int source_pad;
 
 	struct v4l2_ctrl_handler hdl;//v4l2的控制句柄
@@ -161,15 +161,15 @@ struct adv76xx_state {//芯片的状态上下文，为驱动的上下文环境
 	} edid;//edid的描述，256个字节
 	u16 spa_port_a[2];
 	struct v4l2_fract aspect_ratio;
-	u32 rgb_quantization_range;
-	struct workqueue_struct *work_queues;
-	struct delayed_work delayed_work_enable_hotplug;
+	u32 rgb_quantization_range; //rgb的范围是否为真彩等
+	struct workqueue_struct *work_queues;//工作队列
+	struct delayed_work delayed_work_enable_hotplug;//延迟任务
 	bool restart_stdi_once;
 
 	int reset_gpio;//芯片复位的gpio管脚
 
 	/* i2c clients */
-	struct i2c_client *i2c_clients[ADV76XX_PAGE_MAX];
+	struct i2c_client *i2c_clients[ADV76XX_PAGE_MAX];//不同页表现为不同的i2c设备
 
 	/* controls *///v4l2的一些控制
 	struct v4l2_ctrl *detect_tx_5v_ctrl;
@@ -180,7 +180,7 @@ struct adv76xx_state {//芯片的状态上下文，为驱动的上下文环境
 	struct v4l2_ctrl *rgb_quantization_range_ctrl;
 };
 
-static bool adv76xx_has_afe(struct adv76xx_state *state)
+static bool adv76xx_has_afe(struct adv76xx_state *state)//是否支持模拟视频
 {
 	return state->info->has_afe;
 }
@@ -2465,7 +2465,7 @@ static const struct v4l2_ctrl_config adv76xx_ctrl_free_run_mode = {
 };
 
 /* ----------------------------------------------------------------------- */
-
+//核心初始化
 static int adv76xx_core_init(struct v4l2_subdev *sd)
 {
 	struct adv76xx_state *state = to_state(sd);
@@ -2985,6 +2985,7 @@ static int adv76xx_probe(struct i2c_client *client,
 		}
 	}
 
+	//工作队列，单线程的工作队列，创建
 	/* work queues */
 	state->work_queues = create_singlethread_workqueue(client->name);
 	if (!state->work_queues) {
@@ -2992,27 +2993,28 @@ static int adv76xx_probe(struct i2c_client *client,
 		err = -ENOMEM;
 		goto err_i2c;
 	}
-
+	//关联工作队列到具体的函数接口上
 	INIT_DELAYED_WORK(&state->delayed_work_enable_hotplug,
 			adv76xx_delayed_work_enable_hotplug);
 
 	state->source_pad = state->info->num_dv_ports
-			  + (state->info->has_afe ? 2 : 0);
+			  + (state->info->has_afe ? 2 : 0);//adv7611不支持afe，接口数量为1
 	for (i = 0; i < state->source_pad; ++i)
 		state->pads[i].flags = MEDIA_PAD_FL_SINK;
 	state->pads[state->source_pad].flags = MEDIA_PAD_FL_SOURCE;
 
 	err = media_entity_init(&sd->entity, state->source_pad + 1,
-				state->pads, 0);
+				state->pads, 0);//初始化v4l2的实体
 	if (err)
 		goto err_work_queues;
 
-	err = adv76xx_core_init(sd);
+	err = adv76xx_core_init(sd);//核心初始化----step2
 	if (err)
 		goto err_entity;
 	v4l2_info(sd, "%s found @ 0x%x (%s)\n", client->name,
 			client->addr << 1, client->adapter->name);
 
+	//中断资源的使用
 	/* Request IRQ if available. */
 	if (client->irq) {
 		err = request_threaded_irq(client->irq, NULL, adv76xx_irq_handler,
@@ -3024,6 +3026,7 @@ static int adv76xx_probe(struct i2c_client *client,
 		}
 	}
 
+	//异步注册v4l2设备
 	err = v4l2_async_register_subdev(sd);
 	if (err)
 		goto err_free_irq;
@@ -3072,7 +3075,7 @@ static struct i2c_driver adv76xx_driver = {//i2c设备的驱动结构
 		.name = "adv7604",
 		.of_match_table = of_match_ptr(adv76xx_of_id),
 	},
-	.probe = adv76xx_probe,
+	.probe = adv76xx_probe,//------step 1
 	.remove = adv76xx_remove,
 	.id_table = adv76xx_i2c_id,
 };

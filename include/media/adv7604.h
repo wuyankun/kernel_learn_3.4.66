@@ -23,7 +23,7 @@
 
 #include <linux/types.h>
 
-/* Analog input muxing modes (AFE register 0x02, [2:0]) */
+/* Analog input muxing modes (AFE register 0x02, [2:0]) *///模拟输入特征使能
 enum adv7604_ain_sel {
 	ADV7604_AIN1_2_3_NC_SYNC_1_2 = 0,
 	ADV7604_AIN4_5_6_NC_SYNC_2_1 = 1,
@@ -37,7 +37,7 @@ enum adv7604_ain_sel {
  * the board and describes the components order on the bus when the ADV7604
  * outputs RGB.
  */
-enum adv7604_bus_order {
+enum adv7604_bus_order {//2^3=8种顺序，总线顺序
 	ADV7604_BUS_ORDER_RGB,		/* No operation	*/
 	ADV7604_BUS_ORDER_GRB,		/* Swap 1-2	*/
 	ADV7604_BUS_ORDER_RBG,		/* Swap 2-3	*/
@@ -66,7 +66,7 @@ enum adv7604_op_format_mode_sel {
 	ADV7604_OP_FORMAT_MODE2 = 0x08,
 };
 
-enum adv76xx_drive_strength {
+enum adv76xx_drive_strength {//驱动的路径长度，跟布线相关
 	ADV76XX_DR_STR_MEDIUM_LOW = 1,
 	ADV76XX_DR_STR_MEDIUM_HIGH = 2,
 	ADV76XX_DR_STR_HIGH = 3,
@@ -80,7 +80,7 @@ enum adv76xx_int1_config {
 	ADV76XX_INT1_CONFIG_DISABLED,
 };
 
-enum adv76xx_page {
+enum adv76xx_page {//不同的控制区域，不同的I2C地址
 	ADV76XX_PAGE_IO,
 	ADV7604_PAGE_AVLINK,
 	ADV76XX_PAGE_CEC,
