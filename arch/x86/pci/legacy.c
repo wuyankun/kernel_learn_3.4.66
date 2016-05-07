@@ -22,6 +22,7 @@ static void __devinit pcibios_fixup_peer_bridges(void)
 		pcibios_scan_specific_bus(n);
 }
 
+//pci 扫描入口
 int __init pci_legacy_init(void)
 {
 	if (!raw_pci_ops) {
@@ -30,7 +31,7 @@ int __init pci_legacy_init(void)
 	}
 
 	printk("PCI: Probing PCI hardware\n");
-	pci_root_bus = pcibios_scan_root(0);
+	pci_root_bus = pcibios_scan_root(0);//扫面根总线
 	return 0;
 }
 
