@@ -1,9 +1,10 @@
 
 	DO NOT ADD FIRMWARE TO THIS DIRECTORY.
 	======================================
-
+//内核中的这个目录不要添加固件，保留只因为旧内核没有使用reques_firmware的实现，
+//为了实现代码和固件隔离，已经不在使用这个目录
 This directory is only here to contain firmware images extracted from old
-device drivers which predate the common use of request_firmware().
+device drivers which predate the common use of request_firmware().//predate :come before  早于，在...之前
 
 As we update those drivers to use request_firmware() and keep a clean
 separation between code and firmware, we put the extracted firmware

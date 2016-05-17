@@ -12,9 +12,9 @@ fw-external-y := $(subst ",,$(CONFIG_EXTRA_FIRMWARE))
 # There are three cases to care about:
 # 1. Building kernel with CONFIG_FIRMWARE_IN_KERNEL=y -- $(fw-shipped-y) should
 #    include the firmware files to include, according to .config
-# 2. 'make modules_install', which will install firmware for modules, and 
+# 2. 'make modules_install', which will install firmware for modules, and //将只会安装模块所需要的驱动
 #    _also_ for the in-kernel drivers when CONFIG_FIRMWARE_IN_KERNEL=n
-# 3. 'make firmware_install', which installs all firmware, unconditionally.
+# 3. 'make firmware_install', which installs all firmware, unconditionally.//将会安装所有模块，不分状况
 
 # For the former two cases we want $(fw-shipped-y) and $(fw-shipped-m) to be
 # accurate. In the latter case it doesn't matter -- it'll use $(fw-shipped-all).
@@ -141,7 +141,7 @@ fw-shipped-$(CONFIG_USB_VICAM) += vicam/firmware.fw
 fw-shipped-$(CONFIG_VIDEO_CPIA2) += cpia2/stv0672_vp4.bin
 fw-shipped-$(CONFIG_YAM) += yam/1200.bin yam/9600.bin
 
-fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)
+fw-shipped-all := $(fw-shipped-y) $(fw-shipped-m) $(fw-shipped-)//目标出现了，将会包含上述的文件
 
 # Directories which we _might_ need to create, so we have a rule for them.
 firmware-dirs := $(sort $(addprefix $(objtree)/$(obj)/,$(dir $(fw-external-y) $(fw-shipped-all))))
