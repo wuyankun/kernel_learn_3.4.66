@@ -59,7 +59,7 @@ int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 	u16 poll_count = 0;
 
 	cmd = buf;
-	cmd->id = cpu_to_le16(id);
+	cmd->id = cpu_to_le16(id);//使用标准接口，安全的转换为了芯片需要的小端结构
 	cmd->status = 0;
 
 	WARN_ON(len % 4 != 0);
@@ -69,11 +69,11 @@ int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 
 	wl1271_write32(wl, ACX_REG_INTERRUPT_TRIG, INTR_TRIG_CMD);
 
-	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);
+	timeout = jiffies + msecs_to_jiffies(WL1271_COMMAND_TIMEOUT);//时钟记时单位，和毫秒转换为时钟即时单位
 
 	intr = wl1271_read32(wl, ACX_REG_INTERRUPT_NO_CLEAR);
 	while (!(intr & WL1271_ACX_INTR_CMD_COMPLETE)) {
-		if (time_after(jiffies, timeout)) {
+		if (time_after(jiffies, timeout)) {//判断是否超时，采用时刻点比较的方式
 			wl1271_error("command complete timeout");
 			ret = -ETIMEDOUT;
 			goto fail;
@@ -81,7 +81,7 @@ int wl1271_cmd_send(struct wl1271 *wl, u16 id, void *buf, size_t len,
 
 		poll_count++;
 		if (poll_count < WL1271_CMD_FAST_POLL_COUNT)
-			udelay(10);
+			udelay(10);//两种延迟时间的方式
 		else
 			msleep(1);
 

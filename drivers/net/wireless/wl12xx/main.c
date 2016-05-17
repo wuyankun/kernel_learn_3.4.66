@@ -5286,7 +5286,7 @@ static int wl1271_init_ieee80211(struct wl1271 *wl)
 
 #define WL1271_DEFAULT_CHANNEL 0
 
-static struct ieee80211_hw *wl1271_alloc_hw(void)
+static struct ieee80211_hw *wl1271_alloc_hw(void)//22222222222222222222222222222222222222
 {
 	struct ieee80211_hw *hw;
 	struct wl1271 *wl;
@@ -5295,7 +5295,7 @@ static struct ieee80211_hw *wl1271_alloc_hw(void)
 
 	BUILD_BUG_ON(AP_MAX_STATIONS > WL12XX_MAX_LINKS);
 
-	hw = ieee80211_alloc_hw(sizeof(*wl), &wl1271_ops);
+	hw = ieee80211_alloc_hw(sizeof(*wl), &wl1271_ops);//3333333333333333333333333333333333
 	if (!hw) {
 		wl1271_error("could not alloc ieee80211_hw");
 		ret = -ENOMEM;
@@ -5311,28 +5311,28 @@ static struct ieee80211_hw *wl1271_alloc_hw(void)
 
 	for (i = 0; i < NUM_TX_QUEUES; i++)
 		for (j = 0; j < WL12XX_MAX_LINKS; j++)
-			skb_queue_head_init(&wl->links[j].tx_queue[i]);
+			skb_queue_head_init(&wl->links[j].tx_queue[i]);//网络设备的skb驱动
 
-	skb_queue_head_init(&wl->deferred_rx_queue);
-	skb_queue_head_init(&wl->deferred_tx_queue);
+	skb_queue_head_init(&wl->deferred_rx_queue);//接收队列
+	skb_queue_head_init(&wl->deferred_tx_queue);//传输队列
 
-	INIT_DELAYED_WORK(&wl->elp_work, wl1271_elp_work);
-	INIT_WORK(&wl->netstack_work, wl1271_netstack_work);
+	INIT_DELAYED_WORK(&wl->elp_work, wl1271_elp_work);//延迟工作队列
+	INIT_WORK(&wl->netstack_work, wl1271_netstack_work);//工作队列
 	INIT_WORK(&wl->tx_work, wl1271_tx_work);
 	INIT_WORK(&wl->recovery_work, wl1271_recovery_work);
-	INIT_DELAYED_WORK(&wl->scan_complete_work, wl1271_scan_complete_work);
+	INIT_DELAYED_WORK(&wl->scan_complete_work, wl1271_scan_complete_work);//延迟工作队列
 	INIT_DELAYED_WORK(&wl->tx_watchdog_work, wl12xx_tx_watchdog_work);
 
-	wl->freezable_wq = create_freezable_workqueue("wl12xx_wq");
+	wl->freezable_wq = create_freezable_workqueue("wl12xx_wq");//工作队列
 	if (!wl->freezable_wq) {
 		ret = -ENOMEM;
 		goto err_hw;
 	}
 
-	wl->channel = WL1271_DEFAULT_CHANNEL;
-	wl->rx_counter = 0;
-	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;
-	wl->band = IEEE80211_BAND_2GHZ;
+	wl->channel = WL1271_DEFAULT_CHANNEL;//默认通道0
+	wl->rx_counter = 0;//接收个数0
+	wl->power_level = WL1271_DEFAULT_POWER_LEVEL;//电源级别
+	wl->band = IEEE80211_BAND_2GHZ;//波段
 	wl->flags = 0;
 	wl->sg_enabled = true;
 	wl->hw_pg_ver = -1;
@@ -5345,7 +5345,7 @@ static struct ieee80211_hw *wl1271_alloc_hw(void)
 	wl->system_hlid = WL12XX_SYSTEM_HLID;
 	wl->active_sta_count = 0;
 	wl->fwlog_size = 0;
-	init_waitqueue_head(&wl->fwlog_waitq);
+	init_waitqueue_head(&wl->fwlog_waitq);//等待队列
 
 	/* The system link is always allocated */
 	__set_bit(WL12XX_SYSTEM_HLID, wl->links_map);
@@ -5447,7 +5447,7 @@ static irqreturn_t wl12xx_hardirq(int irq, void *cookie)
 
 	/* complete the ELP completion */
 	spin_lock_irqsave(&wl->wl_lock, flags);
-	set_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags);
+	set_bit(WL1271_FLAG_IRQ_RUNNING, &wl->flags);//更新状态
 	if (wl->elp_compl) {
 		complete(wl->elp_compl);
 		wl->elp_compl = NULL;
@@ -5467,15 +5467,15 @@ static irqreturn_t wl12xx_hardirq(int irq, void *cookie)
 	return IRQ_WAKE_THREAD;
 }
 
-static int __devinit wl12xx_probe(struct platform_device *pdev)
+static int __devinit wl12xx_probe(struct platform_device *pdev)//探测函数，上下文初始化11111111111111111111111111111111111111
 {
-	struct wl12xx_platform_data *pdata = pdev->dev.platform_data;
+	struct wl12xx_platform_data *pdata = pdev->dev.platform_data;//得到平台设备附加数据
 	struct ieee80211_hw *hw;
 	struct wl1271 *wl;
-	unsigned long irqflags;
-	int ret = -ENODEV;
+	unsigned long irqflags;//中断flags
+	int ret = -ENODEV;//返回值初始化为找不到设备
 
-	hw = wl1271_alloc_hw();
+	hw = wl1271_alloc_hw();//222222222222222222222222222222222222
 	if (IS_ERR(hw)) {
 		wl1271_error("can't allocate hw");
 		ret = PTR_ERR(hw);
@@ -5483,30 +5483,31 @@ static int __devinit wl12xx_probe(struct platform_device *pdev)
 	}
 
 	wl = hw->priv;
-	wl->irq = platform_get_irq(pdev, 0);
-	wl->ref_clock = pdata->board_ref_clock;
+	wl->irq = platform_get_irq(pdev, 0);//从平台数据的信息中，拿到中断的配置
+	wl->ref_clock = pdata->board_ref_clock;//从平台数据中，拿到时钟信息
 	wl->tcxo_clock = pdata->board_tcxo_clock;
-	wl->platform_quirks = pdata->platform_quirks;
-	wl->set_power = pdata->set_power;
-	wl->dev = &pdev->dev;
-	wl->if_ops = pdata->ops;
+	wl->platform_quirks = pdata->platform_quirks;//从平台设备中拿到特殊的属性(直译为怪癖)
+	wl->set_power = pdata->set_power;//平台数据中，开关的接口
+	
+	wl->dev = &pdev->dev;//保存通用device节点
+	wl->if_ops = pdata->ops;//接口的操作函数指针
 
-	platform_set_drvdata(pdev, wl);
+	platform_set_drvdata(pdev, wl);//将设备上下文保存到平台设备的私有变量中，通过指针传递上下文信息
 
-	if (wl->platform_quirks & WL12XX_PLATFORM_QUIRK_EDGE_IRQ)
+	if (wl->platform_quirks & WL12XX_PLATFORM_QUIRK_EDGE_IRQ)//中断触发的属性，边缘触发还是电平触发
 		irqflags = IRQF_TRIGGER_RISING;
 	else
 		irqflags = IRQF_TRIGGER_HIGH | IRQF_ONESHOT;
 
-	ret = request_threaded_irq(wl->irq, wl12xx_hardirq, wl1271_irq,
+	ret = request_threaded_irq(wl->irq, wl12xx_hardirq, wl1271_irq,//中断进入和中断退出，中断类型
 				   irqflags,
-				   pdev->name, wl);
+				   pdev->name, wl);//申请中断资源，绑定中断处理函数，传参时传入上下文环境
 	if (ret < 0) {
 		wl1271_error("request_irq() failed: %d", ret);
 		goto out_free_hw;
 	}
 
-	ret = enable_irq_wake(wl->irq);
+	ret = enable_irq_wake(wl->irq);//激活中断
 	if (!ret) {
 		wl->irq_wake_enabled = true;
 		device_init_wakeup(wl->dev, 1);
@@ -5514,32 +5515,32 @@ static int __devinit wl12xx_probe(struct platform_device *pdev)
 			hw->wiphy->wowlan.flags = WIPHY_WOWLAN_ANY;
 
 	}
-	disable_irq(wl->irq);
+	disable_irq(wl->irq);//关闭中断
 
-	ret = wl1271_init_ieee80211(wl);
+	ret = wl1271_init_ieee80211(wl);//初始化ieee802.11
 	if (ret)
 		goto out_irq;
 
-	ret = wl1271_register_hw(wl);
+	ret = wl1271_register_hw(wl);//注册硬件
 	if (ret)
 		goto out_irq;
 
 	/* Create sysfs file to control bt coex state */
-	ret = device_create_file(wl->dev, &dev_attr_bt_coex_state);
+	ret = device_create_file(wl->dev, &dev_attr_bt_coex_state);//创建两个属性文件
 	if (ret < 0) {
 		wl1271_error("failed to create sysfs file bt_coex_state");
 		goto out_irq;
 	}
 
 	/* Create sysfs file to get HW PG version */
-	ret = device_create_file(wl->dev, &dev_attr_hw_pg_ver);
+	ret = device_create_file(wl->dev, &dev_attr_hw_pg_ver);//另外一个属性文件
 	if (ret < 0) {
 		wl1271_error("failed to create sysfs file hw_pg_ver");
 		goto out_bt_coex_state;
 	}
 
 	/* Create sysfs file for the FW log */
-	ret = device_create_bin_file(wl->dev, &fwlog_attr);
+	ret = device_create_bin_file(wl->dev, &fwlog_attr);//二进制文件，属性文件
 	if (ret < 0) {
 		wl1271_error("failed to create sysfs file fwlog");
 		goto out_hw_pg_ver;
@@ -5565,26 +5566,26 @@ out:
 
 static int __devexit wl12xx_remove(struct platform_device *pdev)
 {
-	struct wl1271 *wl = platform_get_drvdata(pdev);
+	struct wl1271 *wl = platform_get_drvdata(pdev);//得到驱动上下文环境
 
 	if (wl->irq_wake_enabled) {
 		device_init_wakeup(wl->dev, 0);
 		disable_irq_wake(wl->irq);
 	}
 	wl1271_unregister_hw(wl);
-	free_irq(wl->irq, wl);
+	free_irq(wl->irq, wl);//释放中断资源
 	wl1271_free_hw(wl);
 
 	return 0;
 }
 
-static const struct platform_device_id wl12xx_id_table[] __devinitconst = {
+static const struct platform_device_id wl12xx_id_table[] __devinitconst = {//平台设备，总线match是通过名字的
 	{ "wl12xx", 0 },
 	{  } /* Terminating Entry */
 };
 MODULE_DEVICE_TABLE(platform, wl12xx_id_table);
 
-static struct platform_driver wl12xx_driver = {
+static struct platform_driver wl12xx_driver = {//平台设备
 	.probe		= wl12xx_probe,
 	.remove		= __devexit_p(wl12xx_remove),
 	.id_table	= wl12xx_id_table,
@@ -5606,7 +5607,7 @@ static void __exit wl12xx_exit(void)
 }
 module_exit(wl12xx_exit);
 
-u32 wl12xx_debug_level = DEBUG_NONE;
+u32 wl12xx_debug_level = DEBUG_NONE;//默认是不Debug的，可以打开调试
 EXPORT_SYMBOL_GPL(wl12xx_debug_level);
 module_param_named(debug_level, wl12xx_debug_level, uint, S_IRUSR | S_IWUSR);
 MODULE_PARM_DESC(debug_level, "wl12xx debugging level");
@@ -5619,5 +5620,5 @@ module_param(bug_on_recovery, bool, S_IRUSR | S_IWUSR);
 MODULE_PARM_DESC(bug_on_recovery, "BUG() on fw recovery");
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Luciano Coelho <coelho@ti.com>");
-MODULE_AUTHOR("Juuso Oikarinen <juuso.oikarinen@nokia.com>");
+MODULE_AUTHOR("Luciano Coelho <coelho@ti.com>");//德州仪器
+MODULE_AUTHOR("Juuso Oikarinen <juuso.oikarinen@nokia.com>");//诺基亚
