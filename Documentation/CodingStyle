@@ -15,6 +15,7 @@ Anyway, here goes:
 
 	 	Chapter 1: Indentation
 
+//建议tab键步进值为8个字符
 Tabs are 8 characters, and thus indentations are also 8 characters.
 There are heretic movements that try to make indentations 4 (or even 2!)
 characters deep, and that is akin to trying to define the value of PI to
@@ -34,7 +35,7 @@ your program.
 In short, 8-char indents make things easier to read, and have the added
 benefit of warning you when you're nesting your functions too deep.
 Heed that warning.
-
+//switch..case语句建议保持对齐
 The preferred way to ease multiple indentation levels in a switch statement is
 to align the "switch" and its subordinate "case" labels in the same column
 instead of "double-indenting" the "case" labels.  E.g.:
@@ -56,7 +57,7 @@ instead of "double-indenting" the "case" labels.  E.g.:
 		break;
 	}
 
-
+//多条语句不要放置在同一行上
 Don't put multiple statements on a single line unless you have
 something to hide:
 
@@ -68,7 +69,7 @@ is super simple.  Avoid tricky expressions.
 
 Outside of comments, documentation and except in Kconfig, spaces are never
 used for indentation, and the above example is deliberately broken.
-
+//文件的末尾不要留一些空白
 Get a decent editor and don't leave whitespace at the end of lines.
 
 
@@ -76,7 +77,7 @@ Get a decent editor and don't leave whitespace at the end of lines.
 
 Coding style is all about readability and maintainability using commonly
 available tools.
-
+//一行建议长度为80列，适当换行，有意义的字符不换行，否则不利于grep
 The limit on the length of lines is 80 columns and this is a strongly
 preferred limit.
 
@@ -95,7 +96,7 @@ braces.  Unlike the indent size, there are few technical reasons to
 choose one placement strategy over the other, but the preferred way, as
 shown to us by the prophets Kernighan and Ritchie, is to put the opening
 brace last on the line, and put the closing brace first, thusly:
-
+//关于左边括号的约定，包括if switch while等
 	if (x is true) {
 		we do y
 	}
@@ -116,7 +117,7 @@ while, do).  E.g.:
 
 However, there is one special case, namely functions: they have the
 opening brace at the beginning of the next line, thus:
-
+//函数的实现，则需要使用开括号的形式，即另起一行
 	int function(int x)
 	{
 		body of function
@@ -126,7 +127,7 @@ Heretic people all over the world have claimed that this inconsistency
 is ...  well ...  inconsistent, but all right-thinking people know that
 (a) K&R are _right_ and (b) K&R are right.  Besides, functions are
 special anyway (you can't nest them in C).
-
+//闭括号的使用规则，判断后续是否有相关语义在后
 Note that the closing brace is empty on a line of its own, _except_ in
 the cases where it is followed by a continuation of the same statement,
 ie a "while" in a do-statement or an "else" in an if-statement, like
@@ -155,7 +156,7 @@ supply of new-lines on your screen is not a renewable resource (think
 comments on.
 
 Do not unnecessarily use braces where a single statement will do.
-
+//判断语句后跟单条语句，则可省略括号，任一分支有多条语句，则全部加上括号
 if (condition)
 	action();
 
@@ -184,7 +185,8 @@ notable exceptions are sizeof, typeof, alignof, and __attribute__, which look
 somewhat like functions (and are usually used with parentheses in Linux,
 although they are not required in the language, as in: "sizeof info" after
 "struct fileinfo info;" is declared).
-
+//原则是关键字后面是需要加空格的，为避免将一些关键字判定为函数，则不需要加
+//如sizeof typeof alignof __attribute__等
 So use a space after these keywords:
 	if, switch, case, for, do, while
 but not with sizeof, typeof, alignof, or __attribute__.  E.g.,
@@ -194,7 +196,8 @@ Do not add spaces around (inside) parenthesized expressions.  This example is
 *bad*:
 
 	s = sizeof( struct file );
-
+//当定义一个指针指向数据或者一个函数，该函数返回一个指针类型，*号直接跟在数据名称
+//和函数名称
 When declaring pointer data or a function that returns a pointer type, the
 preferred use of '*' is adjacent to the data name or function name and not
 adjacent to the type name.  Examples:
@@ -202,7 +205,7 @@ adjacent to the type name.  Examples:
 	char *linux_banner;
 	unsigned long long memparse(char *ptr, char **retptr);
 	char *match_strdup(substring_t *s);
-
+//大部分的运算前后都需要加上空格，除了一些特殊符号含义
 Use one space around (on each side of) most binary and ternary operators,
 such as any of these:
 
@@ -218,14 +221,16 @@ no space after the prefix increment & decrement unary operators:
 	++  --
 
 and no space around the '.' and "->" structure member operators.
-
+//前置++或者后置++,以及结构体成员，指针成员不需要加空格
 Do not leave trailing whitespace at the ends of lines.  Some editors with
 "smart" indentation will insert whitespace at the beginning of new lines as
 appropriate, so you can start typing the next line of code right away.
 However, some such editors do not remove the whitespace if you end up not
 putting a line of code there, such as if you leave a blank line.  As a result,
 you end up with lines containing trailing whitespace.
-
+//一些编译器会聪明的自动插入一个新行，以方便立马编辑下一行开始
+//git补丁会经过文件末尾的空行，如果你有很多含有空行的补丁，将会出错因为改变
+//了文件内容的上下文函数
 Git will warn you about patches that introduce trailing whitespace, and can
 optionally strip the trailing whitespace for you; however, if applying a series
 of patches, this may make later patches in the series fail by changing their
@@ -234,12 +239,12 @@ context lines.
 
 		Chapter 4: Naming
 
-C is a Spartan language, and so should your naming be.  Unlike Modula-2
+C is a Spartan(斯巴达勇士) language, and so should your naming be.  Unlike Modula-2
 and Pascal programmers, C programmers do not use cute names like
 ThisVariableIsATemporaryCounter.  A C programmer would call that
 variable "tmp", which is much easier to write, and not the least more
 difficult to understand.
-
+//命名尽量简单，全局变量不要过于简单，显得没有意义
 HOWEVER, while mixed-case names are frowned upon, descriptive names for
 global variables are a must.  To call a global function "foo" is a
 shooting offense.
@@ -253,7 +258,7 @@ Encoding the type of a function into the name (so-called Hungarian
 notation) is brain damaged - the compiler knows the types anyway and can
 check those, and it only confuses the programmer.  No wonder MicroSoft
 makes buggy programs.
-
+//本地变量，尽量简单，如果你有些随机的loop变量，直接用i,不要过度命名
 LOCAL variable names should be short, and to the point.  If you have
 some random integer loop counter, it should probably be called "i".
 Calling it "loop_counter" is non-productive, if there is no chance of it
@@ -266,7 +271,7 @@ See chapter 6 (Functions).
 
 
 		Chapter 5: Typedefs
-
+//尽量少的使用结构体命名，否则代码含有不明
 Please don't use things like "vps_t".
 
 It's a _mistake_ to use typedef for structures and pointers. When you see a
@@ -283,7 +288,7 @@ you can actually tell what "a" is.
 
 Lots of people think that typedefs "help readability". Not so. They are
 useful only for:
-
+//有几种情况下使用typedef是有好处的，如完全隐藏的类型
  (a) totally opaque objects (where the typedef is actively used to _hide_
      what the object is).
 
@@ -293,10 +298,10 @@ useful only for:
      NOTE! Opaqueness and "accessor functions" are not good in themselves.
      The reason we have them for things like pte_t etc. is that there
      really is absolutely _zero_ portably accessible information there.
-
+//可以指代清晰的整形变量，可以清晰指代int 和long的含义
  (b) Clear integer types, where the abstraction _helps_ avoid confusion
      whether it is "int" or "long".
-
+//u8/u16/u32已经定义
      u8/u16/u32 are perfectly fine typedefs, although they fit into
      category (d) better than here.
 
@@ -342,7 +347,7 @@ be directly accessed should _never_ be a typedef.
 
 
 		Chapter 6: Functions
-
+//函数命名应该简单美妙，仅仅指代一个事物
 Functions should be short and sweet, and do just one thing.  They should
 fit on one or two screenfuls of text (the ISO/ANSI screen size is 80x24,
 as we all know), and do one thing and do that well.
@@ -352,7 +357,7 @@ complexity and indentation level of that function.  So, if you have a
 conceptually simple function that is just one long (but simple)
 case-statement, where you have to do lots of small things for a lot of
 different cases, it's OK to have a longer function.
-
+//使用内联函数在内，尽量使得复杂函数简短
 However, if you have a complex function, and you suspect that a
 less-than-gifted first-year high-school student might not even
 understand what the function is all about, you should adhere to the
@@ -360,7 +365,7 @@ maximum limits all the more closely.  Use helper functions with
 descriptive names (you can ask the compiler to in-line them if you think
 it's performance-critical, and it will probably do a better job of it
 than you would have done).
-
+//函数的参数最好不要超过10个，否则人类理解不过来，难以记忆
 Another measure of the function is the number of local variables.  They
 shouldn't exceed 5-10, or you're doing something wrong.  Re-think the
 function, and split it into smaller pieces.  A human brain can
@@ -384,7 +389,7 @@ because it is a simple way to add valuable information for the reader.
 
 
 		Chapter 7: Centralized exiting of functions
-
+//退出函数的约定，特别提到goto语句的使用
 Albeit deprecated by some people, the equivalent of the goto statement is
 used frequently by compilers in form of the unconditional jump instruction.
 
@@ -421,12 +426,12 @@ out:
 }
 
 		Chapter 8: Commenting
-
+//注释，但不要过度注释
 Comments are good, but there is also a danger of over-commenting.  NEVER
 try to explain HOW your code works in a comment: it's much better to
 write the code so that the _working_ is obvious, and it's a waste of
 time to explain badly written code.
-
+//注释该函数是什么，而不是如何做到的，如果实现复杂，则考虑拆分函数
 Generally, you want your comments to tell WHAT your code does, not HOW.
 Also, try to avoid putting comments inside a function body: if the
 function is so complex that you need to separately comment parts of it,
@@ -435,11 +440,11 @@ small comments to note or warn about something particularly clever (or
 ugly), but try to avoid excess.  Instead, put the comments at the head
 of the function, telling people what it does, and possibly WHY it does
 it.
-
+//注释内核api函数时，使用内核文档格式
 When commenting the kernel API functions, please use the kernel-doc format.
 See the files Documentation/kernel-doc-nano-HOWTO.txt and scripts/kernel-doc
 for details.
-
+//使用双包含，不是双划线开始
 Linux style for comments is the C89 "/* ... */" style.
 Don't use C99-style "// ..." comments.
 
@@ -461,7 +466,7 @@ item, explaining its use.
 
 
 		Chapter 9: You've made a mess of it
-
+//emacs 配置
 That's OK, we all do.  You've probably been told by your long-time Unix
 user helper that "GNU emacs" automatically formats the C sources for
 you, and you've noticed that yes, it does do that, but the defaults it
@@ -521,7 +526,7 @@ remember: "indent" is not a fix for bad programming.
 
 
 		Chapter 10: Kconfig configuration files
-
+//Kconfig的写法要求
 For all of the Kconfig* configuration files throughout the source tree,
 the indentation is somewhat different.  Lines under a "config" definition
 are indented with one tab, while help text is indented an additional two
@@ -557,7 +562,7 @@ Documentation/kbuild/kconfig-language.txt.
 
 
 		Chapter 11: Data structures
-
+//数据结构定义
 Data structures that have visibility outside the single-threaded
 environment they are created and destroyed in should always have
 reference counts.  In the kernel, garbage collection doesn't exist (and
@@ -588,18 +593,18 @@ have a reference count on it, you almost certainly have a bug.
 
 
 		Chapter 12: Macros, Enums and RTL
-
+//宏定义，枚举
 Names of macros defining constants and labels in enums are capitalized.
 
 #define CONSTANT 0x12345
-
+//含义相关的系列宏定义，推荐使用枚举类型定义
 Enums are preferred when defining several related constants.
-
+//宏功能函数的实现应该用小写形式
 CAPITALIZED macro names are appreciated but macros resembling functions
 may be named in lower case.
-
+//通常情况下，内联函数会由于宏功能函数
 Generally, inline functions are preferable to macros resembling functions.
-
+//宏定义多行，应该使用do...while(0)进行包含，且写入在一行
 Macros with multiple statements should be enclosed in a do - while block:
 
 #define macrofun(a, b, c) 			\
@@ -643,22 +648,23 @@ covers RTL which is used frequently with assembly language in the kernel.
 
 
 		Chapter 13: Printing kernel messages
-
+//打印内核消息，减少极端简写，使得提示清晰
 Kernel developers like to be seen as literate. Do mind the spelling
 of kernel messages to make a good impression. Do not use crippled
 words like "dont"; use "do not" or "don't" instead.  Make the messages
 concise, clear, and unambiguous.
-
+//不要使用打印无用的参数
 Kernel messages do not have to be terminated with a period.
 
 Printing numbers in parentheses (%d) adds no value and should be avoided.
-
+//这里有一些已定义的设备相关的函数，可以使用，如dev_info()等
+//跟设备驱动无关的一些打印函数，如pr_debug(),pr_info()等含有级别打印函数
 There are a number of driver model diagnostic macros in <linux/device.h>
 which you should use to make sure messages are matched to the right device
 and driver, and are tagged with the right level:  dev_err(), dev_warn(),
 dev_info(), and so forth.  For messages that aren't associated with a
 particular device, <linux/printk.h> defines pr_debug() and pr_info().
-
+//提供一份完整的调试信息有利于远程诊断，使用标准的函数，内核配置可优化
 Coming up with good debugging messages can be quite a challenge; and once
 you have them, they can be a huge help for remote troubleshooting.  Such
 messages should be compiled out when the DEBUG symbol is not defined (that
@@ -669,7 +675,7 @@ ones already enabled by DEBUG.
 
 
 		Chapter 14: Allocating memory
-
+//内存分配
 The kernel provides the following general purpose memory allocators:
 kmalloc(), kzalloc(), kcalloc(), vmalloc(), and vzalloc().  Please refer to
 the API documentation for further information about them.
@@ -688,7 +694,7 @@ language.
 
 
 		Chapter 15: The inline disease
-
+//内联灾难
 There appears to be a common misperception that gcc has a magic "make me
 faster" speedup option called "inline". While the use of inlines can be
 appropriate (for example as a means of replacing macros, see Chapter 12), it
@@ -698,7 +704,7 @@ icache footprint for the CPU and simply because there is less memory
 available for the pagecache. Just think about it; a pagecache miss causes a
 disk seek, which easily takes 5 milliseconds. There are a LOT of cpu cycles
 that can go into these 5 milliseconds.
-
+//内联函数过多会导致系统性能下降，原则上内联函数实现不能多于3行
 A reasonable rule of thumb is to not put inline at functions that have more
 than 3 lines of code in them. An exception to this rule are the cases where
 a parameter is known to be a compiletime constant, and as a result of this
@@ -715,7 +721,7 @@ something it would have done anyway.
 
 
 		Chapter 16: Function return values and names
-
+//函数返回值的预订，对于成功与否，在整形和布尔值之间的差异
 Functions can return values of many different kinds, and one of the
 most common is a value indicating whether the function succeeded or
 failed.  Such a value can be represented as an error-code integer
@@ -731,7 +737,7 @@ convention:
 	If the name of a function is an action or an imperative command,
 	the function should return an error-code integer.  If the name
 	is a predicate, the function should return a "succeeded" boolean.
-
+//原则是指令或者动作返回0作为成功，否则返回错误码，对于状态查询则1代表真，0代表假
 For example, "add work" is a command, and the add_work() function returns 0
 for success or -EBUSY for failure.  In the same way, "PCI device present" is
 a predicate, and the pci_dev_present() function returns 1 if it succeeds in
@@ -749,7 +755,7 @@ NULL or the ERR_PTR mechanism to report failure.
 
 
 		Chapter 17:  Don't re-invent the kernel macros
-
+//使用一些内核已经定义好的宏，而不是自己重新创造
 The header file include/linux/kernel.h contains a number of macros that
 you should use, rather than explicitly coding some variant of them yourself.
 For example, if you need to calculate the length of an array, take advantage
