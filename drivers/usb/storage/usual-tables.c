@@ -91,7 +91,7 @@ struct ignore_entry {
 	.bcdmax = bcdDeviceMax,		\
 }
 
-static struct ignore_entry ignore_ids[] = {
+static struct ignore_entry ignore_ids[] = {//不是普通的设备列表
 #	include "unusual_alauda.h"
 #	include "unusual_cypress.h"
 #	include "unusual_datafab.h"
@@ -118,14 +118,14 @@ int usb_usual_ignore_device(struct usb_interface *intf)
 	unsigned vid, pid, bcd;
 	struct ignore_entry *p;
 
-	udev = interface_to_usbdev(intf);
-	vid = le16_to_cpu(udev->descriptor.idVendor);
+	udev = interface_to_usbdev(intf);//从接口中(配置)找到对应的设备
+	vid = le16_to_cpu(udev->descriptor.idVendor);//读取设备信息，因大小端原因，这里使用了标准的接口
 	pid = le16_to_cpu(udev->descriptor.idProduct);
 	bcd = le16_to_cpu(udev->descriptor.bcdDevice);
 
-	for (p = ignore_ids; p->vid; ++p) {
+	for (p = ignore_ids; p->vid; ++p) {//在表格中轮询查找，去掉不关心的设备
 		if (p->vid == vid && p->pid == pid &&
-				p->bcdmin <= bcd && p->bcdmax >= bcd)
+				p->bcdmin <= bcd && p->bcdmax >= bcd)//bcd的范围
 			return -ENXIO;
 	}
 	return 0;

@@ -53,7 +53,7 @@
 
 void usb_stor_show_command(struct scsi_cmnd *srb)
 {
-	char *what = NULL;
+	char *what = NULL;//还记得吴长安老师的what，what，what吗，哈哈
 	int i;
 
 	switch (srb->cmnd[0]) {
