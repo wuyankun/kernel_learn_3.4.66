@@ -64,7 +64,7 @@ config USB_EHCI_HCD
 	  module will be called ehci-hcd.
 
 config USB_EHCI_ROOT_HUB_TT
-	bool "Root Hub Transaction Translators"
+	bool "Root Hub Transaction Translators"//根hub事物译码器
 	depends on USB_EHCI_HCD
 	---help---
 	  Some EHCI chips have vendor-specific extensions to integrate
@@ -76,7 +76,7 @@ config USB_EHCI_ROOT_HUB_TT
 	  from ARC, and has since changed hands a few times.
 
 config USB_EHCI_TT_NEWSCHED
-	bool "Improved Transaction Translator scheduling"
+	bool "Improved Transaction Translator scheduling"//改进的事务译码调度算法
 	depends on USB_EHCI_HCD
 	default y
 	---help---
@@ -92,7 +92,8 @@ config USB_EHCI_TT_NEWSCHED
 	  (possibly due to "ENOSPC" or "-28" errors), say Y.  Conversely, if
 	  you have only one such device and it doesn't work, you could try
 	  saying N.
-
+	  //在调试某耳麦时，发现不打开该选项，则报-28错误，直面意思是带宽不够，经过
+	  //测试，打开该选项后，该错误消失
 	  If unsure, say Y.
 
 config USB_EHCI_HCD_PMC_MSP
