@@ -110,7 +110,7 @@ static struct attribute_group psmouse_attribute_group = {
  */
 static DEFINE_MUTEX(psmouse_mutex);
 
-static struct workqueue_struct *kpsmoused_wq;
+static struct workqueue_struct *kpsmoused_wq;//创建一个工作队列的结构体
 
 struct psmouse_protocol {
 	enum psmouse_type type;
@@ -289,17 +289,17 @@ static int psmouse_handle_byte(struct psmouse *psmouse)
  * psmouse_interrupt() handles incoming characters, either passing them
  * for normal processing or gathering them as command response.
  */
-
+//处理到来的数据字节，或者传递给正常流程或者作为命令响应
 static irqreturn_t psmouse_interrupt(struct serio *serio,
 		unsigned char data, unsigned int flags)
 {
-	struct psmouse *psmouse = serio_get_drvdata(serio);
+	struct psmouse *psmouse = serio_get_drvdata(serio);//获得驱动上下文环境，结构体
 
-	if (psmouse->state == PSMOUSE_IGNORE)
+	if (psmouse->state == PSMOUSE_IGNORE)//鼠标的全局状态，是否为忽略状态
 		goto out;
 
 	if (unlikely((flags & SERIO_TIMEOUT) ||
-		     ((flags & SERIO_PARITY) && !psmouse->ignore_parity))) {
+		     ((flags & SERIO_PARITY) && !psmouse->ignore_parity))) {//unlikely是逻辑判断基本不会为真的情况，用于gcc编译优化
 
 		if (psmouse->state == PSMOUSE_ACTIVATED)
 			psmouse_warn(psmouse,
@@ -510,18 +510,18 @@ static int intellimouse_detect(struct psmouse *psmouse, bool set_properties)
 	ps2_command(ps2dev, param, PSMOUSE_CMD_SETRATE);
 	ps2_command(ps2dev, param, PSMOUSE_CMD_GETID);
 
-	if (param[0] != 3)
+	if (param[0] != 3)//读取id时返回0x03,第一个需要修改的地方，返回的ID不同
 		return -1;
 
-	if (set_properties) {
+	if (set_properties) {//增加滚轮，中间按键使能标识位
 		__set_bit(BTN_MIDDLE, psmouse->dev->keybit);
 		__set_bit(REL_WHEEL, psmouse->dev->relbit);
 
-		if (!psmouse->vendor)
+		if (!psmouse->vendor)//初始化一些厂商属性信息
 			psmouse->vendor = "Generic";
 		if (!psmouse->name)
 			psmouse->name = "Wheel Mouse";
-		psmouse->pktsize = 4;
+		psmouse->pktsize = 4;//包大小被设置为4，区别通用的3个字节，第二个需要修改的地方，包大小不同
 	}
 
 	return 0;
@@ -660,20 +660,20 @@ static void psmouse_apply_defaults(struct psmouse *psmouse)
 	memset(input_dev->absbit, 0, sizeof(input_dev->absbit));
 	memset(input_dev->mscbit, 0, sizeof(input_dev->mscbit));
 
-	__set_bit(EV_KEY, input_dev->evbit);
+	__set_bit(EV_KEY, input_dev->evbit);//标准的事件和相对数据
 	__set_bit(EV_REL, input_dev->evbit);
 
-	__set_bit(BTN_LEFT, input_dev->keybit);
+	__set_bit(BTN_LEFT, input_dev->keybit);//左右按键
 	__set_bit(BTN_RIGHT, input_dev->keybit);
 
-	__set_bit(REL_X, input_dev->relbit);
+	__set_bit(REL_X, input_dev->relbit);//绝对数据
 	__set_bit(REL_Y, input_dev->relbit);
 
-	psmouse->set_rate = psmouse_set_rate;
+	psmouse->set_rate = psmouse_set_rate;//各种属性设置调整方法
 	psmouse->set_resolution = psmouse_set_resolution;
 	psmouse->poll = psmouse_poll;
 	psmouse->protocol_handler = psmouse_process_byte;
-	psmouse->pktsize = 3;
+	psmouse->pktsize = 3;//默认包大小为3个字节,并清空一些接口
 	psmouse->reconnect = NULL;
 	psmouse->disconnect = NULL;
 	psmouse->cleanup = NULL;
@@ -690,9 +690,9 @@ static int psmouse_do_detect(int (*detect)(struct psmouse *psmouse,
 			     struct psmouse *psmouse, bool set_properties)
 {
 	if (set_properties)
-		psmouse_apply_defaults(psmouse);
+		psmouse_apply_defaults(psmouse);//先使用默认数据来初始化结构体，对所有协议的鼠标适用
 
-	return detect(psmouse, set_properties);
+	return detect(psmouse, set_properties);//调用具体的探测函数，探测成功后，设置具体的属性
 }
 
 /*
@@ -848,12 +848,14 @@ static int psmouse_extensions(struct psmouse *psmouse,
 		return PSMOUSE_IMEX;
 	}
 
+	//需要模仿成这种鼠标
 	if (max_proto >= PSMOUSE_IMPS &&
 	    psmouse_do_detect(intellimouse_detect,
 			      psmouse, set_properties) == 0) {
 		return PSMOUSE_IMPS;
 	}
 
+//当所有特殊种类的鼠标都没有正确被识别后，使用通用鼠标来探测
 /*
  * Okay, all failed, we have a standard mouse here. The number of the buttons
  * is still a question, though. We assume 3.
@@ -870,7 +872,7 @@ static int psmouse_extensions(struct psmouse *psmouse,
 		psmouse_reset(psmouse);
 	}
 
-	return PSMOUSE_PS2;
+	return PSMOUSE_PS2;//默认返回是正常的PS2鼠标
 }
 
 static const struct psmouse_protocol psmouse_protocols[] = {
@@ -1039,10 +1041,10 @@ static const struct psmouse_protocol *psmouse_protocol_by_name(const char *name,
 /*
  * psmouse_probe() probes for a PS/2 mouse.
  */
-
+//鼠标的探测
 static int psmouse_probe(struct psmouse *psmouse)
 {
-	struct ps2dev *ps2dev = &psmouse->ps2dev;
+	struct ps2dev *ps2dev = &psmouse->ps2dev;//ps2设备的一种
 	unsigned char param[2];
 
 /*
@@ -1051,7 +1053,8 @@ static int psmouse_probe(struct psmouse *psmouse)
  * Sunrex K8561 IR Keyboard/Mouse reports 0xff on second and subsequent
  * ID queries, probably due to a firmware bug.
  */
-
+//先查询设备返回的ID值，是不是常见的数据，0x00是标准鼠标，0x03是IntelliMouse，有4个字节数据
+//0x04等
 	param[0] = 0xa5;
 	if (ps2_command(ps2dev, param, PSMOUSE_CMD_GETID))
 		return -1;
@@ -1063,7 +1066,7 @@ static int psmouse_probe(struct psmouse *psmouse)
 /*
  * Then we reset and disable the mouse so that it doesn't generate events.
  */
-
+//然后重置鼠标
 	if (ps2_command(ps2dev, NULL, PSMOUSE_CMD_RESET_DIS))
 		psmouse_warn(psmouse, "Failed to reset mouse on %s\n",
 			     ps2dev->serio->phys);
@@ -1334,7 +1337,7 @@ static int psmouse_switch_protocol(struct psmouse *psmouse,
 		selected_proto = proto;
 	} else {
 		psmouse->type = psmouse_extensions(psmouse,
-						   psmouse_max_proto, true);
+						   psmouse_max_proto, true);//探测鼠标的种类
 		selected_proto = psmouse_protocol_by_type(psmouse->type);
 	}
 
@@ -1374,76 +1377,77 @@ static int psmouse_switch_protocol(struct psmouse *psmouse,
  * psmouse_connect() is a callback from the serio module when
  * an unhandled serio port is found.
  */
+//回调函数，当发现一个串口被发现但没有被处理的情况
 static int psmouse_connect(struct serio *serio, struct serio_driver *drv)
 {
-	struct psmouse *psmouse, *parent = NULL;
-	struct input_dev *input_dev;
-	int retval = 0, error = -ENOMEM;
+	struct psmouse *psmouse, *parent = NULL;//两个上下文指针
+	struct input_dev *input_dev;//鼠标为input设备，功能划分
+	int retval = 0, error = -ENOMEM;//返回值，错误码初始化为没有内存
 
-	mutex_lock(&psmouse_mutex);
+	mutex_lock(&psmouse_mutex);//互斥开始，重复连接
 
 	/*
 	 * If this is a pass-through port deactivate parent so the device
 	 * connected to this port can be successfully identified
 	 */
-	if (serio->parent && serio->id.type == SERIO_PS_PSTHRU) {
+	if (serio->parent && serio->id.type == SERIO_PS_PSTHRU) {//特殊情况，忽略
 		parent = serio_get_drvdata(serio->parent);
 		psmouse_deactivate(parent);
 	}
 
-	psmouse = kzalloc(sizeof(struct psmouse), GFP_KERNEL);
-	input_dev = input_allocate_device();
+	psmouse = kzalloc(sizeof(struct psmouse), GFP_KERNEL);//分配内存,驱动上下文环境，全部是指针
+	input_dev = input_allocate_device();//分配inpur_dev，新建一个input device，指针
 	if (!psmouse || !input_dev)
 		goto err_free;
 
-	ps2_init(&psmouse->ps2dev, serio);
-	INIT_DELAYED_WORK(&psmouse->resync_work, psmouse_resync);
-	psmouse->dev = input_dev;
-	snprintf(psmouse->phys, sizeof(psmouse->phys), "%s/input0", serio->phys);
+	ps2_init(&psmouse->ps2dev, serio);//标准调用，初始化ps2
+	INIT_DELAYED_WORK(&psmouse->resync_work, psmouse_resync);//创建一个延时工作队列，用于中断的延时处理
+	psmouse->dev = input_dev;//关联inpur_dev
+	snprintf(psmouse->phys, sizeof(psmouse->phys), "%s/input0", serio->phys);//初始化物理路径，在串口路径上加入第一个input设备
 
-	psmouse_set_state(psmouse, PSMOUSE_INITIALIZING);
+	psmouse_set_state(psmouse, PSMOUSE_INITIALIZING);//全局状态设置为初始化中
 
-	serio_set_drvdata(serio, psmouse);
+	serio_set_drvdata(serio, psmouse);//将驱动上下文的环境保存在驱动的私有数据指针中
 
-	error = serio_open(serio, drv);
+	error = serio_open(serio, drv);//打开串行设备接口
 	if (error)
 		goto err_clear_drvdata;
 
-	if (psmouse_probe(psmouse) < 0) {
+	if (psmouse_probe(psmouse) < 0) {//探测设备，识别设备,读取ID，重置一次鼠标
 		error = -ENODEV;
 		goto err_close_serio;
 	}
 
-	psmouse->rate = psmouse_rate;
+	psmouse->rate = psmouse_rate;//一些基本属性的设置
 	psmouse->resolution = psmouse_resolution;
 	psmouse->resetafter = psmouse_resetafter;
 	psmouse->resync_time = parent ? 0 : psmouse_resync_time;
 	psmouse->smartscroll = psmouse_smartscroll;
 
-	psmouse_switch_protocol(psmouse, NULL);
+	psmouse_switch_protocol(psmouse, NULL);//切换协议，根据不同厂商，有轻微的不同，主要是数据包大小
 
-	psmouse_set_state(psmouse, PSMOUSE_CMD_MODE);
-	psmouse_initialize(psmouse);
+	psmouse_set_state(psmouse, PSMOUSE_CMD_MODE);//全局状态设置为命令模式
+	psmouse_initialize(psmouse);//鼠标初始化
 
-	error = input_register_device(psmouse->dev);
+	error = input_register_device(psmouse->dev);//注册这个input设备
 	if (error)
 		goto err_protocol_disconnect;
 
 	if (parent && parent->pt_activate)
 		parent->pt_activate(parent);
 
-	error = sysfs_create_group(&serio->dev.kobj, &psmouse_attribute_group);
+	error = sysfs_create_group(&serio->dev.kobj, &psmouse_attribute_group);//sysfs文件系统的初始化，创建一些属性组
 	if (error)
 		goto err_pt_deactivate;
 
-	psmouse_activate(psmouse);
+	psmouse_activate(psmouse);//激活这个鼠标
 
  out:
 	/* If this is a pass-through port the parent needs to be re-activated */
 	if (parent)
 		psmouse_activate(parent);
 
-	mutex_unlock(&psmouse_mutex);
+	mutex_unlock(&psmouse_mutex);//互斥结束
 	return retval;
 
  err_pt_deactivate:
@@ -1546,17 +1550,17 @@ static struct serio_device_id psmouse_serio_ids[] = {
 
 MODULE_DEVICE_TABLE(serio, psmouse_serio_ids);
 
-static struct serio_driver psmouse_drv = {
+static struct serio_driver psmouse_drv = {//串行驱动，鼠标驱动
 	.driver		= {
 		.name	= "psmouse",
 	},
 	.description	= DRIVER_DESC,
-	.id_table	= psmouse_serio_ids,
-	.interrupt	= psmouse_interrupt,
-	.connect	= psmouse_connect,
-	.reconnect	= psmouse_reconnect,
-	.disconnect	= psmouse_disconnect,
-	.cleanup	= psmouse_cleanup,
+	.id_table	= psmouse_serio_ids,//支持的设备列表
+	.interrupt	= psmouse_interrupt,//中断
+	.connect	= psmouse_connect,//连接
+	.reconnect	= psmouse_reconnect,//重新连接
+	.disconnect	= psmouse_disconnect,//断开连接
+	.cleanup	= psmouse_cleanup,//清扫？
 };
 
 ssize_t psmouse_attr_show_helper(struct device *dev, struct device_attribute *devattr,
@@ -1794,23 +1798,23 @@ static int __init psmouse_init(void)
 	synaptics_module_init();
 	hgpk_module_init();
 
-	kpsmoused_wq = create_singlethread_workqueue("kpsmoused");
+	kpsmoused_wq = create_singlethread_workqueue("kpsmoused");//创建单线程的工作队列，工作队列名称为kpsmoused_wq
 	if (!kpsmoused_wq) {
 		pr_err("failed to create kpsmoused workqueue\n");
 		return -ENOMEM;
 	}
 
-	err = serio_register_driver(&psmouse_drv);
+	err = serio_register_driver(&psmouse_drv);//串行驱动注册
 	if (err)
-		destroy_workqueue(kpsmoused_wq);
+		destroy_workqueue(kpsmoused_wq);//销毁工作队列
 
 	return err;
 }
 
 static void __exit psmouse_exit(void)
 {
-	serio_unregister_driver(&psmouse_drv);
-	destroy_workqueue(kpsmoused_wq);
+	serio_unregister_driver(&psmouse_drv);//去注册
+	destroy_workqueue(kpsmoused_wq);//销毁工作队列
 }
 
 module_init(psmouse_init);
