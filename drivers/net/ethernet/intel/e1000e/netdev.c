@@ -1649,7 +1649,7 @@ static void e1000e_downshift_workaround(struct work_struct *work)
  * @irq: interrupt number
  * @data: pointer to a network interface device structure
  **/
-static irqreturn_t e1000_intr_msi(int irq, void *data)
+static irqreturn_t e1000_intr_msi(int irq, void *data)//MSI中断处理函数的实现
 {
 	struct net_device *netdev = data;
 	struct e1000_adapter *adapter = netdev_priv(netdev);
@@ -1684,7 +1684,7 @@ static irqreturn_t e1000_intr_msi(int irq, void *data)
 		}
 		/* guard against interrupt when we're going down */
 		if (!test_bit(__E1000_DOWN, &adapter->state))
-			mod_timer(&adapter->watchdog_timer, jiffies + 1);
+			mod_timer(&adapter->watchdog_timer, jiffies + 1);//修改timer的属性，重新开始timer
 	}
 
 	if (napi_schedule_prep(&adapter->napi)) {
@@ -2046,19 +2046,19 @@ static int e1000_request_irq(struct e1000_adapter *adapter)
 		adapter->int_mode = E1000E_INT_MODE_MSI;
 		e1000e_set_interrupt_capability(adapter);
 	}
-	if (adapter->flags & FLAG_MSI_ENABLED) {
+	if (adapter->flags & FLAG_MSI_ENABLED) {//使用MSI中断的处理
 		err = request_irq(adapter->pdev->irq, e1000_intr_msi, 0,
-				  netdev->name, netdev);
+				  netdev->name, netdev);//中断类型为0,MSI中断
 		if (!err)
 			return err;
 
 		/* fall back to legacy interrupt */
 		e1000e_reset_interrupt_capability(adapter);
-		adapter->int_mode = E1000E_INT_MODE_LEGACY;
+		adapter->int_mode = E1000E_INT_MODE_LEGACY;//中断模式会被标识,传统方式的中断
 	}
 
 	err = request_irq(adapter->pdev->irq, e1000_intr, IRQF_SHARED,
-			  netdev->name, netdev);
+			  netdev->name, netdev);//共享中断
 	if (err)
 		e_err("Unable to allocate interrupt, Error: %d\n", err);
 
@@ -3727,7 +3727,7 @@ static irqreturn_t e1000_intr_msi_test(int irq, void *data)
 	e_dbg("icr is %08X\n", icr);
 	if (icr & E1000_ICR_RXSEQ) {
 		adapter->flags &= ~FLAG_MSI_TEST_FAILED;
-		wmb();
+		wmb();//写内存屏障，在写入flags之前不能读
 	}
 
 	return IRQ_HANDLED;
@@ -3755,41 +3755,41 @@ static int e1000_test_msi_interrupt(struct e1000_adapter *adapter)
 
 	/* Assume that the test fails, if it succeeds then the test
 	 * MSI irq handler will unset this flag */
-	adapter->flags |= FLAG_MSI_TEST_FAILED;
+	adapter->flags |= FLAG_MSI_TEST_FAILED;//先标识测试失败
 
-	err = pci_enable_msi(adapter->pdev);
+	err = pci_enable_msi(adapter->pdev);//激活MSI中断
 	if (err)
 		goto msi_test_failed;
 
 	err = request_irq(adapter->pdev->irq, e1000_intr_msi_test, 0,
-			  netdev->name, netdev);
+			  netdev->name, netdev);//绑定MSI中断的中断处理函数
 	if (err) {
-		pci_disable_msi(adapter->pdev);
+		pci_disable_msi(adapter->pdev);//绑定失败则关闭MSI中断
 		goto msi_test_failed;
 	}
 
-	wmb();
+	wmb();//写内存屏障，处理器和编译器不要打乱写指令的先后顺序
 
-	e1000_irq_enable(adapter);
+	e1000_irq_enable(adapter);//使能中断,中间有一系列的写寄存器操作，寄存器写的顺序不能优化，加入写屏障
 
-	/* fire an unusual interrupt on the test handler */
+	/* fire an unusual interrupt on the test handler *///触发一个不寻常的中断，测试中断处理程序
 	ew32(ICS, E1000_ICS_RXSEQ);
 	e1e_flush();
 	msleep(100);
 
-	e1000_irq_disable(adapter);
+	e1000_irq_disable(adapter);//关闭中断
 
-	rmb();
+	rmb();//读内存屏障，处理器和编译器不要打乱读指令的先后顺序
 
-	if (adapter->flags & FLAG_MSI_TEST_FAILED) {
+	if (adapter->flags & FLAG_MSI_TEST_FAILED) {//测试结果
 		adapter->int_mode = E1000E_INT_MODE_LEGACY;
 		e_info("MSI interrupt test failed, using legacy interrupt.\n");
 	} else {
 		e_dbg("MSI interrupt test succeeded!\n");
 	}
 
-	free_irq(adapter->pdev->irq, netdev);
-	pci_disable_msi(adapter->pdev);
+	free_irq(adapter->pdev->irq, netdev);//释放中断
+	pci_disable_msi(adapter->pdev);//关闭MSI使能
 
 msi_test_failed:
 	e1000e_set_interrupt_capability(adapter);
@@ -3807,11 +3807,11 @@ static int e1000_test_msi(struct e1000_adapter *adapter)
 	int err;
 	u16 pci_cmd;
 
-	if (!(adapter->flags & FLAG_MSI_ENABLED))
+	if (!(adapter->flags & FLAG_MSI_ENABLED))//适配器标识是否支持MSI中断类型
 		return 0;
 
 	/* disable SERR in case the MSI write causes a master abort */
-	pci_read_config_word(adapter->pdev, PCI_COMMAND, &pci_cmd);
+	pci_read_config_word(adapter->pdev, PCI_COMMAND, &pci_cmd);//SERR标识会导致master产生一次中断，故设置一下配置寄存器中的命令字
 	if (pci_cmd & PCI_COMMAND_SERR)
 		pci_write_config_word(adapter->pdev, PCI_COMMAND,
 				      pci_cmd & ~PCI_COMMAND_SERR);
@@ -3819,7 +3819,7 @@ static int e1000_test_msi(struct e1000_adapter *adapter)
 	err = e1000_test_msi_interrupt(adapter);
 
 	/* re-enable SERR */
-	if (pci_cmd & PCI_COMMAND_SERR) {
+	if (pci_cmd & PCI_COMMAND_SERR) {//重新将标识位复位，增加SERR的标识位
 		pci_read_config_word(adapter->pdev, PCI_COMMAND, &pci_cmd);
 		pci_cmd |= PCI_COMMAND_SERR;
 		pci_write_config_word(adapter->pdev, PCI_COMMAND, pci_cmd);
@@ -3904,7 +3904,7 @@ static int e1000_open(struct net_device *netdev)
 	 * ignore e1000e MSI messages, which means we need to test our MSI
 	 * interrupt now
 	 */
-	if (adapter->int_mode != E1000E_INT_MODE_LEGACY) {
+	if (adapter->int_mode != E1000E_INT_MODE_LEGACY) {//测试是否支持MSI中断
 		err = e1000_test_msi(adapter);
 		if (err) {
 			e_err("Interrupt allocation failed\n");
@@ -6068,43 +6068,44 @@ static const struct net_device_ops e1000e_netdev_ops = {
  * The OS initialization, configuring of the adapter private structure,
  * and a hardware reset occur.
  **/
+//e1000e的探测函数
 static int __devinit e1000_probe(struct pci_dev *pdev,
 				 const struct pci_device_id *ent)
 {
-	struct net_device *netdev;
-	struct e1000_adapter *adapter;
-	struct e1000_hw *hw;
+	struct net_device *netdev;//网络设备，功能逻辑划分
+	struct e1000_adapter *adapter;//适配器
+	struct e1000_hw *hw;//硬件相关信息
 	const struct e1000_info *ei = e1000_info_tbl[ent->driver_data];
-	resource_size_t mmio_start, mmio_len;
-	resource_size_t flash_start, flash_len;
+	resource_size_t mmio_start, mmio_len;//pci io内存的起始点和长度信息
+	resource_size_t flash_start, flash_len;//pci flash的起始点和长度信息
 	static int cards_found;
 	u16 aspm_disable_flag = 0;
 	int i, err, pci_using_dac;
 	u16 eeprom_data = 0;
 	u16 eeprom_apme_mask = E1000_EEPROM_APME;
 
-	if (ei->flags2 & FLAG2_DISABLE_ASPM_L0S)
+	if (ei->flags2 & FLAG2_DISABLE_ASPM_L0S)//一些跟设备相关的设置
 		aspm_disable_flag = PCIE_LINK_STATE_L0S;
 	if (ei->flags2 & FLAG2_DISABLE_ASPM_L1)
 		aspm_disable_flag |= PCIE_LINK_STATE_L1;
 	if (aspm_disable_flag)
 		e1000e_disable_aspm(pdev, aspm_disable_flag);
 
-	err = pci_enable_device_mem(pdev);
+	err = pci_enable_device_mem(pdev);//加了mem有什么区别?
 	if (err)
 		return err;
 
 	pci_using_dac = 0;
-	err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(64));
+	err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(64));//DMA的标识为64位
 	if (!err) {
-		err = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(64));
+		err = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(64));//coherent 连续的，一贯的
 		if (!err)
 			pci_using_dac = 1;
 	} else {
-		err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(32));
+		err = dma_set_mask(&pdev->dev, DMA_BIT_MASK(32));//否则使用DMA的标识为32位
 		if (err) {
 			err = dma_set_coherent_mask(&pdev->dev,
-						    DMA_BIT_MASK(32));
+						    DMA_BIT_MASK(32));//coherent 连续的，一贯的
 			if (err) {
 				dev_err(&pdev->dev, "No usable DMA configuration, aborting\n");
 				goto err_dma;
@@ -6114,31 +6115,31 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 
 	err = pci_request_selected_regions_exclusive(pdev,
 	                                  pci_select_bars(pdev, IORESOURCE_MEM),
-	                                  e1000e_driver_name);
+	                                  e1000e_driver_name);//资源相关的请求，含义?
 	if (err)
 		goto err_pci_reg;
 
 	/* AER (Advanced Error Reporting) hooks */
-	pci_enable_pcie_error_reporting(pdev);
+	pci_enable_pcie_error_reporting(pdev);//错误上报使能
 
-	pci_set_master(pdev);
+	pci_set_master(pdev);//主模式
 	/* PCI config space info */
-	err = pci_save_state(pdev);
+	err = pci_save_state(pdev);//?含义
 	if (err)
 		goto err_alloc_etherdev;
 
 	err = -ENOMEM;
-	netdev = alloc_etherdev(sizeof(struct e1000_adapter));
+	netdev = alloc_etherdev(sizeof(struct e1000_adapter));//分配一个以太网设备
 	if (!netdev)
 		goto err_alloc_etherdev;
 
-	SET_NETDEV_DEV(netdev, &pdev->dev);
+	SET_NETDEV_DEV(netdev, &pdev->dev);//关联device设备
 
-	netdev->irq = pdev->irq;
+	netdev->irq = pdev->irq;//从pci的配置寄存器中拿到中断号
 
-	pci_set_drvdata(pdev, netdev);
+	pci_set_drvdata(pdev, netdev);//pci关联网络设备
 	adapter = netdev_priv(netdev);
-	hw = &adapter->hw;
+	hw = &adapter->hw;//adapter才是驱动上下文环境指针
 	adapter->netdev = netdev;
 	adapter->pdev = pdev;
 	adapter->ei = ei;
@@ -6150,15 +6151,15 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 	adapter->max_hw_frame_size = ei->max_hw_frame_size;
 	adapter->msg_enable = netif_msg_init(debug, DEFAULT_MSG_ENABLE);
 
-	mmio_start = pci_resource_start(pdev, 0);
+	mmio_start = pci_resource_start(pdev, 0);//pci的IO内存区域资源获取
 	mmio_len = pci_resource_len(pdev, 0);
 
 	err = -EIO;
-	adapter->hw.hw_addr = ioremap(mmio_start, mmio_len);
+	adapter->hw.hw_addr = ioremap(mmio_start, mmio_len);//映射为虚拟地址空间，可读写
 	if (!adapter->hw.hw_addr)
 		goto err_ioremap;
 
-	if ((adapter->flags & FLAG_HAS_FLASH) &&
+	if ((adapter->flags & FLAG_HAS_FLASH) &&//如果设备支持Flash的接口，则映射FLASH的区域资源
 	    (pci_resource_flags(pdev, 1) & IORESOURCE_MEM)) {
 		flash_start = pci_resource_start(pdev, 1);
 		flash_len = pci_resource_len(pdev, 1);
@@ -6168,9 +6169,9 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 	}
 
 	/* construct the net_device struct */
-	netdev->netdev_ops		= &e1000e_netdev_ops;
+	netdev->netdev_ops		= &e1000e_netdev_ops;//网络设备的ops接口函数指针赋值初始化
 	e1000e_set_ethtool_ops(netdev);
-	netdev->watchdog_timeo		= 5 * HZ;
+	netdev->watchdog_timeo		= 5 * HZ;//5秒的超时时间
 	netif_napi_add(netdev, &adapter->napi, e1000_clean, 64);
 	strlcpy(netdev->name, pci_name(pdev), sizeof(netdev->name));
 
@@ -6281,11 +6282,11 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 		goto err_eeprom;
 	}
 
-	init_timer(&adapter->watchdog_timer);
-	adapter->watchdog_timer.function = e1000_watchdog;
-	adapter->watchdog_timer.data = (unsigned long) adapter;
+	init_timer(&adapter->watchdog_timer);//初始化一个timer定时器
+	adapter->watchdog_timer.function = e1000_watchdog;//timer的超时处理函数
+	adapter->watchdog_timer.data = (unsigned long) adapter;//超时处理函数附带的数据，驱动上下文
 
-	init_timer(&adapter->phy_info_timer);
+	init_timer(&adapter->phy_info_timer);//另外一个定时器初始化
 	adapter->phy_info_timer.function = e1000_update_phy_info;
 	adapter->phy_info_timer.data = (unsigned long) adapter;
 
@@ -6358,7 +6359,7 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 		e1000e_get_hw_control(adapter);
 
 	strlcpy(netdev->name, "eth%d", sizeof(netdev->name));
-	err = register_netdev(netdev);
+	err = register_netdev(netdev);//注册网络设备
 	if (err)
 		goto err_register;
 
