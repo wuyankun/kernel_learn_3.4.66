@@ -9,7 +9,7 @@
 
 struct vm_area_struct;
 
-/* Plain integer GFP bitmasks. Do not use this directly. */
+/* Plain integer GFP bitmasks. Do not use this directly. *///内存分配时的flags，不要直接使用
 #define ___GFP_DMA		0x01u
 #define ___GFP_HIGHMEM		0x02u
 #define ___GFP_DMA32		0x04u
@@ -41,7 +41,7 @@ struct vm_area_struct;
 /*
  * GFP bitmasks..
  *
- * Zone modifiers (see linux/mmzone.h - low three bits)
+ * Zone modifiers (see linux/mmzone.h - low three bits)//区域分类
  *
  * Do not put any conditional on these. If necessary modify the definitions
  * without the underscores and use them consistently. The definitions here may
@@ -53,7 +53,7 @@ struct vm_area_struct;
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* Page is movable */
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
 /*
- * Action modifiers - doesn't change the zoning
+ * Action modifiers - doesn't change the zoning//动作分类
  *
  * __GFP_REPEAT: Try hard to allocate the memory, but the allocation attempt
  * _might_ fail.  This depends upon the particular VM implementation.
@@ -97,13 +97,13 @@ struct vm_area_struct;
 #define __GFP_BITS_SHIFT 25	/* Room for N __GFP_FOO bits */
 #define __GFP_BITS_MASK ((__force gfp_t)((1 << __GFP_BITS_SHIFT) - 1))
 
-/* This equals 0, but use constants in case they ever change */
+/* This equals 0, but use constants in case they ever change *///按类型分类，屏蔽底层细节
 #define GFP_NOWAIT	(GFP_ATOMIC & ~__GFP_HIGH)
 /* GFP_ATOMIC means both !wait (__GFP_WAIT not set) and use emergency pool */
 #define GFP_ATOMIC	(__GFP_HIGH)
 #define GFP_NOIO	(__GFP_WAIT)
 #define GFP_NOFS	(__GFP_WAIT | __GFP_IO)
-#define GFP_KERNEL	(__GFP_WAIT | __GFP_IO | __GFP_FS)
+#define GFP_KERNEL	(__GFP_WAIT | __GFP_IO | __GFP_FS)//最常用的标识，可能发生睡眠，IO，文件系统操作
 #define GFP_TEMPORARY	(__GFP_WAIT | __GFP_IO | __GFP_FS | \
 			 __GFP_RECLAIMABLE)
 #define GFP_USER	(__GFP_WAIT | __GFP_IO | __GFP_FS | __GFP_HARDWALL)
@@ -146,7 +146,7 @@ struct vm_area_struct;
 #define GFP_DMA		__GFP_DMA
 
 /* 4GB DMA on some platforms */
-#define GFP_DMA32	__GFP_DMA32
+#define GFP_DMA32	__GFP_DMA32//某些平台上支持4GB的DMA
 
 /* Convert GFP flags to their corresponding migrate type */
 static inline int allocflags_to_migratetype(gfp_t gfp_flags)
@@ -294,7 +294,7 @@ static inline void arch_alloc_page(struct page *page, int order) { }
 struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 		       struct zonelist *zonelist, nodemask_t *nodemask);
-
+//分配内存页，返回起始页的物理地址，无法直接使用，需将页地址转换为虚拟地址
 static inline struct page *
 __alloc_pages(gfp_t gfp_mask, unsigned int order,
 		struct zonelist *zonelist)
@@ -358,7 +358,7 @@ void *alloc_pages_exact_nid(int nid, size_t size, gfp_t gfp_mask);
 		__get_free_pages((gfp_mask) | GFP_DMA, (order))
 
 extern void __free_pages(struct page *page, unsigned int order);
-extern void free_pages(unsigned long addr, unsigned int order);
+extern void free_pages(unsigned long addr, unsigned int order);//释放内存页，页地址和分配的大小
 extern void free_hot_cold_page(struct page *page, int cold);
 extern void free_hot_cold_page_list(struct list_head *list, int cold);
 

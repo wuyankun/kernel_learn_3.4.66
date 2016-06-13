@@ -199,32 +199,32 @@ size_t ksize(const void *);
  *
  * %GFP_USER - Allocate memory on behalf of user.  May sleep.
  *
- * %GFP_KERNEL - Allocate normal kernel ram.  May sleep.
+ * %GFP_KERNEL - Allocate normal kernel ram.  May sleep.//常用的内存分配时的参数，分配的类型
  *
  * %GFP_ATOMIC - Allocation will not sleep.  May use emergency pools.
- *   For example, use this inside interrupt handlers.
+ *   For example, use this inside interrupt handlers.//在不能睡眠，中断上下文环境中使用
  *
- * %GFP_HIGHUSER - Allocate pages from high memory.
+ * %GFP_HIGHUSER - Allocate pages from high memory.//高端内存分配
  *
- * %GFP_NOIO - Do not do any I/O at all while trying to get memory.
+ * %GFP_NOIO - Do not do any I/O at all while trying to get memory.//在分配内存时，不能进行IO操作
  *
- * %GFP_NOFS - Do not make any fs calls while trying to get memory.
+ * %GFP_NOFS - Do not make any fs calls while trying to get memory.//在分配内存时，不能进行FS操作，在FS代码中防止嵌套
  *
  * %GFP_NOWAIT - Allocation will not sleep.
  *
  * %GFP_THISNODE - Allocate node-local memory only.
  *
- * %GFP_DMA - Allocation suitable for DMA.
+ * %GFP_DMA - Allocation suitable for DMA.//分配DMA时使用的类型，分配DMA区的内存给设备
  *   Should only be used for kmalloc() caches. Otherwise, use a
  *   slab created with SLAB_DMA.
  *
- * Also it is possible to set different flags by OR'ing
+ * Also it is possible to set different flags by OR'ing//使用或的组合来精确控制内存的分配行为
  * in one or more of the following additional @flags:
  *
  * %__GFP_COLD - Request cache-cold pages instead of
  *   trying to return cache-warm pages.
  *
- * %__GFP_HIGH - This allocation has high priority and may use emergency pools.
+ * %__GFP_HIGH - This allocation has high priority and may use emergency pools.//高端内存区域>968MB
  *
  * %__GFP_NOFAIL - Indicate that this allocation is in no way allowed to fail
  *   (think twice before using).
