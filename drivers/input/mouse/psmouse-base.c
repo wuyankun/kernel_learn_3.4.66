@@ -14,22 +14,22 @@
 #define pr_fmt(fmt)		KBUILD_MODNAME ": " fmt
 #define psmouse_fmt(fmt)	fmt
 
-#include <linux/delay.h>
-#include <linux/module.h>
-#include <linux/slab.h>
+#include <linux/delay.h>//msleep和usleep需要
+#include <linux/module.h>//module_init和module_exit需要
+#include <linux/slab.h>//内存分配kmalloc需要
 #include <linux/interrupt.h>
-#include <linux/input.h>
+#include <linux/input.h>//input相关接口需要
 #include <linux/serio.h>
-#include <linux/init.h>
-#include <linux/libps2.h>
-#include <linux/mutex.h>
+#include <linux/init.h>//__init和__exit需要
+#include <linux/libps2.h>//ps2的一些标准函数
+#include <linux/mutex.h>//互斥需要
 
-#include "psmouse.h"
+#include "psmouse.h"//上下文环境和一些命令字定义，宏定义等
 #include "synaptics.h"
 #include "logips2pp.h"
 #include "alps.h"
 #include "hgpk.h"
-#include "lifebook.h"
+#include "lifebook.h"//特殊类型的鼠标的一些实现
 #include "trackpoint.h"
 #include "touchkit_ps2.h"
 #include "elantech.h"
@@ -108,10 +108,10 @@ static struct attribute_group psmouse_attribute_group = {
  * rarely more than one PS/2 mouse connected and since semaphore
  * is taken in "slow" paths it is not worth it.
  */
-static DEFINE_MUTEX(psmouse_mutex);
+static DEFINE_MUTEX(psmouse_mutex);//互斥的静态定义
 
-static struct workqueue_struct *kpsmoused_wq;//创建一个工作队列的结构体
-
+static struct workqueue_struct *kpsmoused_wq;//创建一个工作队列的结构体,静态定义
+//协议定义的结构体
 struct psmouse_protocol {
 	enum psmouse_type type;
 	bool maxproto;
@@ -132,7 +132,7 @@ psmouse_ret_t psmouse_process_byte(struct psmouse *psmouse)
 	struct input_dev *dev = psmouse->dev;
 	unsigned char *packet = psmouse->packet;
 
-	if (psmouse->pktcnt < psmouse->pktsize)
+	if (psmouse->pktcnt < psmouse->pktsize)//如果没有达到协议的最大包大小，则认为是合法的字节数据
 		return PSMOUSE_GOOD_DATA;
 
 /*
@@ -197,15 +197,15 @@ psmouse_ret_t psmouse_process_byte(struct psmouse *psmouse)
 /*
  * Generic PS/2 Mouse
  */
-
-	input_report_key(dev, BTN_LEFT,    packet[0]       & 1);
-	input_report_key(dev, BTN_MIDDLE, (packet[0] >> 2) & 1);
-	input_report_key(dev, BTN_RIGHT,  (packet[0] >> 1) & 1);
+	//通用鼠标，对包数据的处理
+	input_report_key(dev, BTN_LEFT,    packet[0]       & 1);//BIT(0)
+	input_report_key(dev, BTN_MIDDLE, (packet[0] >> 2) & 1);//BIT(2)
+	input_report_key(dev, BTN_RIGHT,  (packet[0] >> 1) & 1);//BIT(1)
 
 	input_report_rel(dev, REL_X, packet[1] ? (int) packet[1] - (int) ((packet[0] << 4) & 0x100) : 0);
 	input_report_rel(dev, REL_Y, packet[2] ? (int) ((packet[0] << 3) & 0x100) - (int) packet[2] : 0);
 
-	input_sync(dev);
+	input_sync(dev);//产生一个同步事件
 
 	return PSMOUSE_FULL_PACKET;
 }
@@ -219,13 +219,13 @@ void psmouse_queue_work(struct psmouse *psmouse, struct delayed_work *work,
 /*
  * __psmouse_set_state() sets new psmouse state and resets all flags.
  */
-
+//切换鼠标的状态标识
 static inline void __psmouse_set_state(struct psmouse *psmouse, enum psmouse_state new_state)
 {
 	psmouse->state = new_state;
 	psmouse->pktcnt = psmouse->out_of_sync_cnt = 0;
 	psmouse->ps2dev.flags = 0;
-	psmouse->last = jiffies;
+	psmouse->last = jiffies;//记录切换时的，时钟ticks
 }
 
 
@@ -322,11 +322,11 @@ static irqreturn_t psmouse_interrupt(struct serio *serio,
 		goto out;
 
 	if (psmouse->state == PSMOUSE_ACTIVATED &&
-	    psmouse->pktcnt && time_after(jiffies, psmouse->last + HZ/2)) {
+	    psmouse->pktcnt && time_after(jiffies, psmouse->last + HZ/2)) {//延迟1/2秒的时间
 		psmouse_info(psmouse, "%s at %s lost synchronization, throwing %d bytes away.\n",
 			     psmouse->name, psmouse->phys, psmouse->pktcnt);
 		psmouse->badbyte = psmouse->packet[0];
-		__psmouse_set_state(psmouse, PSMOUSE_RESYNCING);
+		__psmouse_set_state(psmouse, PSMOUSE_RESYNCING);//重新同步一次
 		psmouse_queue_work(psmouse, &psmouse->resync_work, 0);
 		goto out;
 	}
@@ -461,7 +461,7 @@ static int psmouse_poll(struct psmouse *psmouse)
 			   PSMOUSE_CMD_POLL | (psmouse->pktsize << 8));
 }
 
-
+//类型探测函数，读取ID等特定的沟通方式
 /*
  * Genius NetMouse magic init.
  */
@@ -649,7 +649,7 @@ static int cortron_detect(struct psmouse *psmouse, bool set_properties)
  * Apply default settings to the psmouse structure. Most of them will
  * be overridden by individual protocol initialization routines.
  */
-
+//将鼠标的上下文环境设置为默认值
 static void psmouse_apply_defaults(struct psmouse *psmouse)
 {
 	struct input_dev *input_dev = psmouse->dev;
@@ -1138,7 +1138,7 @@ static void psmouse_resync(struct work_struct *work)
 	bool failed = false, enabled = false;
 	int i;
 
-	mutex_lock(&psmouse_mutex);
+	mutex_lock(&psmouse_mutex);//互斥上锁
 
 	if (psmouse->state != PSMOUSE_RESYNCING)
 		goto out;

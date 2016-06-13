@@ -1,7 +1,7 @@
 #ifndef _PSMOUSE_H
 #define _PSMOUSE_H
 
-#define PSMOUSE_CMD_SETSCALE11	0x00e6
+#define PSMOUSE_CMD_SETSCALE11	0x00e6//ps2鼠标的一些命令字，协议定义
 #define PSMOUSE_CMD_SETSCALE21	0x00e7
 #define PSMOUSE_CMD_SETRES	0x10e8
 #define PSMOUSE_CMD_GETINFO	0x03e9
@@ -21,7 +21,7 @@
 #define PSMOUSE_RET_ACK		0xfa
 #define PSMOUSE_RET_NAK		0xfe
 
-enum psmouse_state {
+enum psmouse_state {//鼠标状态枚举
 	PSMOUSE_IGNORE,
 	PSMOUSE_INITIALIZING,
 	PSMOUSE_RESYNCING,
@@ -36,39 +36,39 @@ typedef enum {
 	PSMOUSE_FULL_PACKET
 } psmouse_ret_t;
 
-struct psmouse {
-	void *private;
-	struct input_dev *dev;
-	struct ps2dev ps2dev;
-	struct delayed_work resync_work;
-	char *vendor;
-	char *name;
-	unsigned char packet[8];
+struct psmouse {//驱动上下文结构，环境上下文
+	void *private;//私有数据指针,泛型
+	struct input_dev *dev;//本身是一个input设备，逻辑划分
+	struct ps2dev ps2dev;//本身是一个ps2设备，接口划分
+	struct delayed_work resync_work;//延迟工作队列
+	char *vendor;//厂商信息
+	char *name;//设备名称信息
+	unsigned char packet[8];//上传的数据包，这里分配最大的缓冲区，为8个无符号字节
 	unsigned char badbyte;
-	unsigned char pktcnt;
-	unsigned char pktsize;
-	unsigned char type;
-	bool ignore_parity;
+	unsigned char pktcnt;//包的计数
+	unsigned char pktsize;//包大小设置，不同类型的ps2鼠标包大小不一样
+	unsigned char type;//类型，区分不同的鼠标类型
+	bool ignore_parity;//？字面意思，忽视平等
 	bool acks_disable_command;
 	unsigned int model;
 	unsigned long last;
 	unsigned long out_of_sync_cnt;
 	unsigned long num_resyncs;
-	enum psmouse_state state;
-	char devname[64];
-	char phys[32];
+	enum psmouse_state state;//鼠标状态信息
+	char devname[64];//设备名称，sys文件系统需要
+	char phys[32];//物理路径
 
-	unsigned int rate;
+	unsigned int rate;//放大倍率
 	unsigned int resolution;
 	unsigned int resetafter;
 	unsigned int resync_time;
 	bool smartscroll;	/* Logitech only */
 
-	psmouse_ret_t (*protocol_handler)(struct psmouse *psmouse);
-	void (*set_rate)(struct psmouse *psmouse, unsigned int rate);
+	psmouse_ret_t (*protocol_handler)(struct psmouse *psmouse);//协议处理，并且返回协议规定的返回值类型枚举
+	void (*set_rate)(struct psmouse *psmouse, unsigned int rate);//设置一些属性的接口函数
 	void (*set_resolution)(struct psmouse *psmouse, unsigned int resolution);
 
-	int (*reconnect)(struct psmouse *psmouse);
+	int (*reconnect)(struct psmouse *psmouse);//重连，断开，清除，poll等待，激活，非激活
 	void (*disconnect)(struct psmouse *psmouse);
 	void (*cleanup)(struct psmouse *psmouse);
 	int (*poll)(struct psmouse *psmouse);
@@ -77,7 +77,7 @@ struct psmouse {
 	void (*pt_deactivate)(struct psmouse *psmouse);
 };
 
-enum psmouse_type {
+enum psmouse_type {//鼠标类型枚举，PS2协议已经比较旧了
 	PSMOUSE_NONE,
 	PSMOUSE_PS2,
 	PSMOUSE_PS2PP,
@@ -97,7 +97,7 @@ enum psmouse_type {
 	PSMOUSE_SYNAPTICS_RELATIVE,
 	PSMOUSE_AUTO		/* This one should always be last */
 };
-
+//一些接口函数的定义
 void psmouse_queue_work(struct psmouse *psmouse, struct delayed_work *work,
 		unsigned long delay);
 int psmouse_sliced_command(struct psmouse *psmouse, unsigned char command);
@@ -108,7 +108,7 @@ psmouse_ret_t psmouse_process_byte(struct psmouse *psmouse);
 int psmouse_activate(struct psmouse *psmouse);
 int psmouse_deactivate(struct psmouse *psmouse);
 
-struct psmouse_attribute {
+struct psmouse_attribute {//属性结构体定义
 	struct device_attribute dattr;
 	void *data;
 	ssize_t (*show)(struct psmouse *psmouse, void *data, char *buf);
@@ -158,7 +158,7 @@ static struct psmouse_attribute psmouse_attr_##_name = {			\
 #ifndef psmouse_fmt
 #define psmouse_fmt(fmt)	KBUILD_BASENAME ": " fmt
 #endif
-
+//调试打印接口的扩展，使用宏函数实现
 #define psmouse_dbg(psmouse, format, ...)		\
 	dev_dbg(&(psmouse)->ps2dev.serio->dev,		\
 		psmouse_fmt(format), ##__VA_ARGS__)
