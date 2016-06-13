@@ -9,14 +9,14 @@
  *
  */
 
-#include <linux/delay.h>
+#include <linux/delay.h> //timer相关的定义
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
-#include <linux/clk.h>
-#include <linux/input.h>
-#include <linux/interrupt.h>
-#include <linux/slab.h>
+#include <linux/clk.h>//时钟
+#include <linux/input.h>//input设备
+#include <linux/interrupt.h>//中断
+#include <linux/slab.h>//kmalloc内存分配
 
 /* ADC controller bit defines */
 #define ADC_DELAY	0xf00
@@ -39,23 +39,23 @@
 #define WT_INT_EN	(0x01 << 23)
 #define ADC_DIV		(0x04 << 1)	/* div = 6 */
 
-enum ts_state {
+enum ts_state {//触摸屏的全局状态
 	TS_WAIT_NEW_PACKET,	/* We are waiting next touch report */
 	TS_WAIT_X_COORD,	/* We are waiting for ADC to report X coord */
 	TS_WAIT_Y_COORD,	/* We are waiting for ADC to report Y coord */
 	TS_IDLE,		/* Input device is closed, don't do anything */
 };
 
-struct w90p910_ts {
-	struct input_dev *input;
-	struct timer_list timer;
-	struct clk *clk;
-	int irq_num;
-	void __iomem *ts_reg;
-	spinlock_t lock;
-	enum ts_state state;
+struct w90p910_ts {//驱动上下文环境
+	struct input_dev *input;//逻辑划分为一个input设备
+	struct timer_list timer;//包含一个定时器
+	struct clk *clk;//管理时钟
+	int irq_num;//中断号，中断线记录
+	void __iomem *ts_reg;//IO内存记录
+	spinlock_t lock;//自旋锁
+	enum ts_state state;//全局的状态记录
 };
-
+//报告一个事件，提交一个input_event事件
 static void w90p910_report_event(struct w90p910_ts *w90p910_ts, bool down)
 {
 	struct input_dev *dev = w90p910_ts->input;
@@ -71,7 +71,7 @@ static void w90p910_report_event(struct w90p910_ts *w90p910_ts, bool down)
 	input_sync(dev);
 }
 
-static void w90p910_prepare_x_reading(struct w90p910_ts *w90p910_ts)
+static void w90p910_prepare_x_reading(struct w90p910_ts *w90p910_ts)//先处于X方向上的数据
 {
 	unsigned long ctlreg;
 
@@ -81,7 +81,7 @@ static void w90p910_prepare_x_reading(struct w90p910_ts *w90p910_ts)
 	ctlreg |= ADC_SEMIAUTO | ADC_INT_EN | ADC_CONV;
 	__raw_writel(ctlreg, w90p910_ts->ts_reg);
 
-	w90p910_ts->state = TS_WAIT_X_COORD;
+	w90p910_ts->state = TS_WAIT_X_COORD;//标记X方向数据正确，更新全局的设备状态
 }
 
 static void w90p910_prepare_y_reading(struct w90p910_ts *w90p910_ts)
@@ -94,7 +94,7 @@ static void w90p910_prepare_y_reading(struct w90p910_ts *w90p910_ts)
 	ctlreg |= ADC_SEMIAUTO | ADC_INT_EN | ADC_CONV;
 	__raw_writel(ctlreg, w90p910_ts->ts_reg);
 
-	w90p910_ts->state = TS_WAIT_Y_COORD;
+	w90p910_ts->state = TS_WAIT_Y_COORD;//标记Y方向数据正确，更新全局的设备状态
 }
 
 static void w90p910_prepare_next_packet(struct w90p910_ts *w90p910_ts)
@@ -114,27 +114,27 @@ static irqreturn_t w90p910_ts_interrupt(int irq, void *dev_id)
 	struct w90p910_ts *w90p910_ts = dev_id;
 	unsigned long flags;
 
-	spin_lock_irqsave(&w90p910_ts->lock, flags);
+	spin_lock_irqsave(&w90p910_ts->lock, flags);//不容许中断嵌套
 
-	switch (w90p910_ts->state) {
-	case TS_WAIT_NEW_PACKET:
+	switch (w90p910_ts->state) {//根据硬件中断和当前设备处于的状态，来推动事件处理
+	case TS_WAIT_NEW_PACKET://第一次中断来后，设备默认处于等待新的数据包
 		/*
 		 * The controller only generates interrupts when pen
 		 * is down.
 		 */
-		del_timer(&w90p910_ts->timer);
-		w90p910_prepare_x_reading(w90p910_ts);
+		del_timer(&w90p910_ts->timer);//先删除定时器
+		w90p910_prepare_x_reading(w90p910_ts);//先去读取X方向的数据，再产生一次中断
 		break;
 
 
 	case TS_WAIT_X_COORD:
-		w90p910_prepare_y_reading(w90p910_ts);
+		w90p910_prepare_y_reading(w90p910_ts);//再去读取Y方向的数据，再产生一次中断
 		break;
 
 	case TS_WAIT_Y_COORD:
-		w90p910_report_event(w90p910_ts, true);
-		w90p910_prepare_next_packet(w90p910_ts);
-		mod_timer(&w90p910_ts->timer, jiffies + msecs_to_jiffies(100));
+		w90p910_report_event(w90p910_ts, true);//上报一次数据
+		w90p910_prepare_next_packet(w90p910_ts);//更新全局的状态，等待下一个包数据
+		mod_timer(&w90p910_ts->timer, jiffies + msecs_to_jiffies(100));//重新启动定时器，当前时刻后的100ms
 		break;
 
 	case TS_IDLE:
@@ -146,7 +146,7 @@ static irqreturn_t w90p910_ts_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static void w90p910_check_pen_up(unsigned long data)
+static void w90p910_check_pen_up(unsigned long data)//定时器处理程序，每隔一定间隔来查询，是否有ADC数据
 {
 	struct w90p910_ts *w90p910_ts = (struct w90p910_ts *) data;
 	unsigned long flags;
@@ -156,7 +156,7 @@ static void w90p910_check_pen_up(unsigned long data)
 	if (w90p910_ts->state == TS_WAIT_NEW_PACKET &&
 	    !(__raw_readl(w90p910_ts->ts_reg + 0x04) & ADC_DOWN)) {
 
-		w90p910_report_event(w90p910_ts, false);
+		w90p910_report_event(w90p910_ts, false);//当前处于等待新的数据包中，但没有新的数据产生
 	}
 
 	spin_unlock_irqrestore(&w90p910_ts->lock, flags);
@@ -180,8 +180,8 @@ static int w90p910_open(struct input_dev *dev)
 	__raw_writel(val & TSC_FOURWIRE, w90p910_ts->ts_reg + 0x04);
 	__raw_writel(ADC_DELAY, w90p910_ts->ts_reg + 0x08);
 
-	w90p910_ts->state = TS_WAIT_NEW_PACKET;
-	wmb();
+	w90p910_ts->state = TS_WAIT_NEW_PACKET;//设备被打开后，设备处于等待新的数据包的状态
+	wmb();//内存写入屏障的例子程序，不可以跨越写的顺序
 
 	/* set trigger mode */
 	val = __raw_readl(w90p910_ts->ts_reg);
@@ -198,7 +198,7 @@ static void w90p910_close(struct input_dev *dev)
 
 	/* disable trigger mode */
 
-	spin_lock_irq(&w90p910_ts->lock);
+	spin_lock_irq(&w90p910_ts->lock);//关闭掉中断
 
 	w90p910_ts->state = TS_IDLE;
 
@@ -209,10 +209,10 @@ static void w90p910_close(struct input_dev *dev)
 	spin_unlock_irq(&w90p910_ts->lock);
 
 	/* Now that interrupts are shut off we can safely delete timer */
-	del_timer_sync(&w90p910_ts->timer);
+	del_timer_sync(&w90p910_ts->timer);//删除掉timer定时器，同步的方式
 
 	/* stop the ADC clock */
-	clk_disable(w90p910_ts->clk);
+	clk_disable(w90p910_ts->clk);//关闭时钟
 }
 
 static int __devinit w90x900ts_probe(struct platform_device *pdev)
@@ -230,10 +230,10 @@ static int __devinit w90x900ts_probe(struct platform_device *pdev)
 	}
 
 	w90p910_ts->input = input_dev;
-	w90p910_ts->state = TS_IDLE;
+	w90p910_ts->state = TS_IDLE;//默认状态为待机状态
 	spin_lock_init(&w90p910_ts->lock);
 	setup_timer(&w90p910_ts->timer, w90p910_check_pen_up,
-		    (unsigned long)w90p910_ts);
+		    (unsigned long)w90p910_ts);//设置timer，初始化timer的结构体
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
@@ -277,8 +277,8 @@ static int __devinit w90x900ts_probe(struct platform_device *pdev)
 
 	input_set_drvdata(input_dev, w90p910_ts);
 
-	w90p910_ts->irq_num = platform_get_irq(pdev, 0);
-	if (request_irq(w90p910_ts->irq_num, w90p910_ts_interrupt,
+	w90p910_ts->irq_num = platform_get_irq(pdev, 0);//中断号从平台资源处获得
+	if (request_irq(w90p910_ts->irq_num, w90p910_ts_interrupt,//激活中断，绑定中断处理程序和中断处理程序传入的资源
 			0, "w90p910ts", w90p910_ts)) {
 		err = -EBUSY;
 		goto fail4;
@@ -306,19 +306,19 @@ static int __devexit w90x900ts_remove(struct platform_device *pdev)
 	struct w90p910_ts *w90p910_ts = platform_get_drvdata(pdev);
 	struct resource *res;
 
-	free_irq(w90p910_ts->irq_num, w90p910_ts);
-	del_timer_sync(&w90p910_ts->timer);
-	iounmap(w90p910_ts->ts_reg);
+	free_irq(w90p910_ts->irq_num, w90p910_ts);//中断释放
+	del_timer_sync(&w90p910_ts->timer);//删除定时器，同步的方式
+	iounmap(w90p910_ts->ts_reg);//IO内存解除映射
 
-	clk_put(w90p910_ts->clk);
+	clk_put(w90p910_ts->clk);//停掉时钟
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	release_mem_region(res->start, resource_size(res));
+	release_mem_region(res->start, resource_size(res));//是否内存区域
 
-	input_unregister_device(w90p910_ts->input);
-	kfree(w90p910_ts);
+	input_unregister_device(w90p910_ts->input);//去注册input设备
+	kfree(w90p910_ts);//释放内存
 
-	platform_set_drvdata(pdev, NULL);
+	platform_set_drvdata(pdev, NULL);//平台设备的私有数据设置为空
 
 	return 0;
 }
