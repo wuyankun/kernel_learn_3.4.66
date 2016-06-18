@@ -1912,11 +1912,11 @@ static void e1000_configure_msix(struct e1000_adapter *adapter)
 
 void e1000e_reset_interrupt_capability(struct e1000_adapter *adapter)
 {
-	if (adapter->msix_entries) {
+	if (adapter->msix_entries) {//如果存在分配的MSIX中断向量实体，则释放相关资源
 		pci_disable_msix(adapter->pdev);
 		kfree(adapter->msix_entries);
 		adapter->msix_entries = NULL;
-	} else if (adapter->flags & FLAG_MSI_ENABLED) {
+	} else if (adapter->flags & FLAG_MSI_ENABLED) {//如果使能了MSI中断，释放，重置标识位
 		pci_disable_msi(adapter->pdev);
 		adapter->flags &= ~FLAG_MSI_ENABLED;
 	}
@@ -1933,34 +1933,35 @@ void e1000e_set_interrupt_capability(struct e1000_adapter *adapter)
 	int err;
 	int i;
 
+	//三种不同类型的中断，MSIX, MSI 和传统的管脚中断
 	switch (adapter->int_mode) {
 	case E1000E_INT_MODE_MSIX:
 		if (adapter->flags & FLAG_HAS_MSIX) {
-			adapter->num_vectors = 3; /* RxQ0, TxQ0 and other */
+			adapter->num_vectors = 3; /* RxQ0, TxQ0 and other */ //共申请3个MSIX中断向量号
 			adapter->msix_entries = kcalloc(adapter->num_vectors,
 						      sizeof(struct msix_entry),
 						      GFP_KERNEL);
 			if (adapter->msix_entries) {
 				for (i = 0; i < adapter->num_vectors; i++)
-					adapter->msix_entries[i].entry = i;
+					adapter->msix_entries[i].entry = i;//向量编号为0,1,2
 
 				err = pci_enable_msix(adapter->pdev,
 						      adapter->msix_entries,
 						      adapter->num_vectors);
-				if (err == 0)
+				if (err == 0)//分配指定的中断号成功后，返回0,最大支持2048个中断资源
 					return;
 			}
 			/* MSI-X failed, so fall through and try MSI */
-			e_err("Failed to initialize MSI-X interrupts.  Falling back to MSI interrupts.\n");
+			e_err("Failed to initialize MSI-X interrupts.  Falling back to MSI interrupts.\n");//否则尝试MSI中断
 			e1000e_reset_interrupt_capability(adapter);
 		}
-		adapter->int_mode = E1000E_INT_MODE_MSI;
+		adapter->int_mode = E1000E_INT_MODE_MSI;//切到MSI模式，这里没有break
 		/* Fall through */
 	case E1000E_INT_MODE_MSI:
-		if (!pci_enable_msi(adapter->pdev)) {
+		if (!pci_enable_msi(adapter->pdev)) {//成功返回0
 			adapter->flags |= FLAG_MSI_ENABLED;
 		} else {
-			adapter->int_mode = E1000E_INT_MODE_LEGACY;
+			adapter->int_mode = E1000E_INT_MODE_LEGACY;//否则采用传统的中断模式，即管脚中断（电平中断触发)
 			e_err("Failed to initialize MSI interrupts.  Falling back to legacy interrupts.\n");
 		}
 		/* Fall through */
@@ -1970,7 +1971,7 @@ void e1000e_set_interrupt_capability(struct e1000_adapter *adapter)
 	}
 
 	/* store the number of vectors being used */
-	adapter->num_vectors = 1;
+	adapter->num_vectors = 1;//中断向量技术为1，使用MSI和传统中断时
 }
 
 /**
@@ -1990,6 +1991,7 @@ static int e1000_request_msix(struct e1000_adapter *adapter)
 			 "%s-rx-0", netdev->name);
 	else
 		memcpy(adapter->rx_ring->name, netdev->name, IFNAMSIZ);
+	//第一个绑定中断
 	err = request_irq(adapter->msix_entries[vector].vector,
 			  e1000_intr_msix_rx, 0, adapter->rx_ring->name,
 			  netdev);
@@ -1998,7 +2000,7 @@ static int e1000_request_msix(struct e1000_adapter *adapter)
 	adapter->rx_ring->itr_register = adapter->hw.hw_addr +
 	    E1000_EITR_82574(vector);
 	adapter->rx_ring->itr_val = adapter->itr;
-	vector++;
+	vector++;//计数加1
 
 	if (strlen(netdev->name) < (IFNAMSIZ - 5))
 		snprintf(adapter->tx_ring->name,
@@ -2006,6 +2008,7 @@ static int e1000_request_msix(struct e1000_adapter *adapter)
 			 "%s-tx-0", netdev->name);
 	else
 		memcpy(adapter->tx_ring->name, netdev->name, IFNAMSIZ);
+	//第二次绑定请求中断
 	err = request_irq(adapter->msix_entries[vector].vector,
 			  e1000_intr_msix_tx, 0, adapter->tx_ring->name,
 			  netdev);
@@ -2014,8 +2017,8 @@ static int e1000_request_msix(struct e1000_adapter *adapter)
 	adapter->tx_ring->itr_register = adapter->hw.hw_addr +
 	    E1000_EITR_82574(vector);
 	adapter->tx_ring->itr_val = adapter->itr;
-	vector++;
-
+	vector++;//计数加1
+	//第三次绑定请求中断
 	err = request_irq(adapter->msix_entries[vector].vector,
 			  e1000_msix_other, 0, netdev->name, netdev);
 	if (err)
@@ -2037,18 +2040,18 @@ static int e1000_request_irq(struct e1000_adapter *adapter)
 	struct net_device *netdev = adapter->netdev;
 	int err;
 
-	if (adapter->msix_entries) {
+	if (adapter->msix_entries) {//如果使能，首选尝试申请MSIX中断资源
 		err = e1000_request_msix(adapter);
 		if (!err)
 			return err;
 		/* fall back to MSI */
 		e1000e_reset_interrupt_capability(adapter);
 		adapter->int_mode = E1000E_INT_MODE_MSI;
-		e1000e_set_interrupt_capability(adapter);
+		e1000e_set_interrupt_capability(adapter);//重置为MSI中断
 	}
 	if (adapter->flags & FLAG_MSI_ENABLED) {//使用MSI中断的处理
 		err = request_irq(adapter->pdev->irq, e1000_intr_msi, 0,
-				  netdev->name, netdev);//中断类型为0,MSI中断
+				  netdev->name, netdev);//中断类型为0,MSI中断，MSI申请成功后会更新中断号为新分配的号
 		if (!err)
 			return err;
 
@@ -2058,7 +2061,7 @@ static int e1000_request_irq(struct e1000_adapter *adapter)
 	}
 
 	err = request_irq(adapter->pdev->irq, e1000_intr, IRQF_SHARED,
-			  netdev->name, netdev);//共享中断
+			  netdev->name, netdev);//共享中断,中断号采用配置寄存器中的值
 	if (err)
 		e_err("Unable to allocate interrupt, Error: %d\n", err);
 
@@ -2069,7 +2072,7 @@ static void e1000_free_irq(struct e1000_adapter *adapter)
 {
 	struct net_device *netdev = adapter->netdev;
 
-	if (adapter->msix_entries) {
+	if (adapter->msix_entries) {//释放MSIX的三个中断资源，否则导致中断资源泄漏
 		int vector = 0;
 
 		free_irq(adapter->msix_entries[vector].vector, netdev);
@@ -2083,7 +2086,7 @@ static void e1000_free_irq(struct e1000_adapter *adapter)
 		return;
 	}
 
-	free_irq(adapter->pdev->irq, netdev);
+	free_irq(adapter->pdev->irq, netdev);//释放MSI中断或者传统中断资源
 }
 
 /**
@@ -2101,7 +2104,7 @@ static void e1000_irq_disable(struct e1000_adapter *adapter)
 	if (adapter->msix_entries) {
 		int i;
 		for (i = 0; i < adapter->num_vectors; i++)
-			synchronize_irq(adapter->msix_entries[i].vector);
+			synchronize_irq(adapter->msix_entries[i].vector);//？接口作用
 	} else {
 		synchronize_irq(adapter->pdev->irq);
 	}
@@ -6037,6 +6040,7 @@ static int e1000_set_features(struct net_device *netdev,
 	return 0;
 }
 
+//网络设备的ops结构体
 static const struct net_device_ops e1000e_netdev_ops = {
 	.ndo_open		= e1000_open,
 	.ndo_stop		= e1000_close,
@@ -6135,7 +6139,7 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 
 	SET_NETDEV_DEV(netdev, &pdev->dev);//关联device设备
 
-	netdev->irq = pdev->irq;//从pci的配置寄存器中拿到中断号
+	netdev->irq = pdev->irq;//从pci的配置寄存器中拿到中断号,传统中断号，一段分配MSIX和MSI中断，该号被覆盖，这里保存一下
 
 	pci_set_drvdata(pdev, netdev);//pci关联网络设备
 	adapter = netdev_priv(netdev);
@@ -6420,7 +6424,7 @@ static void __devexit e1000_remove(struct pci_dev *pdev)
 	 */
 	if (!down)
 		set_bit(__E1000_DOWN, &adapter->state);
-	del_timer_sync(&adapter->watchdog_timer);
+	del_timer_sync(&adapter->watchdog_timer);//安全的删除timer资源，timer可能还没到期
 	del_timer_sync(&adapter->phy_info_timer);
 
 	cancel_work_sync(&adapter->reset_task);
