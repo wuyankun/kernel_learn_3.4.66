@@ -108,9 +108,9 @@ struct tsc2005_spi_rd {
 	u32			spi_tx;
 	u32			spi_rx;
 };
-
+//驱动上下文结构体定义
 struct tsc2005 {
-	struct spi_device	*spi;
+	struct spi_device	*spi;//接口设备
 
 	struct spi_message      spi_read_msg;
 	struct tsc2005_spi_rd	spi_x;
@@ -118,10 +118,10 @@ struct tsc2005 {
 	struct tsc2005_spi_rd	spi_z1;
 	struct tsc2005_spi_rd	spi_z2;
 
-	struct input_dev	*idev;
-	char			phys[32];
+	struct input_dev	*idev;//逻辑功能设备
+	char			phys[32];//input设备初始化需要
 
-	struct mutex		mutex;
+	struct mutex		mutex;//定义了一个互斥
 
 	/* raw copy of previous x,y,z */
 	int			in_x;
@@ -129,11 +129,11 @@ struct tsc2005 {
 	int                     in_z1;
 	int			in_z2;
 
-	spinlock_t		lock;
-	struct timer_list	penup_timer;
+	spinlock_t		lock;//自旋锁
+	struct timer_list	penup_timer;//定时器
 
 	unsigned int		esd_timeout;
-	struct delayed_work	esd_work;
+	struct delayed_work	esd_work;//延迟工作
 	unsigned long		last_valid_interrupt;
 
 	unsigned int		x_plate_ohm;
@@ -157,11 +157,11 @@ static int tsc2005_cmd(struct tsc2005 *ts, u8 cmd)
 	struct spi_message msg;
 	int error;
 
-	spi_message_init(&msg);
-	spi_message_add_tail(&xfer, &msg);
+	spi_message_init(&msg);//写数据，定一个消息
+	spi_message_add_tail(&xfer, &msg);//加入到队列尾部
 
-	error = spi_sync(ts->spi, &msg);
-	if (error) {
+	error = spi_sync(ts->spi, &msg);//调用同步发送出去
+	if (error) {//判断返回值
 		dev_err(&ts->spi->dev, "%s: failed, command: %x, error: %d\n",
 			__func__, cmd, error);
 		return error;
@@ -181,7 +181,7 @@ static int tsc2005_write(struct tsc2005 *ts, u8 reg, u16 value)
 	struct spi_message msg;
 	int error;
 
-	spi_message_init(&msg);
+	spi_message_init(&msg);//写数据
 	spi_message_add_tail(&xfer, &msg);
 
 	error = spi_sync(ts->spi, &msg);
@@ -215,7 +215,7 @@ static int tsc2005_read(struct tsc2005 *ts, u8 reg, u16 *value)
 
 	tsc2005_setup_read(&spi_rd, reg, true);
 
-	spi_message_init(&msg);
+	spi_message_init(&msg);//spi传输数据方法
 	spi_message_add_tail(&spi_rd.spi_xfer, &msg);
 
 	error = spi_sync(ts->spi, &msg);
@@ -244,7 +244,7 @@ static void tsc2005_update_pen_state(struct tsc2005 *ts,
 			ts->pen_down = false;
 		}
 	}
-	input_sync(ts->idev);
+	input_sync(ts->idev);//产生一个触摸事件
 	dev_dbg(&ts->spi->dev, "point(%4d,%4d), pressure (%4d)\n", x, y,
 		pressure);
 }
@@ -301,15 +301,15 @@ static irqreturn_t tsc2005_irq_thread(int irq, void *_ts)
 	if (unlikely(pressure > MAX_12BIT))
 		goto out;
 
-	spin_lock_irqsave(&ts->lock, flags);
+	spin_lock_irqsave(&ts->lock, flags);//在中断中，获取锁，关闭中断，不会重复获得锁
 
-	tsc2005_update_pen_state(ts, x, y, pressure);
+	tsc2005_update_pen_state(ts, x, y, pressure);//更新数据
 	mod_timer(&ts->penup_timer,
-		  jiffies + msecs_to_jiffies(TSC2005_PENUP_TIME_MS));
+		  jiffies + msecs_to_jiffies(TSC2005_PENUP_TIME_MS));//修改timer，并启动timer
 
-	spin_unlock_irqrestore(&ts->lock, flags);
+	spin_unlock_irqrestore(&ts->lock, flags);//释放锁
 
-	ts->last_valid_interrupt = jiffies;
+	ts->last_valid_interrupt = jiffies;//更新上一次发送中断的时刻
 out:
 	return IRQ_HANDLED;
 }
@@ -320,7 +320,7 @@ static void tsc2005_penup_timer(unsigned long data)
 	unsigned long flags;
 
 	spin_lock_irqsave(&ts->lock, flags);
-	tsc2005_update_pen_state(ts, 0, 0, 0);
+	tsc2005_update_pen_state(ts, 0, 0, 0);//定时器触发后，更新数据，这里用自旋锁保护
 	spin_unlock_irqrestore(&ts->lock, flags);
 }
 
@@ -343,11 +343,11 @@ static void __tsc2005_disable(struct tsc2005 *ts)
 	tsc2005_stop_scan(ts);
 
 	disable_irq(ts->spi->irq);
-	del_timer_sync(&ts->penup_timer);
+	del_timer_sync(&ts->penup_timer);//删除定时器
 
-	cancel_delayed_work_sync(&ts->esd_work);
+	cancel_delayed_work_sync(&ts->esd_work);//取消延时工作同步
 
-	enable_irq(ts->spi->irq);
+	enable_irq(ts->spi->irq);//激活中断？
 }
 
 /* must be called with ts->mutex held */
@@ -356,10 +356,10 @@ static void __tsc2005_enable(struct tsc2005 *ts)
 	tsc2005_start_scan(ts);
 
 	if (ts->esd_timeout && ts->set_reset) {
-		ts->last_valid_interrupt = jiffies;
-		schedule_delayed_work(&ts->esd_work,
-				round_jiffies_relative(
-					msecs_to_jiffies(ts->esd_timeout)));
+		ts->last_valid_interrupt = jiffies;//当前时刻
+		schedule_delayed_work(&ts->esd_work,//调度这个工作
+				round_jiffies_relative(//向上取2的幂值
+					msecs_to_jiffies(ts->esd_timeout)));//毫秒转换为时刻值
 	}
 
 }
@@ -369,7 +369,7 @@ static ssize_t tsc2005_selftest_show(struct device *dev,
 				     char *buf)
 {
 	struct spi_device *spi = to_spi_device(dev);
-	struct tsc2005 *ts = spi_get_drvdata(spi);
+	struct tsc2005 *ts = spi_get_drvdata(spi);//得到驱动上下文环境指针
 	u16 temp_high;
 	u16 temp_high_orig;
 	u16 temp_high_test;
@@ -415,7 +415,7 @@ static ssize_t tsc2005_selftest_show(struct device *dev,
 
 	/* hardware reset */
 	ts->set_reset(false);
-	usleep_range(100, 500); /* only 10us required */
+	usleep_range(100, 500); /* only 10us required *///usleep可以是一个范围的实现，接口学习一下
 	ts->set_reset(true);
 
 	if (!success)
@@ -442,10 +442,10 @@ out:
 
 	return sprintf(buf, "%d\n", success);
 }
-
+//生成dev_attr_selftest
 static DEVICE_ATTR(selftest, S_IRUGO, tsc2005_selftest_show, NULL);
 
-static struct attribute *tsc2005_attrs[] = {
+static struct attribute *tsc2005_attrs[] = {//属性数组
 	&dev_attr_selftest.attr,
 	NULL
 };
@@ -455,43 +455,43 @@ static umode_t tsc2005_attr_is_visible(struct kobject *kobj,
 {
 	struct device *dev = container_of(kobj, struct device, kobj);
 	struct spi_device *spi = to_spi_device(dev);
-	struct tsc2005 *ts = spi_get_drvdata(spi);
-	umode_t mode = attr->mode;
+	struct tsc2005 *ts = spi_get_drvdata(spi);//找到驱动上下文环境指针
+	umode_t mode = attr->mode;//模式
 
-	if (attr == &dev_attr_selftest.attr) {
+	if (attr == &dev_attr_selftest.attr) {//其实只定义了一个属性
 		if (!ts->set_reset)
 			mode = 0;
 	}
 
 	return mode;
 }
-
+//属性组
 static const struct attribute_group tsc2005_attr_group = {
-	.is_visible	= tsc2005_attr_is_visible,
-	.attrs		= tsc2005_attrs,
+	.is_visible	= tsc2005_attr_is_visible,//是否可见
+	.attrs		= tsc2005_attrs,//属性数组
 };
 
-static void tsc2005_esd_work(struct work_struct *work)
+static void tsc2005_esd_work(struct work_struct *work)//传入一个工作的结构体指针
 {
-	struct tsc2005 *ts = container_of(work, struct tsc2005, esd_work.work);
+	struct tsc2005 *ts = container_of(work, struct tsc2005, esd_work.work);//通过偏移量找到驱动上下文指针
 	int error;
 	u16 r;
 
-	if (!mutex_trylock(&ts->mutex)) {
+	if (!mutex_trylock(&ts->mutex)) {//尝试去获得锁，非阻塞
 		/*
 		 * If the mutex is taken, it means that disable or enable is in
 		 * progress. In that case just reschedule the work. If the work
 		 * is not needed, it will be canceled by disable.
 		 */
-		goto reschedule;
+		goto reschedule;//如果没有获得锁
 	}
 
 	if (time_is_after_jiffies(ts->last_valid_interrupt +
-				  msecs_to_jiffies(ts->esd_timeout)))
+				  msecs_to_jiffies(ts->esd_timeout)))//超过了某个时刻点
 		goto out;
 
 	/* We should be able to read register without disabling interrupts. */
-	error = tsc2005_read(ts, TSC2005_REG_CFR0, &r);
+	error = tsc2005_read(ts, TSC2005_REG_CFR0, &r);//读数据
 	if (!error &&
 	    !((r ^ TSC2005_CFR0_INITVALUE) & TSC2005_CFR0_RW_MASK)) {
 		goto out;
@@ -502,8 +502,8 @@ static void tsc2005_esd_work(struct work_struct *work)
 	 * then we should reset the controller as if from power-up and start
 	 * scanning again.
 	 */
-	dev_info(&ts->spi->dev, "TSC2005 not responding - resetting\n");
-
+	dev_info(&ts->spi->dev, "TSC2005 not responding - resetting\n");//重置了，实现了类似watchdog的功能
+	//重启一次设备
 	disable_irq(ts->spi->irq);
 	del_timer_sync(&ts->penup_timer);
 
@@ -517,10 +517,10 @@ static void tsc2005_esd_work(struct work_struct *work)
 	tsc2005_start_scan(ts);
 
 out:
-	mutex_unlock(&ts->mutex);
+	mutex_unlock(&ts->mutex);//获得锁必须释放
 reschedule:
 	/* re-arm the watchdog */
-	schedule_delayed_work(&ts->esd_work,
+	schedule_delayed_work(&ts->esd_work,//重新调度一次
 			      round_jiffies_relative(
 					msecs_to_jiffies(ts->esd_timeout)));
 }
@@ -534,7 +534,7 @@ static int tsc2005_open(struct input_dev *input)
 	if (!ts->suspended)
 		__tsc2005_enable(ts);
 
-	ts->opened = true;
+	ts->opened = true;//打开设备，标记为真
 
 	mutex_unlock(&ts->mutex);
 
@@ -571,14 +571,14 @@ static void __devinit tsc2005_setup_spi_xfer(struct tsc2005 *ts)
 
 static int __devinit tsc2005_probe(struct spi_device *spi)
 {
-	const struct tsc2005_platform_data *pdata = spi->dev.platform_data;
-	struct tsc2005 *ts;
-	struct input_dev *input_dev;
+	const struct tsc2005_platform_data *pdata = spi->dev.platform_data;//平台数据定义，传递，指针
+	struct tsc2005 *ts;//驱动上下文环境指针
+	struct input_dev *input_dev;//逻辑input设备指针
 	unsigned int max_x, max_y, max_p;
 	unsigned int fudge_x, fudge_y, fudge_p;
 	int error;
 
-	if (!pdata) {
+	if (!pdata) {//平台数据检查，和初始化
 		dev_dbg(&spi->dev, "no platform data\n");
 		return -ENODEV;
 	}
@@ -591,87 +591,87 @@ static int __devinit tsc2005_probe(struct spi_device *spi)
 	max_p	= pdata->ts_pressure_max   ? : MAX_12BIT;
 
 	if (spi->irq <= 0) {
-		dev_dbg(&spi->dev, "no irq\n");
+		dev_dbg(&spi->dev, "no irq\n");//这个写法也是醉了，默认赋值为-1?
 		return -ENODEV;
 	}
 
-	spi->mode = SPI_MODE_0;
-	spi->bits_per_word = 8;
+	spi->mode = SPI_MODE_0;//四种SPI的模式
+	spi->bits_per_word = 8;//一个字的字节数
 	if (!spi->max_speed_hz)
-		spi->max_speed_hz = TSC2005_SPI_MAX_SPEED_HZ;
+		spi->max_speed_hz = TSC2005_SPI_MAX_SPEED_HZ;//通信速率约定
 
-	error = spi_setup(spi);
+	error = spi_setup(spi);//更新spi控制器信息
 	if (error)
 		return error;
 
-	ts = kzalloc(sizeof(*ts), GFP_KERNEL);
-	input_dev = input_allocate_device();
+	ts = kzalloc(sizeof(*ts), GFP_KERNEL);//分配驱动上下文环境内存
+	input_dev = input_allocate_device();//input设备分配
 	if (!ts || !input_dev) {
 		error = -ENOMEM;
 		goto err_free_mem;
 	}
 
-	ts->spi = spi;
-	ts->idev = input_dev;
+	ts->spi = spi;//关联接口设备
+	ts->idev = input_dev;//关联逻辑设备
 
-	ts->x_plate_ohm	= pdata->ts_x_plate_ohm	? : 280;
+	ts->x_plate_ohm	= pdata->ts_x_plate_ohm	? : 280;//平台数据
 	ts->esd_timeout	= pdata->esd_timeout_ms;
 	ts->set_reset	= pdata->set_reset;
 
-	mutex_init(&ts->mutex);
+	mutex_init(&ts->mutex);//定义了一个互斥
 
-	spin_lock_init(&ts->lock);
-	setup_timer(&ts->penup_timer, tsc2005_penup_timer, (unsigned long)ts);
+	spin_lock_init(&ts->lock);//定义了一个自旋锁，不是静态变量，这么初始化
+	setup_timer(&ts->penup_timer, tsc2005_penup_timer, (unsigned long)ts);//定义的一个timer，并且绑定了超时回调函数，和传入的中断上下文环境指针，无符号long型
 
-	INIT_DELAYED_WORK(&ts->esd_work, tsc2005_esd_work);
+	INIT_DELAYED_WORK(&ts->esd_work, tsc2005_esd_work);//初始化一个延迟工作,并绑定工作的执行接口
 
 	tsc2005_setup_spi_xfer(ts);
 
-	snprintf(ts->phys, sizeof(ts->phys),
+	snprintf(ts->phys, sizeof(ts->phys),//input设备需要的初始化信息，使用spi设备的路径加上一个自定义扩展
 		 "%s/input-ts", dev_name(&spi->dev));
 
-	input_dev->name = "TSC2005 touchscreen";
-	input_dev->phys = ts->phys;
-	input_dev->id.bustype = BUS_SPI;
-	input_dev->dev.parent = &spi->dev;
-	input_dev->evbit[0] = BIT(EV_ABS) | BIT(EV_KEY);
-	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
+	input_dev->name = "TSC2005 touchscreen";//名字常量
+	input_dev->phys = ts->phys;//物理路径
+	input_dev->id.bustype = BUS_SPI;//总线类型
+	input_dev->dev.parent = &spi->dev;//input设备的父设备为spi设备，即spi设备的下级设备是input设备
+	input_dev->evbit[0] = BIT(EV_ABS) | BIT(EV_KEY);//支持的事件类型
+	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);//按键种类类型
 
-	input_set_abs_params(input_dev, ABS_X, 0, max_x, fudge_x, 0);
+	input_set_abs_params(input_dev, ABS_X, 0, max_x, fudge_x, 0);//绝对设备最大最小值定义
 	input_set_abs_params(input_dev, ABS_Y, 0, max_y, fudge_y, 0);
 	input_set_abs_params(input_dev, ABS_PRESSURE, 0, max_p, fudge_p, 0);
 
-	input_dev->open = tsc2005_open;
+	input_dev->open = tsc2005_open;//input设备支持打开和关闭操作
 	input_dev->close = tsc2005_close;
 
-	input_set_drvdata(input_dev, ts);
+	input_set_drvdata(input_dev, ts);//input设备关联驱动上下文指针，因为支持打开关闭，指针需要传递给她们
 
 	/* Ensure the touchscreen is off */
 	tsc2005_stop_scan(ts);
 
-	error = request_threaded_irq(spi->irq, NULL, tsc2005_irq_thread,
+	error = request_threaded_irq(spi->irq, NULL, tsc2005_irq_thread,//申请中断资源，绑定中断处理程序
 				     IRQF_TRIGGER_RISING, "tsc2005", ts);
 	if (error) {
 		dev_err(&spi->dev, "Failed to request irq, err: %d\n", error);
 		goto err_free_mem;
 	}
 
-	spi_set_drvdata(spi, ts);
-	error = sysfs_create_group(&spi->dev.kobj, &tsc2005_attr_group);
+	spi_set_drvdata(spi, ts);//spi关联驱动上下文环境指针，实现是赋值私有数据指针
+	error = sysfs_create_group(&spi->dev.kobj, &tsc2005_attr_group);//属性组
 	if (error) {
 		dev_err(&spi->dev,
 			"Failed to create sysfs attributes, err: %d\n", error);
 		goto err_clear_drvdata;
 	}
 
-	error = input_register_device(ts->idev);
+	error = input_register_device(ts->idev);//注册input设备
 	if (error) {
 		dev_err(&spi->dev,
 			"Failed to register input device, err: %d\n", error);
 		goto err_remove_sysfs;
 	}
 
-	irq_set_irq_wake(spi->irq, 1);
+	irq_set_irq_wake(spi->irq, 1);//？？？？？激活中断？,不是使能中断
 	return 0;
 
 err_remove_sysfs:
@@ -689,13 +689,13 @@ static int __devexit tsc2005_remove(struct spi_device *spi)
 {
 	struct tsc2005 *ts = spi_get_drvdata(spi);
 
-	sysfs_remove_group(&ts->spi->dev.kobj, &tsc2005_attr_group);
+	sysfs_remove_group(&ts->spi->dev.kobj, &tsc2005_attr_group);//属性组
 
-	free_irq(ts->spi->irq, ts);
-	input_unregister_device(ts->idev);
-	kfree(ts);
+	free_irq(ts->spi->irq, ts);//中断资源
+	input_unregister_device(ts->idev);//input设备去注册
+	kfree(ts);//释放中断上下文环境堆内存
 
-	spi_set_drvdata(spi, NULL);
+	spi_set_drvdata(spi, NULL);//spi私有数据赋值为空
 	return 0;
 }
 

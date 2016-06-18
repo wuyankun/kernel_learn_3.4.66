@@ -88,15 +88,15 @@ struct ads7846_packet {
 	struct ts_event		tc;
 	/* for ads7845 with mpc5121 psc spi we use 3-byte buffers */
 	u8			read_x_cmd[3], read_y_cmd[3], pwrdown_cmd[3];
-};
+};//数据包结构体定义
 
-struct ads7846 {
-	struct input_dev	*input;
-	char			phys[32];
+struct ads7846 {//驱动上下文结构体定义
+	struct input_dev	*input;//功能划分为input设备，这里是指针，结构体保留指针，内存用堆内存管理
+	char			phys[32];//临时变量，初始化input设备结构体需要
 	char			name[32];
 
-	struct spi_device	*spi;
-	struct regulator	*reg;
+	struct spi_device	*spi;//从接口划分为一个spi设备
+	struct regulator	*reg;//电压管理
 
 #if defined(CONFIG_HWMON) || defined(CONFIG_HWMON_MODULE)
 	struct attribute_group	*attr_group;
@@ -112,12 +112,12 @@ struct ads7846 {
 	bool			swap_xy;
 	bool			use_internal;
 
-	struct ads7846_packet	*packet;
+	struct ads7846_packet	*packet;//包结构指针
 
-	struct spi_transfer	xfer[18];
+	struct spi_transfer	xfer[18];//spi数据传输相关
 	struct spi_message	msg[5];
 	int			msg_count;
-	wait_queue_head_t	wait;
+	wait_queue_head_t	wait;//等待队列的头部结构体
 
 	bool			pendown;
 
@@ -131,12 +131,12 @@ struct ads7846 {
 
 	u16			penirq_recheck_delay_usecs;
 
-	struct mutex		lock;
+	struct mutex		lock;//互斥锁
 	bool			stopped;	/* P: lock */
 	bool			disabled;	/* P: lock */
 	bool			suspended;	/* P: lock */
 
-	int			(*filter)(void *data, int data_idx, int *val);
+	int			(*filter)(void *data, int data_idx, int *val);//接口函数指针定义
 	void			*filter_data;
 	void			(*filter_cleanup)(void *data);
 	int			(*get_pendown_state)(void);
@@ -586,7 +586,7 @@ static ssize_t ads7846_pen_down_show(struct device *dev,
 
 	return sprintf(buf, "%u\n", ts->pendown);
 }
-
+//宏实现申明，展开为dev_attr_pen_down,权限设置，读取，写入的实现
 static DEVICE_ATTR(pen_down, S_IRUGO, ads7846_pen_down_show, NULL);
 
 static ssize_t ads7846_disable_show(struct device *dev,
@@ -616,7 +616,7 @@ static ssize_t ads7846_disable_store(struct device *dev,
 
 	return count;
 }
-
+//宏实现申明，展开为dev_attr_disable
 static DEVICE_ATTR(disable, 0664, ads7846_disable_show, ads7846_disable_store);
 
 static struct attribute *ads784x_attributes[] = {
@@ -625,8 +625,9 @@ static struct attribute *ads784x_attributes[] = {
 	NULL,
 };
 
+//属性组
 static struct attribute_group ads784x_attr_group = {
-	.attrs = ads784x_attributes,
+	.attrs = ads784x_attributes,//属性数组
 };
 
 /*--------------------------------------------------------------------------*/
@@ -865,21 +866,21 @@ static void ads7846_report_state(struct ads7846 *ts)
 		dev_vdbg(&ts->spi->dev, "%4d/%4d/%4d\n", x, y, Rt);
 	}
 }
-
+//中断线程处理
 static irqreturn_t ads7846_hard_irq(int irq, void *handle)
 {
 	struct ads7846 *ts = handle;
 
-	return get_pendown_state(ts) ? IRQ_WAKE_THREAD : IRQ_HANDLED;
+	return get_pendown_state(ts) ? IRQ_WAKE_THREAD : IRQ_HANDLED;//唤醒线程，或者返回已处理
 }
 
-
+//常规中断处理
 static irqreturn_t ads7846_irq(int irq, void *handle)
 {
 	struct ads7846 *ts = handle;
 
 	/* Start with a small delay before checking pendown state */
-	msleep(TS_POLL_DELAY);
+	msleep(TS_POLL_DELAY);//中断上下文睡眠？？？？？
 
 	while (!ts->stopped && get_pendown_state(ts)) {
 
@@ -890,17 +891,17 @@ static irqreturn_t ads7846_irq(int irq, void *handle)
 			ads7846_report_state(ts);
 
 		wait_event_timeout(ts->wait, ts->stopped,
-				   msecs_to_jiffies(TS_POLL_PERIOD));
+				   msecs_to_jiffies(TS_POLL_PERIOD));//等待特定的条件，带有超时时间限定
 	}
 
-	if (ts->pendown) {
-		struct input_dev *input = ts->input;
+	if (ts->pendown) {//触摸状态为按下
+		struct input_dev *input = ts->input;//产生一次事件
 
 		input_report_key(input, BTN_TOUCH, 0);
 		input_report_abs(input, ABS_PRESSURE, 0);
 		input_sync(input);
 
-		ts->pendown = false;
+		ts->pendown = false;//升级为弹起
 		dev_vdbg(&ts->spi->dev, "UP\n");
 	}
 
@@ -1192,15 +1193,15 @@ static void __devinit ads7846_setup_spi_msg(struct ads7846 *ts,
 	spi_message_add_tail(x, m);
 }
 
-static int __devinit ads7846_probe(struct spi_device *spi)
+static int __devinit ads7846_probe(struct spi_device *spi)//__devinit在新的内核中已不在使用
 {
-	struct ads7846 *ts;
+	struct ads7846 *ts;//驱动上下文指针
 	struct ads7846_packet *packet;
-	struct input_dev *input_dev;
-	struct ads7846_platform_data *pdata = spi->dev.platform_data;
-	unsigned long irq_flags;
+	struct input_dev *input_dev;//功能划分为一个input设备
+	struct ads7846_platform_data *pdata = spi->dev.platform_data;//平台传入的数据
+	unsigned long irq_flags;//保存中断状态
 	int err;
-
+	//数据检查，找不到设备
 	if (!spi->irq) {
 		dev_dbg(&spi->dev, "no IRQ?\n");
 		return -ENODEV;
@@ -1210,7 +1211,7 @@ static int __devinit ads7846_probe(struct spi_device *spi)
 		dev_dbg(&spi->dev, "no platform data?\n");
 		return -ENODEV;
 	}
-
+	//参数错误
 	/* don't exceed max specified sample rate */
 	if (spi->max_speed_hz > (125000 * SAMPLE_BITS)) {
 		dev_dbg(&spi->dev, "f(sample) %d KHz?\n",
@@ -1224,28 +1225,28 @@ static int __devinit ads7846_probe(struct spi_device *spi)
 	 */
 	spi->bits_per_word = 8;
 	spi->mode = SPI_MODE_0;
-	err = spi_setup(spi);
+	err = spi_setup(spi);//spi模式修改为最为通用的使用模式
 	if (err < 0)
 		return err;
 
-	ts = kzalloc(sizeof(struct ads7846), GFP_KERNEL);
-	packet = kzalloc(sizeof(struct ads7846_packet), GFP_KERNEL);
-	input_dev = input_allocate_device();
+	ts = kzalloc(sizeof(struct ads7846), GFP_KERNEL);//分配上下文环境内存
+	packet = kzalloc(sizeof(struct ads7846_packet), GFP_KERNEL);//包数据定义和上下文环境
+	input_dev = input_allocate_device();//input指针结构申请
 	if (!ts || !packet || !input_dev) {
 		err = -ENOMEM;
 		goto err_free_mem;
 	}
 
-	dev_set_drvdata(&spi->dev, ts);
+	dev_set_drvdata(&spi->dev, ts);//保存到device的私有数据中
 
-	ts->packet = packet;
+	ts->packet = packet;//数据关联
 	ts->spi = spi;
 	ts->input = input_dev;
-	ts->vref_mv = pdata->vref_mv;
+	ts->vref_mv = pdata->vref_mv;//平台数据关联赋值
 	ts->swap_xy = pdata->swap_xy;
 
-	mutex_init(&ts->lock);
-	init_waitqueue_head(&ts->wait);
+	mutex_init(&ts->lock);//互斥变量初始化
+	init_waitqueue_head(&ts->wait);//等待队列初始化
 
 	ts->model = pdata->model ? : 7846;
 	ts->vref_delay_usecs = pdata->vref_delay_usecs ? : 100;
@@ -1253,7 +1254,7 @@ static int __devinit ads7846_probe(struct spi_device *spi)
 	ts->pressure_max = pdata->pressure_max ? : ~0;
 
 	if (pdata->filter != NULL) {
-		if (pdata->filter_init != NULL) {
+		if (pdata->filter_init != NULL) {//函数指针，初始化函数存在
 			err = pdata->filter_init(pdata, &ts->filter_data);
 			if (err < 0)
 				goto err_free_mem;
@@ -1282,16 +1283,16 @@ static int __devinit ads7846_probe(struct spi_device *spi)
 
 	ts->wait_for_sync = pdata->wait_for_sync ? : null_wait_for_sync;
 
-	snprintf(ts->phys, sizeof(ts->phys), "%s/input0", dev_name(&spi->dev));
+	snprintf(ts->phys, sizeof(ts->phys), "%s/input0", dev_name(&spi->dev));//物理路径初始化为spi口加上input0
 	snprintf(ts->name, sizeof(ts->name), "ADS%d Touchscreen", ts->model);
 
-	input_dev->name = ts->name;
+	input_dev->name = ts->name;//input结构初始化定义，名字，物理路径，上一次设备
 	input_dev->phys = ts->phys;
 	input_dev->dev.parent = &spi->dev;
 
-	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
-	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
-	input_set_abs_params(input_dev, ABS_X,
+	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);//支持的事件类型
+	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);//支持的按键类型的掩码值
+	input_set_abs_params(input_dev, ABS_X,//触摸屏绝对坐标的上限值
 			pdata->x_min ? : 0,
 			pdata->x_max ? : MAX_12BIT,
 			0, 0);
@@ -1299,36 +1300,36 @@ static int __devinit ads7846_probe(struct spi_device *spi)
 			pdata->y_min ? : 0,
 			pdata->y_max ? : MAX_12BIT,
 			0, 0);
-	input_set_abs_params(input_dev, ABS_PRESSURE,
+	input_set_abs_params(input_dev, ABS_PRESSURE,//触摸的点个数
 			pdata->pressure_min, pdata->pressure_max, 0, 0);
 
 	ads7846_setup_spi_msg(ts, pdata);
 
-	ts->reg = regulator_get(&spi->dev, "vcc");
+	ts->reg = regulator_get(&spi->dev, "vcc");//电压的初始化
 	if (IS_ERR(ts->reg)) {
 		err = PTR_ERR(ts->reg);
 		dev_err(&spi->dev, "unable to get regulator: %d\n", err);
 		goto err_free_gpio;
 	}
 
-	err = regulator_enable(ts->reg);
+	err = regulator_enable(ts->reg);//使能供电
 	if (err) {
 		dev_err(&spi->dev, "unable to enable regulator: %d\n", err);
 		goto err_put_regulator;
 	}
 
-	irq_flags = pdata->irq_flags ? : IRQF_TRIGGER_FALLING;
-	irq_flags |= IRQF_ONESHOT;
+	irq_flags = pdata->irq_flags ? : IRQF_TRIGGER_FALLING;//中断的触发方式，下降沿触发
+	irq_flags |= IRQF_ONESHOT;//含义？
 
 	err = request_threaded_irq(spi->irq, ads7846_hard_irq, ads7846_irq,
-				   irq_flags, spi->dev.driver->name, ts);
+				   irq_flags, spi->dev.driver->name, ts);//内核线程中断处理，内核线程中断处理，和普通中断处理，分别用来处理快速响应和慢速数据处理
 	if (err && !pdata->irq_flags) {
 		dev_info(&spi->dev,
 			"trying pin change workaround on irq %d\n", spi->irq);
-		irq_flags |= IRQF_TRIGGER_RISING;
+		irq_flags |= IRQF_TRIGGER_RISING;//更改为上升沿触发方式
 		err = request_threaded_irq(spi->irq,
 				  ads7846_hard_irq, ads7846_irq,
-				  irq_flags, spi->dev.driver->name, ts);
+				  irq_flags, spi->dev.driver->name, ts);//中断的名字，驱动的上下文环境的指针
 	}
 
 	if (err) {
@@ -1351,15 +1352,15 @@ static int __devinit ads7846_probe(struct spi_device *spi)
 	else
 		(void) ads7846_read12_ser(&spi->dev, READ_12BIT_SER(vaux));
 
-	err = sysfs_create_group(&spi->dev.kobj, &ads784x_attr_group);
+	err = sysfs_create_group(&spi->dev.kobj, &ads784x_attr_group);//属性组，属性组的接口函数实现
 	if (err)
 		goto err_remove_hwmon;
 
-	err = input_register_device(input_dev);
+	err = input_register_device(input_dev);//input设备注册
 	if (err)
 		goto err_remove_attr_group;
 
-	device_init_wakeup(&spi->dev, pdata->wakeup);
+	device_init_wakeup(&spi->dev, pdata->wakeup);//含义？
 
 	return 0;
 
@@ -1390,19 +1391,19 @@ static int __devexit ads7846_remove(struct spi_device *spi)
 {
 	struct ads7846 *ts = dev_get_drvdata(&spi->dev);
 
-	device_init_wakeup(&spi->dev, false);
+	device_init_wakeup(&spi->dev, false);//初始化为false？接口的作用?
 
-	sysfs_remove_group(&spi->dev.kobj, &ads784x_attr_group);
+	sysfs_remove_group(&spi->dev.kobj, &ads784x_attr_group);//sysfs结构移除
 
 	ads7846_disable(ts);
-	free_irq(ts->spi->irq, ts);
+	free_irq(ts->spi->irq, ts);//释放中断资源
 
-	input_unregister_device(ts->input);
+	input_unregister_device(ts->input);//去注册input设备
 
 	ads784x_hwmon_unregister(spi, ts);
 
-	regulator_disable(ts->reg);
-	regulator_put(ts->reg);
+	regulator_disable(ts->reg);//电压禁止
+	regulator_put(ts->reg);//释放电压
 
 	if (!ts->get_pendown_state) {
 		/*
@@ -1413,9 +1414,9 @@ static int __devexit ads7846_remove(struct spi_device *spi)
 	}
 
 	if (ts->filter_cleanup)
-		ts->filter_cleanup(ts->filter_data);
+		ts->filter_cleanup(ts->filter_data);//掉电接口函数释放特殊资源
 
-	kfree(ts->packet);
+	kfree(ts->packet);//资源释放，分配的内存
 	kfree(ts);
 
 	dev_dbg(&spi->dev, "unregistered touchscreen\n");
@@ -1430,7 +1431,7 @@ static struct spi_driver ads7846_driver = {
 		.pm	= &ads7846_pm,
 	},
 	.probe		= ads7846_probe,
-	.remove		= __devexit_p(ads7846_remove),
+	.remove		= __devexit_p(ads7846_remove), //__devexit_p这样的接口在新的内核中已经不能使用
 };
 
 module_spi_driver(ads7846_driver);

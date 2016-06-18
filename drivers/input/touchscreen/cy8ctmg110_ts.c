@@ -68,7 +68,7 @@ struct cy8ctmg110 {
 static void cy8ctmg110_power(struct cy8ctmg110 *ts, bool poweron)
 {
 	if (ts->reset_pin)
-		gpio_direction_output(ts->reset_pin, 1 - poweron);
+		gpio_direction_output(ts->reset_pin, 1 - poweron);//通过激活是否给一个gpio线输出灌电流来使能设备
 }
 
 static int cy8ctmg110_write_regs(struct cy8ctmg110 *tsc, unsigned char reg,
@@ -83,7 +83,7 @@ static int cy8ctmg110_write_regs(struct cy8ctmg110 *tsc, unsigned char reg,
 	i2c_data[0] = reg;
 	memcpy(i2c_data + 1, value, len);
 
-	ret = i2c_master_send(client, i2c_data, len + 1);
+	ret = i2c_master_send(client, i2c_data, len + 1);//发送数据
 	if (ret != len + 1) {
 		dev_err(&client->dev, "i2c write data cmd failed\n");
 		return ret < 0 ? ret : -EIO;
@@ -104,7 +104,7 @@ static int cy8ctmg110_read_regs(struct cy8ctmg110 *tsc,
 		{ client->addr, I2C_M_RD, len, data }
 	};
 
-	ret = i2c_transfer(client->adapter, msg, 2);
+	ret = i2c_transfer(client->adapter, msg, 2);//读入数据
 	if (ret < 0)
 		return ret;
 
@@ -113,7 +113,7 @@ static int cy8ctmg110_read_regs(struct cy8ctmg110 *tsc,
 
 static int cy8ctmg110_touch_pos(struct cy8ctmg110 *tsc)
 {
-	struct input_dev *input = tsc->input;
+	struct input_dev *input = tsc->input;//都没有直接用驱动上下文环境的指针，而是赋值给一个变量
 	unsigned char reg_p[CY8CTMG110_REG_MAX];
 	int x, y;
 
@@ -135,7 +135,7 @@ static int cy8ctmg110_touch_pos(struct cy8ctmg110 *tsc)
 		input_report_abs(input, ABS_Y, y);
 	}
 
-	input_sync(input);
+	input_sync(input);//上报一次数据
 
 	return 0;
 }
@@ -161,7 +161,7 @@ static irqreturn_t cy8ctmg110_irq_thread(int irq, void *dev_id)
 {
 	struct cy8ctmg110 *tsc = dev_id;
 
-	cy8ctmg110_touch_pos(tsc);
+	cy8ctmg110_touch_pos(tsc);//中断产生，则触发一次数据上报
 
 	return IRQ_HANDLED;
 }
@@ -169,51 +169,51 @@ static irqreturn_t cy8ctmg110_irq_thread(int irq, void *dev_id)
 static int __devinit cy8ctmg110_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
 {
-	const struct cy8ctmg110_pdata *pdata = client->dev.platform_data;
-	struct cy8ctmg110 *ts;
-	struct input_dev *input_dev;
+	const struct cy8ctmg110_pdata *pdata = client->dev.platform_data;//自定义的平台数据格式
+	struct cy8ctmg110 *ts;//驱动上下文环境指针
+	struct input_dev *input_dev;//逻辑平台设备指针
 	int err;
 
 	/* No pdata no way forward */
-	if (pdata == NULL) {
+	if (pdata == NULL) {//平台数据检查
 		dev_err(&client->dev, "no pdata\n");
 		return -ENODEV;
 	}
 
 	if (!i2c_check_functionality(client->adapter,
-					I2C_FUNC_SMBUS_READ_WORD_DATA))
+					I2C_FUNC_SMBUS_READ_WORD_DATA))//i2c协议支持检查，是否支持SMBUS的字读取
 		return -EIO;
 
-	ts = kzalloc(sizeof(struct cy8ctmg110), GFP_KERNEL);
-	input_dev = input_allocate_device();
-	if (!ts || !input_dev) {
+	ts = kzalloc(sizeof(struct cy8ctmg110), GFP_KERNEL);//分配内存
+	input_dev = input_allocate_device();//分配input设备
+	if (!ts || !input_dev) {//检查结果
 		err = -ENOMEM;
 		goto err_free_mem;
 	}
 
-	ts->client = client;
-	ts->input = input_dev;
-	ts->reset_pin = pdata->reset_pin;
-	ts->irq_pin = pdata->irq_pin;
+	ts->client = client;//关联i2c设备
+	ts->input = input_dev;//关联input设备
+	ts->reset_pin = pdata->reset_pin;//重置的gpio管脚，通过平台数据传入
+	ts->irq_pin = pdata->irq_pin;//中断管脚
 
 	snprintf(ts->phys, sizeof(ts->phys),
-		 "%s/input0", dev_name(&client->dev));
+		 "%s/input0", dev_name(&client->dev));//平台设备需要的物理路径，i2c设备路径，加上input0
 
-	input_dev->name = CY8CTMG110_DRIVER_NAME " Touchscreen";
-	input_dev->phys = ts->phys;
-	input_dev->id.bustype = BUS_I2C;
-	input_dev->dev.parent = &client->dev;
+	input_dev->name = CY8CTMG110_DRIVER_NAME " Touchscreen";//input设备的名字直接命名
+	input_dev->phys = ts->phys;//物理路径
+	input_dev->id.bustype = BUS_I2C;//总线类型
+	input_dev->dev.parent = &client->dev;//设备父设备关联，input设备是i2c设备的子设备
 
-	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
-	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
+	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);//支持的事件种类
+	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);//按键种类定义
 
-	input_set_abs_params(input_dev, ABS_X,
+	input_set_abs_params(input_dev, ABS_X,//绝对设备的上下限值
 			CY8CTMG110_X_MIN, CY8CTMG110_X_MAX, 4, 0);
 	input_set_abs_params(input_dev, ABS_Y,
 			CY8CTMG110_Y_MIN, CY8CTMG110_Y_MAX, 4, 0);
 
 	if (ts->reset_pin) {
-		err = gpio_request(ts->reset_pin, NULL);
+		err = gpio_request(ts->reset_pin, NULL);//先申请gpio资源
 		if (err) {
 			dev_err(&client->dev,
 				"Unable to request GPIO pin %d.\n",
@@ -225,7 +225,7 @@ static int __devinit cy8ctmg110_probe(struct i2c_client *client,
 	cy8ctmg110_power(ts, true);
 	cy8ctmg110_set_sleepmode(ts, false);
 
-	err = gpio_request(ts->irq_pin, "touch_irq_key");
+	err = gpio_request(ts->irq_pin, "touch_irq_key");//gpio资源申请
 	if (err < 0) {
 		dev_err(&client->dev,
 			"Failed to request GPIO %d, error %d\n",
@@ -233,7 +233,7 @@ static int __devinit cy8ctmg110_probe(struct i2c_client *client,
 		goto err_shutoff_device;
 	}
 
-	err = gpio_direction_input(ts->irq_pin);
+	err = gpio_direction_input(ts->irq_pin);//配置中断gpio线为输入脚
 	if (err < 0) {
 		dev_err(&client->dev,
 			"Failed to configure input direction for GPIO %d, error %d\n",
@@ -241,7 +241,7 @@ static int __devinit cy8ctmg110_probe(struct i2c_client *client,
 		goto err_free_irq_gpio;
 	}
 
-	client->irq = gpio_to_irq(ts->irq_pin);
+	client->irq = gpio_to_irq(ts->irq_pin);//gpio转变为中断资源
 	if (client->irq < 0) {
 		err = client->irq;
 		dev_err(&client->dev,
@@ -251,19 +251,19 @@ static int __devinit cy8ctmg110_probe(struct i2c_client *client,
 	}
 
 	err = request_threaded_irq(client->irq, NULL, cy8ctmg110_irq_thread,
-				   IRQF_TRIGGER_RISING, "touch_reset_key", ts);
+				   IRQF_TRIGGER_RISING, "touch_reset_key", ts);//上升沿触发,普通中断使用
 	if (err < 0) {
 		dev_err(&client->dev,
 			"irq %d busy? error %d\n", client->irq, err);
 		goto err_free_irq_gpio;
 	}
 
-	err = input_register_device(input_dev);
+	err = input_register_device(input_dev);//input设备注册
 	if (err)
 		goto err_free_irq;
 
-	i2c_set_clientdata(client, ts);
-	device_init_wakeup(&client->dev, 1);
+	i2c_set_clientdata(client, ts);//i2c设备关联驱动上下文件指针，保存到私有数据指针
+	device_init_wakeup(&client->dev, 1);//？唤醒设备？
 	return 0;
 
 err_free_irq:
@@ -318,14 +318,14 @@ static int __devexit cy8ctmg110_remove(struct i2c_client *client)
 	struct cy8ctmg110 *ts = i2c_get_clientdata(client);
 
 	cy8ctmg110_set_sleepmode(ts, true);
-	cy8ctmg110_power(ts, false);
+	cy8ctmg110_power(ts, false);//电源gpio的状态关闭
 
-	free_irq(client->irq, ts);
+	free_irq(client->irq, ts);//释放中断资源
 	input_unregister_device(ts->input);
-	gpio_free(ts->irq_pin);
+	gpio_free(ts->irq_pin);//释放gpio支援
 	if (ts->reset_pin)
-		gpio_free(ts->reset_pin);
-	kfree(ts);
+		gpio_free(ts->reset_pin);//重置gpio资源释放
+	kfree(ts);//是否驱动上下文的堆内存
 
 	return 0;
 }

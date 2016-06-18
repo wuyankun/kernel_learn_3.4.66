@@ -252,9 +252,9 @@ static int tsc2007_open(struct input_dev *input_dev)
 	int err;
 
 	ts->stopped = false;
-	mb();
+	mb();//又见内存屏障
 
-	enable_irq(ts->irq);
+	enable_irq(ts->irq);//激活中断
 
 	/* Prepare for touch readings - power down ADC and enable PENIRQ */
 	err = tsc2007_xfer(ts, PWRDOWN);
@@ -298,9 +298,9 @@ static int __devinit tsc2007_probe(struct i2c_client *client,
 	}
 
 	ts->client = client;
-	ts->irq = client->irq;
+	ts->irq = client->irq;//中断号，用i2c的中断号
 	ts->input = input_dev;
-	init_waitqueue_head(&ts->wait);
+	init_waitqueue_head(&ts->wait);//等待队列初始化
 
 	ts->model             = pdata->model;
 	ts->x_plate_ohms      = pdata->x_plate_ohms;
@@ -315,7 +315,8 @@ static int __devinit tsc2007_probe(struct i2c_client *client,
 		err = -EINVAL;
 		goto err_free_mem;
 	}
-
+	
+	//input设备的初始化填充
 	snprintf(ts->phys, sizeof(ts->phys),
 		 "%s/input0", dev_name(&client->dev));
 
@@ -338,7 +339,7 @@ static int __devinit tsc2007_probe(struct i2c_client *client,
 
 	if (pdata->init_platform_hw)
 		pdata->init_platform_hw();
-
+	//软中断和硬中断,这个ONESHOT的含义
 	err = request_threaded_irq(ts->irq, tsc2007_hard_irq, tsc2007_soft_irq,
 				   IRQF_ONESHOT, client->dev.driver->name, ts);
 	if (err < 0) {

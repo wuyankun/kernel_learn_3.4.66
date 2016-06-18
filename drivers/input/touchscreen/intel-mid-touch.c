@@ -568,7 +568,7 @@ static int __devinit mrstouch_adc_init(struct mrstouch_dev *tsdev)
 
 
 /* Probe function for touch screen driver */
-static int __devinit mrstouch_probe(struct platform_device *pdev)
+static int __devinit mrstouch_probe(struct platform_device *pdev)//模板
 {
 	struct mrstouch_dev *tsdev;
 	struct input_dev *input;

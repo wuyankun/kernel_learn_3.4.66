@@ -131,7 +131,7 @@ static void tsc_poll(unsigned long data)
 	unsigned long flags;
 	int i, val, x, y, p;
 
-	spin_lock_irqsave(&ts->lock, flags);
+	spin_lock_irqsave(&ts->lock, flags);//关闭中断，获取自旋锁
 
 	if (ts->sample_count >= TSC_SKIP) {
 		input_report_abs(ts->input_dev, ABS_PRESSURE, 0);
@@ -172,7 +172,7 @@ static irqreturn_t tsc_irq(int irq, void *dev_id)
 	struct sample *sample;
 	int index;
 
-	spin_lock(&ts->lock);
+	spin_lock(&ts->lock);//自旋锁，在中断中获取自旋锁，不是会导致嵌套吗，也没关闭中断,不懂
 
 	index = ts->sample_count % TSC_SAMPLES;
 	sample = &ts->samples[index];
@@ -188,24 +188,24 @@ static irqreturn_t tsc_irq(int irq, void *dev_id)
 		input_report_abs(ts->input_dev, ABS_PRESSURE, sample->p);
 		if (ts->sample_count == TSC_SKIP)
 			input_report_key(ts->input_dev, BTN_TOUCH, 1);
-		input_sync(ts->input_dev);
+		input_sync(ts->input_dev);//上报事件
 	}
-	mod_timer(&ts->timer, jiffies + TSC_PENUP_POLL);
+	mod_timer(&ts->timer, jiffies + TSC_PENUP_POLL);//更新timer
 out:
 	spin_unlock(&ts->lock);
 	return IRQ_HANDLED;
 }
 
-static int tsc_start(struct input_dev *dev)
+static int tsc_start(struct input_dev *dev)//input设备打开
 {
 	struct tsc_data *ts = input_get_drvdata(dev);
 	unsigned long timeout = jiffies + msecs_to_jiffies(IDLE_TIMEOUT);
 	u32 val;
 
-	clk_enable(ts->clk);
+	clk_enable(ts->clk);//激活时钟
 
 	/* Go to idle mode, before any initialization */
-	while (time_after(timeout, jiffies)) {
+	while (time_after(timeout, jiffies)) {//短延时，忙等，占用CPU资源，sleep会释放
 		if (tsc_read(ts, tscm) & IDLE)
 			break;
 	}
@@ -233,14 +233,14 @@ static int tsc_start(struct input_dev *dev)
 	return 0;
 }
 
-static void tsc_stop(struct input_dev *dev)
+static void tsc_stop(struct input_dev *dev)//input设备关闭
 {
 	struct tsc_data *ts = input_get_drvdata(dev);
 
 	tsc_clr_bits(ts, tscm, TSC_EN);
-	synchronize_irq(ts->tsc_irq);
-	del_timer_sync(&ts->timer);
-	clk_disable(ts->clk);
+	synchronize_irq(ts->tsc_irq);//？接口的含义
+	del_timer_sync(&ts->timer);//删除定时器
+	clk_disable(ts->clk);//关闭时钟
 }
 
 static int __devinit tsc_probe(struct platform_device *pdev)
@@ -257,24 +257,25 @@ static int __devinit tsc_probe(struct platform_device *pdev)
 	}
 
 	ts->dev = dev;
-	spin_lock_init(&ts->lock);
-	setup_timer(&ts->timer, tsc_poll, (unsigned long)ts);
-	platform_set_drvdata(pdev, ts);
+	spin_lock_init(&ts->lock);//自旋锁
+	setup_timer(&ts->timer, tsc_poll, (unsigned long)ts);//定时器
+	platform_set_drvdata(pdev, ts);//关联驱动上下文指针
 
+	//平台中断资源
 	ts->tsc_irq = platform_get_irq(pdev, 0);
 	if (ts->tsc_irq < 0) {
 		dev_err(dev, "cannot determine device interrupt\n");
 		error = -ENODEV;
 		goto error_res;
 	}
-
+	//平台内存资源
 	ts->res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!ts->res) {
 		dev_err(dev, "cannot determine register area\n");
 		error = -ENODEV;
 		goto error_res;
 	}
-
+	//需要申请一下
 	if (!request_mem_region(ts->res->start, resource_size(ts->res),
 				pdev->name)) {
 		dev_err(dev, "cannot claim register memory\n");
@@ -282,47 +283,47 @@ static int __devinit tsc_probe(struct platform_device *pdev)
 		error = -EINVAL;
 		goto error_res;
 	}
-
+	//ioremap出来
 	ts->regs = ioremap(ts->res->start, resource_size(ts->res));
 	if (!ts->regs) {
 		dev_err(dev, "cannot map register memory\n");
 		error = -ENOMEM;
 		goto error_map;
 	}
-
+	//时钟获取
 	ts->clk = clk_get(dev, NULL);
 	if (IS_ERR(ts->clk)) {
 		dev_err(dev, "cannot claim device clock\n");
 		error = PTR_ERR(ts->clk);
 		goto error_clk;
 	}
-
+	//中断注册，普通中断
 	error = request_threaded_irq(ts->tsc_irq, NULL, tsc_irq, 0,
 				     dev_name(dev), ts);
 	if (error < 0) {
 		dev_err(ts->dev, "Could not allocate ts irq\n");
 		goto error_irq;
 	}
-
+	//input设备
 	ts->input_dev = input_allocate_device();
 	if (!ts->input_dev) {
 		dev_err(dev, "cannot allocate input device\n");
 		error = -ENOMEM;
 		goto error_input;
 	}
-	input_set_drvdata(ts->input_dev, ts);
+	input_set_drvdata(ts->input_dev, ts);//input设备关联驱动上下指针
 
-	ts->input_dev->name       = pdev->name;
-	ts->input_dev->id.bustype = BUS_HOST;
-	ts->input_dev->dev.parent = &pdev->dev;
-	ts->input_dev->open	  = tsc_start;
+	ts->input_dev->name       = pdev->name;//input设备初始化
+	ts->input_dev->id.bustype = BUS_HOST;//总线类似是HOST
+	ts->input_dev->dev.parent = &pdev->dev;//平台设备的子设备是input设备
+	ts->input_dev->open	  = tsc_start;//input设备的打开关闭实现
 	ts->input_dev->close	  = tsc_stop;
 
-	clk_enable(ts->clk);
+	clk_enable(ts->clk);//激活时钟
 	rev = tsc_read(ts, rev);
 	ts->input_dev->id.product = ((rev >>  8) & 0x07);
 	ts->input_dev->id.version = ((rev >> 16) & 0xfff);
-	clk_disable(ts->clk);
+	clk_disable(ts->clk);//关闭时钟
 
 	__set_bit(EV_KEY,    ts->input_dev->evbit);
 	__set_bit(EV_ABS,    ts->input_dev->evbit);
@@ -332,7 +333,7 @@ static int __devinit tsc_probe(struct platform_device *pdev)
 	input_set_abs_params(ts->input_dev, ABS_Y, 0, 0xffff, 5, 0);
 	input_set_abs_params(ts->input_dev, ABS_PRESSURE, 0, 4095, 128, 0);
 
-	error = input_register_device(ts->input_dev);
+	error = input_register_device(ts->input_dev);//input设备注册
 	if (error < 0) {
 		dev_err(dev, "failed input device registration\n");
 		goto error_reg;

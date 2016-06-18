@@ -489,7 +489,7 @@ static inline void ad7879_gpio_remove(struct ad7879 *ts)
 #endif
 
 struct ad7879 *ad7879_probe(struct device *dev, u8 devid, unsigned int irq,
-			    const struct ad7879_bus_ops *bops)
+			    const struct ad7879_bus_ops *bops) //什么接口类型?
 {
 	struct ad7879_platform_data *pdata = dev->platform_data;
 	struct ad7879 *ts;

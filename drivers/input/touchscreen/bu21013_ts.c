@@ -235,7 +235,7 @@ static int bu21013_do_touch_report(struct bu21013_ts_data *data)
 			input_mt_sync(data->in_dev);
 		}
 	} else
-		input_mt_sync(data->in_dev);
+		input_mt_sync(data->in_dev);//多点触发支持
 
 	input_sync(data->in_dev);
 
@@ -256,7 +256,7 @@ static irqreturn_t bu21013_gpio_irq(int irq, void *device_data)
 	int retval;
 
 	do {
-		retval = bu21013_do_touch_report(data);
+		retval = bu21013_do_touch_report(data);//上报一次数据
 		if (retval < 0) {
 			dev_err(&i2c->dev, "bu21013_do_touch_report failed\n");
 			return IRQ_NONE;
@@ -265,7 +265,7 @@ static irqreturn_t bu21013_gpio_irq(int irq, void *device_data)
 		data->intr_pin = data->chip->irq_read_val();
 		if (data->intr_pin == PEN_DOWN_INTR)
 			wait_event_timeout(data->wait, data->touch_stopped,
-					   msecs_to_jiffies(2));
+					   msecs_to_jiffies(2));//等待一个条件成立，有超时时间
 	} while (!data->intr_pin && !data->touch_stopped);
 
 	return IRQ_HANDLED;
@@ -278,13 +278,13 @@ static irqreturn_t bu21013_gpio_irq(int irq, void *device_data)
  * This function is used to power on
  * the bu21013 controller and returns integer.
  */
-static int bu21013_init_chip(struct bu21013_ts_data *data)
+static int bu21013_init_chip(struct bu21013_ts_data *data)//初始化芯片，一系列的配置数据
 {
 	int retval;
 	struct i2c_client *i2c = data->client;
 
 	retval = i2c_smbus_write_byte_data(i2c, BU21013_RESET_REG,
-					BU21013_RESET_ENABLE);
+					BU21013_RESET_ENABLE);//i2c写字节数据
 	if (retval < 0) {
 		dev_err(&i2c->dev, "BU21013_RESET reg write failed\n");
 		return retval;
@@ -474,12 +474,12 @@ static int __devinit bu21013_probe(struct i2c_client *client,
 		goto err_put_regulator;
 	}
 
-	bu21013_data->touch_stopped = false;
-	init_waitqueue_head(&bu21013_data->wait);
+	bu21013_data->touch_stopped = false;//等待队列的条件
+	init_waitqueue_head(&bu21013_data->wait);//等待队列头部初始化
 
 	/* configure the gpio pins */
 	if (pdata->cs_en) {
-		error = pdata->cs_en(pdata->cs_pin);
+		error = pdata->cs_en(pdata->cs_pin);//是否定义了激活芯片的接口函数
 		if (error < 0) {
 			dev_err(&client->dev, "chip init failed\n");
 			goto err_disable_regulator;
@@ -496,7 +496,7 @@ static int __devinit bu21013_probe(struct i2c_client *client,
 	/* register the device to input subsystem */
 	in_dev->name = DRIVER_TP;
 	in_dev->id.bustype = BUS_I2C;
-	in_dev->dev.parent = &client->dev;
+	in_dev->dev.parent = &client->dev;//i2c的子设备是input设备
 
 	__set_bit(EV_SYN, in_dev->evbit);
 	__set_bit(EV_KEY, in_dev->evbit);
@@ -506,24 +506,24 @@ static int __devinit bu21013_probe(struct i2c_client *client,
 						pdata->touch_x_max, 0, 0);
 	input_set_abs_params(in_dev, ABS_MT_POSITION_Y, 0,
 						pdata->touch_y_max, 0, 0);
-	input_set_drvdata(in_dev, bu21013_data);
+	input_set_drvdata(in_dev, bu21013_data);//input关联数据
 
 	error = request_threaded_irq(pdata->irq, NULL, bu21013_gpio_irq,
 				     IRQF_TRIGGER_FALLING | IRQF_SHARED,
-				     DRIVER_TP, bu21013_data);
+				     DRIVER_TP, bu21013_data);//普通中断使用
 	if (error) {
 		dev_err(&client->dev, "request irq %d failed\n", pdata->irq);
 		goto err_cs_disable;
 	}
 
-	error = input_register_device(in_dev);
+	error = input_register_device(in_dev);//注册input设备
 	if (error) {
 		dev_err(&client->dev, "failed to register input device\n");
 		goto err_free_irq;
 	}
 
-	device_init_wakeup(&client->dev, pdata->wakeup);
-	i2c_set_clientdata(client, bu21013_data);
+	device_init_wakeup(&client->dev, pdata->wakeup);//唤醒设备
+	i2c_set_clientdata(client, bu21013_data);//i2c关联数据
 
 	return 0;
 
@@ -563,7 +563,7 @@ static int __devexit bu21013_remove(struct i2c_client *client)
 
 	kfree(bu21013_data);
 
-	device_init_wakeup(&client->dev, false);
+	device_init_wakeup(&client->dev, false);//false
 
 	return 0;
 }

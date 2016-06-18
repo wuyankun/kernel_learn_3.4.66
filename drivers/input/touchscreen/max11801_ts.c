@@ -175,7 +175,7 @@ static void __devinit max11801_ts_phy_init(struct max11801_data *data)
 }
 
 static int __devinit max11801_ts_probe(struct i2c_client *client,
-				       const struct i2c_device_id *id)
+				       const struct i2c_device_id *id)//中规中矩
 {
 	struct max11801_data *data;
 	struct input_dev *input_dev;
