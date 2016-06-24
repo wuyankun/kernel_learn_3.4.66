@@ -21,11 +21,11 @@ A Message Signaled Interrupt is a write from the device to a special
 address which causes an interrupt to be received by the CPU.//设备向一个特定的地址写，将会触发一个中断，被CPU接收
 
 The MSI capability was first specified in PCI 2.2 and was later enhanced
-in PCI 3.0 to allow each interrupt to be masked individually.  The MSI-X//使得每个中断被独立分发
+in PCI 3.0 to allow each interrupt to be masked individually.  The MSI-X//使得每个中断被独立的被屏蔽
 capability was also introduced with PCI 3.0.  It supports more interrupts
 per device than MSI and allows interrupts to be independently configured.//MSI-X中断支持更多的中断线，并且容许每项单独配置
 
-Devices may support both MSI and MSI-X, but only one can be enabled at//MSI中断和MSI-X中断每次只能使能其中一个
+Devices may support both MSI and MSI-X, but only one can be enabled at//设备可能同时支持两种中断，但MSI中断和MSI-X中断每次只能使能其中一个
 a time.
 
 
@@ -35,18 +35,18 @@ There are three reasons why using MSIs can give an advantage over
 traditional pin-based interrupts.//相对传统的管脚中断存在3个优势
 
 Pin-based PCI interrupts are often shared amongst several devices.//传统中断线往往是设备间共享中断，系统判定时需要
-To support this, the kernel must call each interrupt handler associated//调用各个中断处理，影响系统效率，MSI中断不是
-with an interrupt, which leads to reduced performance for the system as//设备间共享的中断
+To support this, the kernel must call each interrupt handler associated//调用各个中断处理，影响系统效率，MSI中断绝不会是
+with an interrupt, which leads to reduced performance for the system as//设备间共享的中断，可避免这种问题。
 a whole.  MSIs are never shared, so this problem cannot arise.
 
 When a device writes data to memory, then raises a pin-based interrupt,
 it is possible that the interrupt may arrive before all the data has
-arrived in memory (this becomes more likely with devices behind PCI-PCI//传统中断当设备写入内存时，会存在中断到来快于写入内存完成的情况
+arrived in memory (this becomes more likely with devices behind PCI-PCI//传统中断当设备写入内存时，可能会存在中断到来快于写入内存完成的情况
 bridges).  In order to ensure that all the data has arrived in memory,//特别是设备在PCI桥之后更容易发生
 the interrupt handler must read a register on the device which raised
 the interrupt.  PCI transaction ordering rules require that all the data
 arrive in memory before the value may be returned from the register.//为了避免存在这种问题，寄存器位必须等到写完内存后，才能改变状态
-Using MSIs avoids this problem as the interrupt-generating write cannot//MSI中断则不存在这种问题，因为中断生成的写动作不会传递在数据写内存的过程中
+Using MSIs avoids this problem as the interrupt-generating write cannot//MSI中断则不存在这种问题，因为中断生成的写动作不会传递在数据写内存的过程中,当中断产生时，数据已经到达了内存中。
 pass the data writes, so by the time the interrupt is raised, the driver
 knows that all the data has arrived in memory.
 
@@ -79,7 +79,7 @@ CONFIG_PCI_MSI option.
 4.2 Using MSI
 
 Most of the hard work is done for the driver in the PCI layer.  It simply
-has to request that the PCI layer set up the MSI capability for this//大部分的工作都是PCI层实现，驱动仅仅需要声明设备支持这种能力即可
+has to request that the PCI layer set up the MSI capability for this//大部分的艰难实现工作都是PCI层实现，驱动仅仅需要声明设备支持这种能力即可
 device.
 
 4.2.1 pci_enable_msi
@@ -87,18 +87,18 @@ device.
 int pci_enable_msi(struct pci_dev *dev)
 
 A successful call allocates ONE interrupt to the device, regardless//调用后会返回一个中断，不管设备究竟支持多少个中断
-of how many MSIs the device supports.  The device is switched from
+of how many MSIs the device supports.  The device is switched from//设备从传统中断切换到MSI中断模式
 pin-based interrupt mode to MSI mode.  The dev->irq number is changed
-to a new number which represents the message signaled interrupt;//设备的中断计数会发生改变，指代究竟支持多少个MSI中断向量
+to a new number which represents the message signaled interrupt;//设备的中断线信息会发生改变，指代新分配的中断线
 consequently, this function should be called before the driver calls
-request_irq(), because an MSI is delivered via a vector that is//这个必须在调用request_irq()之前，因为MSI是向量中断，区别于传统的管脚的向量中断列表
-different from the vector of a pin-based interrupt.
+request_irq(), because an MSI is delivered via a vector that is//这个必须在调用request_irq()之前，因为pci->irq的中断线存储数据会
+different from the vector of a pin-based interrupt.//发送改变，不同于初始化分配的管脚中断线号
 
 4.2.2 pci_enable_msi_block
 
 int pci_enable_msi_block(struct pci_dev *dev, int count)
 
-This variation on the above call allows a device driver to request multiple
+This variation on the above call allows a device driver to request multiple//分配不止一个中断线的函数接口
 MSIs.  The MSI specification only allows interrupts to be allocated in
 powers of two, up to a maximum of 2^5 (32).//请求获取的中断数，必须是2的整数幂，最大为32个
 
@@ -144,21 +144,21 @@ MSI enabled and thus leaking its vector.
 
 4.3 Using MSI-X
 
-The MSI-X capability is much more flexible than the MSI capability.
+The MSI-X capability is much more flexible than the MSI capability.//最多2048条中断线，不连续的,MSI只能最大支持到32个中断线
 It supports up to 2048 interrupts, each of which can be controlled
 independently.  To support this flexibility(灵活性，适应性), drivers must use an array of//MSI-X提供了更多的中断数量，也增加了灵活性
-`struct msix_entry':
+`struct msix_entry'://需要定义一个这样的结构体
 
 struct msix_entry {
-	u16 	vector; /* kernel uses to write alloc vector */
-	u16	entry; /* driver uses to specify entry */
+	u16 	vector; /* kernel uses to write alloc vector *///真实的驱动线，有pci子系统向系统申请填充
+	u16	entry; /* driver uses to specify entry *///驱动定义的实体，来区分不同的中断，实际上是驱动来区分不同中断的标识
 };
 
-This allows for the device to use these interrupts in a sparse(稀疏的) fashion;
+This allows for the device to use these interrupts in a sparse(稀疏的) fashion;//不连续的，中断号可以是不连续的
 for example, it could use interrupts 3 and 1027 and yet allocate only a
 two-element array.  The driver is expected to fill in the 'entry' value
 in each element of the array to indicate for which entries the kernel
-should assign interrupts; it is invalid to fill in two entries with the
+should assign interrupts; it is invalid to fill in two entries with the//可能分配两个这样的结构体，对应的中断向量号为3和1027，举例
 same number.
 
 4.3.1 pci_enable_msix
@@ -166,15 +166,15 @@ same number.
 int pci_enable_msix(struct pci_dev *dev, struct msix_entry *entries, int nvec)
 
 Calling this function asks the PCI subsystem to allocate 'nvec' MSIs.
-The 'entries' argument is a pointer to an array of msix_entry structs
+The 'entries' argument is a pointer to an array of msix_entry structs//结构体数组指针，至少包含向量个数的数组元素
 which should be at least 'nvec' entries in size.  On success, the
-device is switched into MSI-X mode and the function returns 0.//如果申请成功，中断模式将切换成MSI-X模式
+device is switched into MSI-X mode and the function returns 0.//如果申请成功，中断模式将切换成MSI-X模式，函数返回0
 The 'vector' member in each entry is populated with the interrupt number;
 the driver should then call request_irq() for each 'vector' that it
-decides to use.  The device driver is responsible for keeping track of the
+decides to use.  The device driver is responsible for keeping track of the//需要保存这样的一个结构体数组，后续驱动负责释放资源
 interrupts assigned to the MSI-X vectors so it can free them again later.
 
-If this function returns a negative number, it indicates an error and
+If this function returns a negative number, it indicates an error and//如果返回一个负值，则表示出错，驱动不应该尝试继续去分配MSI-X中断为这个设备，返回一个正值，表示实际分配到的个数
 the driver should not attempt to allocate any more MSI-X interrupts for
 this device.  If it returns a positive number, it indicates the maximum
 number of interrupt vectors that could have been allocated. See example
@@ -223,6 +223,9 @@ MSI-X enabled and thus leaking its vector.
 
 4.3.3 The MSI-X Table
 
+MSI-X能力字段指明了是哪一个bar和在表格在bar中的偏移量，这个地址的映射是由PCI子系统
+来完成的，设备驱动不应该直接去控制这个表格。如果设备驱动希望去屏蔽和去屏蔽某个中断，
+应该去调用disable_irq和enable_irq，去使能关闭某个中断。
 The MSI-X capability specifies a BAR and offset within that BAR for the
 MSI-X Table.  This address is mapped by the PCI subsystem, and should not
 be accessed directly by the device driver.  If the driver wishes to
