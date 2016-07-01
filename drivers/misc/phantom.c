@@ -342,13 +342,13 @@ static int __devinit phantom_probe(struct pci_dev *pdev,
 	unsigned int minor;
 	int retval;
 
-	retval = pci_enable_device(pdev);
+	retval = pci_enable_device(pdev);//使能设备
 	if (retval) {
 		dev_err(&pdev->dev, "pci_enable_device failed!\n");
 		goto err;
 	}
 
-	minor = phantom_get_free();
+	minor = phantom_get_free();//获取一个空闲的子设备号
 	if (minor == PHANTOM_MAX_MINORS) {
 		dev_err(&pdev->dev, "too many devices found!\n");
 		retval = -EIO;
@@ -357,20 +357,20 @@ static int __devinit phantom_probe(struct pci_dev *pdev,
 
 	phantom_devices[minor] = 1;
 
-	retval = pci_request_regions(pdev, "phantom");
+	retval = pci_request_regions(pdev, "phantom");//申请资源
 	if (retval) {
 		dev_err(&pdev->dev, "pci_request_regions failed!\n");
 		goto err_null;
 	}
 
 	retval = -ENOMEM;
-	pht = kzalloc(sizeof(*pht), GFP_KERNEL);
+	pht = kzalloc(sizeof(*pht), GFP_KERNEL);//分配驱动上下文环境的堆内存
 	if (pht == NULL) {
 		dev_err(&pdev->dev, "unable to allocate device\n");
 		goto err_reg;
 	}
 
-	pht->caddr = pci_iomap(pdev, 0, 0);
+	pht->caddr = pci_iomap(pdev, 0, 0);//分配资源
 	if (pht->caddr == NULL) {
 		dev_err(&pdev->dev, "can't remap conf space\n");
 		goto err_fr;
@@ -386,22 +386,22 @@ static int __devinit phantom_probe(struct pci_dev *pdev,
 		goto err_unmi;
 	}
 
-	mutex_init(&pht->open_lock);
-	spin_lock_init(&pht->regs_lock);
-	init_waitqueue_head(&pht->wait);
-	cdev_init(&pht->cdev, &phantom_file_ops);
+	mutex_init(&pht->open_lock);//互斥
+	spin_lock_init(&pht->regs_lock);//自旋锁
+	init_waitqueue_head(&pht->wait);//等待队列
+	cdev_init(&pht->cdev, &phantom_file_ops);//字符设备操作函数关联
 	pht->cdev.owner = THIS_MODULE;
 
 	iowrite32(0, pht->caddr + PHN_IRQCTL);
 	ioread32(pht->caddr + PHN_IRQCTL); /* PCI posting */
 	retval = request_irq(pdev->irq, phantom_isr,
-			IRQF_SHARED | IRQF_DISABLED, "phantom", pht);
+			IRQF_SHARED | IRQF_DISABLED, "phantom", pht);//注册中断响应函数
 	if (retval) {
 		dev_err(&pdev->dev, "can't establish ISR\n");
 		goto err_unmo;
 	}
 
-	retval = cdev_add(&pht->cdev, MKDEV(phantom_major, minor), 1);
+	retval = cdev_add(&pht->cdev, MKDEV(phantom_major, minor), 1);//字符设备添加
 	if (retval) {
 		dev_err(&pdev->dev, "chardev registration failed\n");
 		goto err_irq;
@@ -504,33 +504,33 @@ static struct pci_driver phantom_pci_driver = {
 	.resume = phantom_resume
 };
 
-static CLASS_ATTR_STRING(version, 0444, PHANTOM_VERSION);
+static CLASS_ATTR_STRING(version, 0444, PHANTOM_VERSION);//生成class_attr_version文件，名称，权限，值
 
 static int __init phantom_init(void)
 {
 	int retval;
 	dev_t dev;
 
-	phantom_class = class_create(THIS_MODULE, "phantom");
+	phantom_class = class_create(THIS_MODULE, "phantom");//创建一个类
 	if (IS_ERR(phantom_class)) {
 		retval = PTR_ERR(phantom_class);
 		printk(KERN_ERR "phantom: can't register phantom class\n");
 		goto err;
 	}
-	retval = class_create_file(phantom_class, &class_attr_version.attr);
+	retval = class_create_file(phantom_class, &class_attr_version.attr);//类下面的属性文件
 	if (retval) {
 		printk(KERN_ERR "phantom: can't create sysfs version file\n");
 		goto err_class;
 	}
 
-	retval = alloc_chrdev_region(&dev, 0, PHANTOM_MAX_MINORS, "phantom");
+	retval = alloc_chrdev_region(&dev, 0, PHANTOM_MAX_MINORS, "phantom");//申请一个字符设备的区间段
 	if (retval) {
 		printk(KERN_ERR "phantom: can't register character device\n");
 		goto err_attr;
 	}
-	phantom_major = MAJOR(dev);
+	phantom_major = MAJOR(dev);//记录申请到的主设备号
 
-	retval = pci_register_driver(&phantom_pci_driver);
+	retval = pci_register_driver(&phantom_pci_driver);//PCI接口驱动注册
 	if (retval) {
 		printk(KERN_ERR "phantom: can't register pci driver\n");
 		goto err_unchr;
@@ -552,12 +552,12 @@ err:
 
 static void __exit phantom_exit(void)
 {
-	pci_unregister_driver(&phantom_pci_driver);
+	pci_unregister_driver(&phantom_pci_driver);//PCI去注册
 
-	unregister_chrdev_region(MKDEV(phantom_major, 0), PHANTOM_MAX_MINORS);
+	unregister_chrdev_region(MKDEV(phantom_major, 0), PHANTOM_MAX_MINORS);//字符设备去注册
 
-	class_remove_file(phantom_class, &class_attr_version.attr);
-	class_destroy(phantom_class);
+	class_remove_file(phantom_class, &class_attr_version.attr);//class下面的属性文件销毁
+	class_destroy(phantom_class);//class销毁
 
 	pr_debug("phantom: module successfully removed\n");
 }

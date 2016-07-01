@@ -215,7 +215,7 @@ static int __devinit cb710_probe(struct pci_dev *pdev,
 		return err;
 
 	/* this is actually magic... */
-	pci_read_config_dword(pdev, 0x48, &val);
+	pci_read_config_dword(pdev, 0x48, &val);//读取配置寄存器空间的某个寄存器值
 	if (!(val & 0x80000000)) {
 		pci_write_config_dword(pdev, 0x48, val|0x71000000);
 		pci_read_config_dword(pdev, 0x48, &val);

@@ -288,16 +288,16 @@ ioc4_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
 	int ret;
 
 	/* Enable IOC4 and take ownership of it */
-	if ((ret = pci_enable_device(pdev))) {
+	if ((ret = pci_enable_device(pdev))) { //使能PCI设备
 		printk(KERN_WARNING
 		       "%s: Failed to enable IOC4 device for pci_dev %s.\n",
 		       __func__, pci_name(pdev));
 		goto out;
 	}
-	pci_set_master(pdev);
+	pci_set_master(pdev);//设置为总线master模式，主模式
 
 	/* Set up per-IOC4 data */
-	idd = kmalloc(sizeof(struct ioc4_driver_data), GFP_KERNEL);
+	idd = kmalloc(sizeof(struct ioc4_driver_data), GFP_KERNEL);//分配驱动上下文环境
 	if (!idd) {
 		printk(KERN_WARNING
 		       "%s: Failed to allocate IOC4 data for pci_dev %s.\n",
@@ -305,13 +305,13 @@ ioc4_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
 		ret = -ENODEV;
 		goto out_idd;
 	}
-	idd->idd_pdev = pdev;
-	idd->idd_pci_id = pci_id;
+	idd->idd_pdev = pdev;//资源关联管理
+	idd->idd_pci_id = pci_id;//附加的数据
 
 	/* Map IOC4 misc registers.  These are shared between subdevices
 	 * so the main IOC4 module manages them.
 	 */
-	idd->idd_bar0 = pci_resource_start(idd->idd_pdev, 0);
+	idd->idd_bar0 = pci_resource_start(idd->idd_pdev, 0);//获取Bar0的起始地址
 	if (!idd->idd_bar0) {
 		printk(KERN_WARNING
 		       "%s: Unable to find IOC4 misc resource "
@@ -320,7 +320,7 @@ ioc4_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
 		ret = -ENODEV;
 		goto out_pci;
 	}
-	if (!request_mem_region(idd->idd_bar0, sizeof(struct ioc4_misc_regs),
+	if (!request_mem_region(idd->idd_bar0, sizeof(struct ioc4_misc_regs),//申请bar0的mem资源
 			    "ioc4_misc")) {
 		printk(KERN_WARNING
 		       "%s: Unable to request IOC4 misc region "
@@ -330,7 +330,7 @@ ioc4_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
 		goto out_pci;
 	}
 	idd->idd_misc_regs = ioremap(idd->idd_bar0,
-				     sizeof(struct ioc4_misc_regs));
+				     sizeof(struct ioc4_misc_regs));//进行IOREMAP操作
 	if (!idd->idd_misc_regs) {
 		printk(KERN_WARNING
 		       "%s: Unable to remap IOC4 misc region "
@@ -350,12 +350,12 @@ ioc4_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
 	       idd->idd_variant == IOC4_VARIANT_IO10 ? "IO10" : "unknown");
 
 	/* Initialize IOC4 */
-	pci_read_config_dword(idd->idd_pdev, PCI_COMMAND, &pcmd);
+	pci_read_config_dword(idd->idd_pdev, PCI_COMMAND, &pcmd);//命令字修改
 	pci_write_config_dword(idd->idd_pdev, PCI_COMMAND,
 			       pcmd | PCI_COMMAND_PARITY | PCI_COMMAND_SERR);
 
 	/* Determine PCI clock */
-	ioc4_clock_calibrate(idd);
+	ioc4_clock_calibrate(idd);//附加信息进行初始化
 
 	/* Disable/clear all interrupts.  Need to do this here lest
 	 * one submodule request the shared IOC4 IRQ, but interrupt
@@ -370,7 +370,7 @@ ioc4_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
 
 	/* Track PCI-device specific data */
 	idd->idd_serial_data = NULL;
-	pci_set_drvdata(idd->idd_pdev, idd);
+	pci_set_drvdata(idd->idd_pdev, idd);//PCI管理驱动上下文
 
 	mutex_lock(&ioc4_mutex);
 	list_add_tail(&idd->idd_list, &ioc4_devices);

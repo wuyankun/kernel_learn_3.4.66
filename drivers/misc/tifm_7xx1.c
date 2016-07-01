@@ -157,7 +157,6 @@ static void tifm_7xx1_switch_media(struct work_struct *work)
 		spin_unlock_irqrestore(&fm->lock, flags);
 		return;
 	}
-
 	for (cnt = 0; cnt < fm->num_sockets; cnt++) {
 		if (!(socket_change_set & (1 << cnt)))
 			continue;
@@ -321,27 +320,27 @@ static int tifm_7xx1_has_ms_pif(struct tifm_adapter *fm, struct tifm_dev *sock)
 static int tifm_7xx1_probe(struct pci_dev *dev,
 			   const struct pci_device_id *dev_id)
 {
-	struct tifm_adapter *fm;
+	struct tifm_adapter *fm;//驱动上下文环境结构体指针
 	int pci_dev_busy = 0;
 	int rc;
 
-	rc = pci_set_dma_mask(dev, DMA_BIT_MASK(32));
+	rc = pci_set_dma_mask(dev, DMA_BIT_MASK(32));//设置DMA的掩码类型
 	if (rc)
 		return rc;
 
-	rc = pci_enable_device(dev);
+	rc = pci_enable_device(dev);//使能设备
 	if (rc)
 		return rc;
 
-	pci_set_master(dev);
+	pci_set_master(dev);//总线master模式
 
-	rc = pci_request_regions(dev, DRIVER_NAME);
+	rc = pci_request_regions(dev, DRIVER_NAME);//资源请求
 	if (rc) {
 		pci_dev_busy = 1;
 		goto err_out;
 	}
 
-	pci_intx(dev, 1);
+	pci_intx(dev, 1);//？中断使能？
 
 	fm = tifm_alloc_adapter(dev->device == PCI_DEVICE_ID_TI_XX21_XX11_FM
 				? 4 : 2, &dev->dev);
@@ -353,13 +352,13 @@ static int tifm_7xx1_probe(struct pci_dev *dev,
 	INIT_WORK(&fm->media_switcher, tifm_7xx1_switch_media);
 	fm->eject = tifm_7xx1_eject;
 	fm->has_ms_pif = tifm_7xx1_has_ms_pif;
-	pci_set_drvdata(dev, fm);
+	pci_set_drvdata(dev, fm);//pci驱动关联驱动上下文环境
 
-	fm->addr = pci_ioremap_bar(dev, 0);
+	fm->addr = pci_ioremap_bar(dev, 0);//ioremap映射为虚拟地址
 	if (!fm->addr)
 		goto err_out_free;
 
-	rc = request_irq(dev->irq, tifm_7xx1_isr, IRQF_SHARED, DRIVER_NAME, fm);
+	rc = request_irq(dev->irq, tifm_7xx1_isr, IRQF_SHARED, DRIVER_NAME, fm);//中断资源注册
 	if (rc)
 		goto err_out_unmap;
 

@@ -824,7 +824,7 @@ static int __devinit pti_pci_probe(struct pci_dev *pdev,
 	dev_dbg(&pdev->dev, "%s %s(%d): PTI PCI ID %04x:%04x\n", __FILE__,
 			__func__, __LINE__, pdev->vendor, pdev->device);
 
-	retval = misc_register(&pti_char_driver);
+	retval = misc_register(&pti_char_driver);//混杂设备注册
 	if (retval) {
 		pr_err("%s(%d): CHAR registration failed of pti driver\n",
 			__func__, __LINE__);
@@ -833,7 +833,7 @@ static int __devinit pti_pci_probe(struct pci_dev *pdev,
 		return retval;
 	}
 
-	retval = pci_enable_device(pdev);
+	retval = pci_enable_device(pdev);//使能PCI设备
 	if (retval != 0) {
 		dev_err(&pdev->dev,
 			"%s: pci_enable_device() returned error %d\n",
@@ -841,7 +841,7 @@ static int __devinit pti_pci_probe(struct pci_dev *pdev,
 		return retval;
 	}
 
-	drv_data = kzalloc(sizeof(*drv_data), GFP_KERNEL);
+	drv_data = kzalloc(sizeof(*drv_data), GFP_KERNEL);//分配驱动上下文结构体
 
 	if (drv_data == NULL) {
 		retval = -ENOMEM;
@@ -850,9 +850,9 @@ static int __devinit pti_pci_probe(struct pci_dev *pdev,
 			__func__, __LINE__);
 		return retval;
 	}
-	drv_data->pti_addr = pci_resource_start(pdev, pci_bar);
+	drv_data->pti_addr = pci_resource_start(pdev, pci_bar);//获得bar1的起始地址
 
-	retval = pci_request_region(pdev, pci_bar, dev_name(&pdev->dev));
+	retval = pci_request_region(pdev, pci_bar, dev_name(&pdev->dev));//获得资源
 	if (retval != 0) {
 		dev_err(&pdev->dev,
 			"%s(%d): pci_request_region() returned error %d\n",
@@ -860,9 +860,9 @@ static int __devinit pti_pci_probe(struct pci_dev *pdev,
 		kfree(drv_data);
 		return retval;
 	}
-	drv_data->aperture_base = drv_data->pti_addr+APERTURE_14;
+	drv_data->aperture_base = drv_data->pti_addr+APERTURE_14;//bar1基地址加上固定偏移量
 	drv_data->pti_ioaddr =
-		ioremap_nocache((u32)drv_data->aperture_base,
+		ioremap_nocache((u32)drv_data->aperture_base,//进行IOremap操作
 		APERTURE_LEN);
 	if (!drv_data->pti_ioaddr) {
 		pci_release_region(pdev, pci_bar);
@@ -871,7 +871,7 @@ static int __devinit pti_pci_probe(struct pci_dev *pdev,
 		return retval;
 	}
 
-	pci_set_drvdata(pdev, drv_data);
+	pci_set_drvdata(pdev, drv_data);//pci驱动管理上下文环境
 
 	tty_port_init(&drv_data->port);
 	drv_data->port.ops = &tty_port_ops;
@@ -973,9 +973,9 @@ static void __exit pti_exit(void)
 			__func__, __LINE__, retval);
 	}
 
-	pci_unregister_driver(&pti_pci_driver);
+	pci_unregister_driver(&pti_pci_driver);//接口驱动卸载
 
-	retval = misc_deregister(&pti_char_driver);
+	retval = misc_deregister(&pti_char_driver);//功能驱动卸载
 	if (retval) {
 		pr_err("%s(%d): CHAR unregistration failed of pti driver\n",
 			__func__, __LINE__);
