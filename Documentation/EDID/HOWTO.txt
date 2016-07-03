@@ -1,39 +1,39 @@
 In the good old days when graphics parameters were configured explicitly
-in a file called xorg.conf, even broken hardware could be managed.
-
+in a file called xorg.conf, even broken hardware could be managed.//在过去美好的日子里，图形参数直接记录在xorg.conf文件中，
+																																	//即使一些坏了的硬件也能被管理起来
 Today, with the advent of Kernel Mode Setting, a graphics board is
 either correctly working because all components follow the standards -
-or the computer is unusable, because the screen remains dark after
-booting or it displays the wrong area. Cases when this happens are:
-- The graphics board does not recognize the monitor.
-- The graphics board is unable to detect any EDID data.
-- The graphics board incorrectly forwards EDID data to the driver.
-- The monitor sends no or bogus EDID data.
-- A KVM sends its own EDID data instead of querying the connected monitor.
-Adding the kernel parameter "nomodeset" helps in most cases, but causes
-restrictions later on.
+or the computer is unusable, because the screen remains dark after//如今，伴随着内核描述设置，一个显示板要么正确的工作按照标准来，
+booting or it displays the wrong area. Cases when this happens are://否则将不可用，在启动后依旧显示黑屏，或者显示在错误的区域
+- The graphics board does not recognize the monitor.//有以下几种情况，显卡不认识显示器
+- The graphics board is unable to detect any EDID data.//显卡不能正确探测获取到任何EDID的数据
+- The graphics board incorrectly forwards EDID data to the driver.//显卡提供了错误的EDID数据给驱动
+- The monitor sends no or bogus EDID data.//显示器不提供或者提供一个存在缺陷的EDID数据
+- A KVM sends its own EDID data instead of querying the connected monitor.//KVM使用了自己的EDID数据，而不是从显示器拿到的
+Adding the kernel parameter "nomodeset" helps in most cases, but causes//配置内核参数nomodeset可以解决大部分上述问题，但也会引起
+restrictions later on.//下面描述的问题
 
-As a remedy for such situations, the kernel configuration item
-CONFIG_DRM_LOAD_EDID_FIRMWARE was introduced. It allows to provide an
-individually prepared or corrected EDID data set in the /lib/firmware
-directory from where it is loaded via the firmware interface. The code
-(see drivers/gpu/drm/drm_edid_load.c) contains built-in data sets for
+As a remedy for such situations, the kernel configuration item//作为一个补救措施，内核提供了一个配置项
+CONFIG_DRM_LOAD_EDID_FIRMWARE was introduced. It allows to provide an//将容许提供一个事先准备好的正确的EDID数据，存放在/lib/firmware
+individually prepared or corrected EDID data set in the /lib/firmware//下，将通过固件读取接口来获取.
+directory from where it is loaded via the firmware interface. The code//内核代码drivers/gpu/drm/drm_edid_load.c中包含一些
+(see drivers/gpu/drm/drm_edid_load.c) contains built-in data sets for//数据命令为一些常见的分别率类型，二进制的格式
 commonly used screen resolutions (1024x768, 1280x1024, 1680x1050,
-1920x1080) as binary blobs, but the kernel source tree does not contain
-code to create these data. In order to elucidate the origin of the
+1920x1080) as binary blobs, but the kernel source tree does not contain//但内核源码树并没有包含这些数据
+code to create these data. In order to elucidate the origin of the//为了来产生数据，这里放置了一个这样的Makefile文件
 built-in binary EDID blobs and to facilitate the creation of individual
 data for a specific misbehaving monitor, commented sources and a
 Makefile environment are given here.
 
 To create binary EDID and C source code files from the existing data
-material, simply type "make".
+material, simply type "make".//只需要在当前目录敲入make即可
 
 If you want to create your own EDID file, copy the file 1024x768.S and
 replace the settings with your own data. The CRC value in the last line
   #define CRC 0x55
 is a bit tricky. After a first version of the binary data set is
-created, it must be be checked with the "edid-decode" utility which will
-most probably complain about a wrong CRC. Fortunately, the utility also
-displays the correct CRC which must then be inserted into the source
-file. After the make procedure is repeated, the EDID data set is ready
+created, it must be be checked with the "edid-decode" utility which will//如果你想创建你自己的EDID数据文件，可以参照，并且修改你的
+most probably complain about a wrong CRC. Fortunately, the utility also//数据，用edid-decode来检查生成的二进制文件，会提示你CRC校验和错误
+displays the correct CRC which must then be inserted into the source//工具也会告诉你正确的校验和是多少，修改后重新生成，你就可以
+file. After the make procedure is repeated, the EDID data set is ready//得到一份能用的EDID数据了
 to be used.
