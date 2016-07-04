@@ -1,7 +1,7 @@
 /*
    drm_edid_load.c: use a built-in EDID data set or load it via the firmware
 		    interface
-
+	 //使用一组内置的EDID数据集或者通过固件接口来读取
    Copyright (C) 2012 Carsten Emde <C.Emde@osadl.org>
 
    This program is free software; you can redistribute it and/or
@@ -29,18 +29,18 @@
 static char edid_firmware[PATH_MAX];
 module_param_string(edid_firmware, edid_firmware, sizeof(edid_firmware), 0644);
 MODULE_PARM_DESC(edid_firmware, "Do not probe monitor, use specified EDID blob "
-	"from built-in data or /lib/firmware instead. ");
+	"from built-in data or /lib/firmware instead. ");//模块参数和模块参数描述
 
 #define GENERIC_EDIDS 4
-static char *generic_edid_name[GENERIC_EDIDS] = {
-	"edid/1024x768.bin",
+static char *generic_edid_name[GENERIC_EDIDS] = {//通用的EDID共有4组，均有Documentation/EDID中makefile生成的
+	"edid/1024x768.bin",//路径应该为/lib/firmware/edid/
 	"edid/1280x1024.bin",
 	"edid/1680x1050.bin",
 	"edid/1920x1080.bin",
 };
 
 static u8 generic_edid[GENERIC_EDIDS][128] = {
-	{
+	{/*1024x768.bin*/
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
 	0x31, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x05, 0x16, 0x01, 0x03, 0x6d, 0x23, 0x1a, 0x78,
@@ -58,7 +58,7 @@ static u8 generic_edid[GENERIC_EDIDS][128] = {
 	0x00, 0x4c, 0x69, 0x6e, 0x75, 0x78, 0x20, 0x58,
 	0x47, 0x41, 0x0a, 0x20, 0x20, 0x20, 0x00, 0x55,
 	},
-	{
+	{/*1280x1024.bin*/
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
 	0x31, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x05, 0x16, 0x01, 0x03, 0x6d, 0x2c, 0x23, 0x78,
@@ -76,7 +76,7 @@ static u8 generic_edid[GENERIC_EDIDS][128] = {
 	0x00, 0x4c, 0x69, 0x6e, 0x75, 0x78, 0x20, 0x53,
 	0x58, 0x47, 0x41, 0x0a, 0x20, 0x20, 0x00, 0xa0,
 	},
-	{
+	{/*1680x1050.bin*/
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
 	0x31, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x05, 0x16, 0x01, 0x03, 0x6d, 0x2b, 0x1b, 0x78,
@@ -94,7 +94,7 @@ static u8 generic_edid[GENERIC_EDIDS][128] = {
 	0x00, 0x4c, 0x69, 0x6e, 0x75, 0x78, 0x20, 0x57,
 	0x53, 0x58, 0x47, 0x41, 0x0a, 0x20, 0x00, 0x26,
 	},
-	{
+	{/*1920x1080.bin*/
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00,
 	0x31, 0xd8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x05, 0x16, 0x01, 0x03, 0x6d, 0x32, 0x1c, 0x78,
@@ -113,18 +113,18 @@ static u8 generic_edid[GENERIC_EDIDS][128] = {
 	0x48, 0x44, 0x0a, 0x20, 0x20, 0x20, 0x00, 0x05,
 	},
 };
-
+//连接器上下文数据，数据，连接器的名字
 static int edid_load(struct drm_connector *connector, char *name,
 		     char *connector_name)
 {
-	const struct firmware *fw;
-	struct platform_device *pdev;
+	const struct firmware *fw;//定义一个固件的结构指针
+	struct platform_device *pdev;//平台设备
 	u8 *fwdata = NULL, *edid;
 	int fwsize, expected;
 	int builtin = 0, err = 0;
 	int i, valid_extensions = 0;
 
-	pdev = platform_device_register_simple(connector_name, -1, NULL, 0);
+	pdev = platform_device_register_simple(connector_name, -1, NULL, 0);//注册一个简单的平台设备
 	if (IS_ERR(pdev)) {
 		DRM_ERROR("Failed to register EDID firmware platform device "
 		    "for connector \"%s\"\n", connector_name);
@@ -132,34 +132,34 @@ static int edid_load(struct drm_connector *connector, char *name,
 		goto out;
 	}
 
-	err = request_firmware(&fw, name, &pdev->dev);
-	platform_device_unregister(pdev);
+	err = request_firmware(&fw, name, &pdev->dev);//请求固件数据
+	platform_device_unregister(pdev);//注销这个平台设备
 
-	if (err) {
+	if (err) {//如果固件请求失败
 		i = 0;
-		while (i < GENERIC_EDIDS && strcmp(name, generic_edid_name[i]))
+		while (i < GENERIC_EDIDS && strcmp(name, generic_edid_name[i]))//依次轮训名字是否和通用的名字相同
 			i++;
-		if (i < GENERIC_EDIDS) {
+		if (i < GENERIC_EDIDS) {//如果存在相同的，即四组中的一组，则使用内建的二进制数组
 			err = 0;
-			builtin = 1;
-			fwdata = generic_edid[i];
+			builtin = 1;//使用内建数据的标识
+			fwdata = generic_edid[i];//使用数组数据
 			fwsize = sizeof(generic_edid[i]);
 		}
 	}
 
-	if (err) {
+	if (err) {//如果两种方法都失败了，则报错退出
 		DRM_ERROR("Requesting EDID firmware \"%s\" failed (err=%d)\n",
 		    name, err);
 		goto out;
 	}
 
-	if (fwdata == NULL) {
+	if (fwdata == NULL) {//如果是通过固件读取接口获取的，则更新下一些信息
 		fwdata = (u8 *) fw->data;
 		fwsize = fw->size;
 	}
-
-	expected = (fwdata[0x7e] + 1) * EDID_LENGTH;
-	if (expected != fwsize) {
+	//第127位表示扩展部分的个数，每个扩展部分占用128个字节
+	expected = (fwdata[0x7e] + 1) * EDID_LENGTH;//检查下是否有扩展的数据部分，计算总的数据大小128+128*n
+	if (expected != fwsize) {//参数检查，申明的数据和实际的不符
 		DRM_ERROR("Size of EDID firmware \"%s\" is invalid "
 		    "(expected %d, got %d)\n", name, expected, (int) fwsize);
 		err = -EINVAL;
@@ -171,9 +171,9 @@ static int edid_load(struct drm_connector *connector, char *name,
 		err = -ENOMEM;
 		goto relfw_out;
 	}
-	memcpy(edid, fwdata, fwsize);
+	memcpy(edid, fwdata, fwsize);//将数据拷贝到新分配的堆内存中
 
-	if (!drm_edid_block_valid(edid)) {
+	if (!drm_edid_block_valid(edid)) {//检查数据的合法性，之前只是检查个数
 		DRM_ERROR("Base block of EDID firmware \"%s\" is invalid ",
 		    name);
 		kfree(edid);
@@ -185,17 +185,17 @@ static int edid_load(struct drm_connector *connector, char *name,
 		if (i != valid_extensions + 1)
 			memcpy(edid + (valid_extensions + 1) * EDID_LENGTH,
 			    edid + i * EDID_LENGTH, EDID_LENGTH);
-		if (drm_edid_block_valid(edid + i * EDID_LENGTH))
+		if (drm_edid_block_valid(edid + i * EDID_LENGTH))//依次检查剩下的扩展的128个数据，该接口只检查128个数据，提供一个指针偏移量
 			valid_extensions++;
 	}
 
-	if (valid_extensions != edid[0x7e]) {
+	if (valid_extensions != edid[0x7e]) {//如果存在不合法的块
 		edid[EDID_LENGTH-1] += edid[0x7e] - valid_extensions;
 		DRM_INFO("Found %d valid extensions instead of %d in EDID data "
 		    "\"%s\" for connector \"%s\"\n", valid_extensions,
 		    edid[0x7e], name, connector_name);
 		edid[0x7e] = valid_extensions;
-		edid = krealloc(edid, (valid_extensions + 1) * EDID_LENGTH,
+		edid = krealloc(edid, (valid_extensions + 1) * EDID_LENGTH,//剔除不合法的数据，调整已分配内存的大小
 		    GFP_KERNEL);
 		if (edid == NULL) {
 			err = -ENOMEM;
@@ -203,7 +203,7 @@ static int edid_load(struct drm_connector *connector, char *name,
 		}
 	}
 
-	connector->display_info.raw_edid = edid;
+	connector->display_info.raw_edid = edid;//将堆内存的指针传递给连接器的上下文环境，方便后续释放堆内存
 	DRM_INFO("Got %s EDID base block and %d extension%s from "
 	    "\"%s\" for connector \"%s\"\n", builtin ? "built-in" :
 	    "external", valid_extensions, valid_extensions == 1 ? "" : "s",
@@ -215,7 +215,7 @@ relfw_out:
 out:
 	return err;
 }
-
+/*从固件加载，这里的名字是固定的*/
 int drm_load_edid_firmware(struct drm_connector *connector)
 {
 	char *connector_name = drm_get_connector_name(connector);
@@ -225,26 +225,26 @@ int drm_load_edid_firmware(struct drm_connector *connector)
 	if (*edidname == '\0')
 		return ret;
 
-	colon = strchr(edidname, ':');
+	colon = strchr(edidname, ':');//首先在名字中找到:的偏移量
 	if (colon != NULL) {
-		if (strncmp(connector_name, edidname, colon - edidname))
+		if (strncmp(connector_name, edidname, colon - edidname))/*比较一下，连接器的名字和edid的命名是否一致*/
 			return ret;
 		edidname = colon + 1;
 		if (*edidname == '\0')
 			return ret;
 	}
 
-	last = edidname + strlen(edidname) - 1;
+	last = edidname + strlen(edidname) - 1;/*得到除去名字后的剩下字符*/
 	if (*last == '\n')
 		*last = '\0';
 
-	ret = edid_load(connector, edidname, connector_name);
+	ret = edid_load(connector, edidname, connector_name);//将这个由：分割的两个字段传递给这个函数
 	if (ret)
 		return 0;
 
-	drm_mode_connector_update_edid_property(connector,
+	drm_mode_connector_update_edid_property(connector,//更新连接器的二进制的edid数据
 	    (struct edid *) connector->display_info.raw_edid);
 
 	return drm_add_edid_modes(connector, (struct edid *)
-	    connector->display_info.raw_edid);
+	    connector->display_info.raw_edid);//增加显示模式
 }

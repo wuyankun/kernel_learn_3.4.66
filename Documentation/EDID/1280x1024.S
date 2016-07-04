@@ -23,22 +23,22 @@
 #define REVISION 3
 
 /* Display */
-#define CLOCK 108000 /* kHz */
+#define CLOCK 108000 /* kHz *///像素时钟频率，108MHZ
 #define XPIX 1280
 #define YPIX 1024
-#define XY_RATIO XY_RATIO_5_4
+#define XY_RATIO XY_RATIO_5_4//长高比是5：4
 #define XBLANK 408
 #define YBLANK 42
 #define XOFFSET 48
 #define XPULSE 112
 #define YOFFSET (63+1)
 #define YPULSE (63+3)
-#define DPI 72
+#define DPI 72//DPI和XGA(1024x768)相同
 #define VFREQ 60 /* Hz */
-#define TIMING_NAME "Linux SXGA"
-#define ESTABLISHED_TIMINGS_BITS 0x00 /* none */
-#define HSYNC_POL 1
+#define TIMING_NAME "Linux SXGA"//用SXGA来统称这种分辨率
+#define ESTABLISHED_TIMINGS_BITS 0x00 /* none *///不在标准时序中
+#define HSYNC_POL 1#极性为正
 #define VSYNC_POL 1
-#define CRC 0xa0
+#define CRC 0xa0#校验和
 
-#include "edid.S"
+#include "edid.S"#包含真实的实现

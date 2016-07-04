@@ -23,22 +23,22 @@
 #define REVISION 3
 
 /* Display */
-#define CLOCK 146250 /* kHz */
+#define CLOCK 146250 /* kHz */像素时钟频率146.25MHZ
 #define XPIX 1680
 #define YPIX 1050
-#define XY_RATIO XY_RATIO_16_10
-#define XBLANK 560
+#define XY_RATIO XY_RATIO_16_10//长高比大致统计为16：10
+#define XBLANK 560//波形的详细细节
 #define YBLANK 39
 #define XOFFSET 104
 #define XPULSE 176
 #define YOFFSET (63+3)
 #define YPULSE (63+6)
-#define DPI 96
+#define DPI 96//DPI提高到96
 #define VFREQ 60 /* Hz */
-#define TIMING_NAME "Linux WSXGA"
-#define ESTABLISHED_TIMINGS_BITS 0x00 /* none */
+#define TIMING_NAME "Linux WSXGA"//统称为WSXGA,WSXGA(1680x1050)-->SXGA(1280x1024)-->XGA(1024x768)
+#define ESTABLISHED_TIMINGS_BITS 0x00 /* none *///不是标准时序中的某位表示
 #define HSYNC_POL 1
 #define VSYNC_POL 1
-#define CRC 0x26
+#define CRC 0x26//极性信息和校验和
 
 #include "edid.S"
