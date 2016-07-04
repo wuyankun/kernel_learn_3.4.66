@@ -25,19 +25,19 @@
 
 #include <linux/types.h>
 
-#define EDID_LENGTH 128
-#define DDC_ADDR 0x50
+#define EDID_LENGTH 128 //EDID数据的长度，单位字节，EEDID表示大于128字节
+#define DDC_ADDR 0x50//EDID读取时，i2c的默认地址，DDC通道
 
-#define CEA_EXT	    0x02
+#define CEA_EXT	    0x02//扩展的每128个数据的类型
 #define VTB_EXT	    0x10
 #define DI_EXT	    0x40
 #define LS_EXT	    0x50
 #define MI_EXT	    0x60
 
-struct est_timings {
-	u8 t1;
-	u8 t2;
-	u8 mfg_rsvd;
+struct est_timings {//标准的分辨率支持情况，每个bit代表一种分辨率类型
+	u8 t1;/*Established Timing 1 0x23 720x400@70 640x480@60 640x480@75 800x600@60*/
+	u8 t2;/*Established Timing 2 0x24 800x600@75 832x624@75 1024x768@60 1024x768@75 1280x1024@75*/
+	u8 mfg_rsvd;//厂商保留的种类/*Manufactuer Reserved Timing  0x25 1152x870@75*/
 } __attribute__((packed));
 
 /* 00=16:10, 01=4:3, 10=5:4, 11=16:9 */
@@ -48,7 +48,7 @@ struct est_timings {
 #define EDID_TIMING_VFREQ_SHIFT  0
 #define EDID_TIMING_VFREQ_MASK   (0x3f << EDID_TIMING_VFREQ_SHIFT)
 
-struct std_timing {
+struct std_timing {//标准的时序支持情况，每组占两个字节，大小和刷新率
 	u8 hsize; /* need to multiply by 8 then add 248 */
 	u8 vfreq_aspect;
 } __attribute__((packed));
@@ -60,31 +60,31 @@ struct std_timing {
 #define DRM_EDID_PT_INTERLACED     (1 << 7)
 
 /* If detailed data is pixel timing */
-struct detailed_pixel_timing {
-	u8 hactive_lo;
+struct detailed_pixel_timing { //详细时序的描述，共18个字节，可以参考Documentation/EDID/edid.S中的注释说明
+	u8 hactive_lo;//lo:lower低8bit
 	u8 hblank_lo;
-	u8 hactive_hblank_hi;
+	u8 hactive_hblank_hi;//hi:high高4bit，每个数据是12bit，可表示范围是0-4095
 	u8 vactive_lo;
 	u8 vblank_lo;
-	u8 vactive_vblank_hi;
+	u8 vactive_vblank_hi;//和上述两组数据分布相同，这是垂直方向
 	u8 hsync_offset_lo;
 	u8 hsync_pulse_width_lo;
 	u8 vsync_offset_pulse_width_lo;
-	u8 hsync_vsync_offset_pulse_width_hi;
+	u8 hsync_vsync_offset_pulse_width_hi;//共4组数据，有两组占用10个bit，有两组占用6个bit数据
 	u8 width_mm_lo;
 	u8 height_mm_lo;
-	u8 width_height_mm_hi;
+	u8 width_height_mm_hi;//with，height 两组数据，单位为mm
 	u8 hborder;
 	u8 vborder;
 	u8 misc;
 } __attribute__((packed));
 
 /* If it's not pixel timing, it'll be one of the below */
-struct detailed_data_string {
+struct detailed_data_string {//字符串描述类型
 	u8 str[13];
 } __attribute__((packed));
 
-struct detailed_data_monitor_range {
+struct detailed_data_monitor_range {//显示器刷新频率范围约束的结构体
 	u8 min_vfreq;
 	u8 max_vfreq;
 	u8 min_hfreq_khz;
@@ -116,7 +116,7 @@ struct cvt_timing {
 	u8 code[3];
 } __attribute__((packed));
 
-struct detailed_non_pixel {
+struct detailed_non_pixel {//非时钟细节描述的18个字节的结构体定义
 	u8 pad1;
 	u8 type; /* ff=serial, fe=string, fd=monitor range, fc=monitor name
 		    fb=color point data, fa=standard timing data,
@@ -131,13 +131,14 @@ struct detailed_non_pixel {
 	} data;
 } __attribute__((packed));
 
+//18个详细描述的中，用来标识该18个数据表示信息的类型种类，详细看标准文档
 #define EDID_DETAIL_EST_TIMINGS 0xf7
 #define EDID_DETAIL_CVT_3BYTE 0xf8
 #define EDID_DETAIL_COLOR_MGMT_DATA 0xf9
 #define EDID_DETAIL_STD_MODES 0xfa
 #define EDID_DETAIL_MONITOR_CPDATA 0xfb
-#define EDID_DETAIL_MONITOR_NAME 0xfc
-#define EDID_DETAIL_MONITOR_RANGE 0xfd
+#define EDID_DETAIL_MONITOR_NAME 0xfc //Display Product Name Block Tag 用来描述显示器的名字信息，会被软件读出
+#define EDID_DETAIL_MONITOR_RANGE 0xfd//Display Range Limits Block Tag 用来标识显示器的刷新频率范围//56-73Hz 31-68KHz
 #define EDID_DETAIL_MONITOR_STRING 0xfe
 #define EDID_DETAIL_MONITOR_SERIAL 0xff
 
@@ -155,7 +156,7 @@ struct detailed_timing {
 #define DRM_EDID_INPUT_SEPARATE_SYNCS  (1 << 3)
 #define DRM_EDID_INPUT_BLANK_TO_BLACK  (1 << 4)
 #define DRM_EDID_INPUT_VIDEO_LEVEL     (3 << 5)
-#define DRM_EDID_INPUT_DIGITAL         (1 << 7)
+#define DRM_EDID_INPUT_DIGITAL         (1 << 7)//数字输出BIT位
 #define DRM_EDID_DIGITAL_DEPTH_MASK    (7 << 4)
 #define DRM_EDID_DIGITAL_DEPTH_UNDEF   (0 << 4)
 #define DRM_EDID_DIGITAL_DEPTH_6       (1 << 4)
@@ -165,7 +166,7 @@ struct detailed_timing {
 #define DRM_EDID_DIGITAL_DEPTH_14      (5 << 4)
 #define DRM_EDID_DIGITAL_DEPTH_16      (6 << 4)
 #define DRM_EDID_DIGITAL_DEPTH_RSVD    (7 << 4)
-#define DRM_EDID_DIGITAL_TYPE_UNDEF    (0)
+#define DRM_EDID_DIGITAL_TYPE_UNDEF    (0)//6种数字信号类型，包含未定义，DVI，HDMIA/B MDDI和DP
 #define DRM_EDID_DIGITAL_TYPE_DVI      (1)
 #define DRM_EDID_DIGITAL_TYPE_HDMI_A   (2)
 #define DRM_EDID_DIGITAL_TYPE_HDMI_B   (3)
@@ -188,56 +189,57 @@ struct detailed_timing {
 #define DRM_EDID_FEATURE_PM_SUSPEND       (1 << 6)
 #define DRM_EDID_FEATURE_PM_STANDBY       (1 << 7)
 
+//EDID的数据结构定义，参照标准文档说明
 struct edid {
-	u8 header[8];
+	u8 header[8];//头部信息，数据固定为/*0x00 0xFF ... 0xFF  0x00*//*0x00~0x07*/
 	/* Vendor & product info */
-	u8 mfg_id[2];
-	u8 prod_code[2];
-	u32 serial; /* FIXME: byte order */
-	u8 mfg_week;
-	u8 mfg_year;
+	u8 mfg_id[2];//厂商信息/*vendor name 0x08-0x09*/
+	u8 prod_code[2];//pid占用两位/*pid,vid 0x0A-0x0B*/
+	u32 serial; /* FIXME: byte order *///序列号，占用4个字节/*serial number 0x0C-0x0F*/
+	u8 mfg_week;//一年中的第几周，占用1个字节/*week id,year id 0x10-0x11*/
+	u8 mfg_year;//哪一年，占用1个字节，+1990得到真实的年份
 	/* EDID version */
-	u8 version;
-	u8 revision;
+	u8 version;//支持的EDID协议的版本，大版本/*edid version revision 0x12-0x13*/
+	u8 revision;//小版本
 	/* Display info: */
-	u8 input;
-	u8 width_cm;
-	u8 height_cm;
-	u8 gamma;
-	u8 features;
+	u8 input;//是否支持数字信号等信息/*Video Input Definition 0x14*/
+	u8 width_cm;//可显示的最大宽度/*Max H Image Size (cm) 0x15*/
+	u8 height_cm;//可显示的最大高度/*Max V Image Size (cm) 0x16*/
+	u8 gamma;//支持的gamma的值/*Display Tranfer Gamma 0x17*/
+	u8 features;//支持的属性信息/*Feature Support 0x18*/
 	/* Color characteristics */
-	u8 red_green_lo;
-	u8 black_white_lo;
-	u8 red_x;
-	u8 red_y;
-	u8 green_x;
-	u8 green_y;
-	u8 blue_x;
-	u8 blue_y;
-	u8 white_x;
-	u8 white_y;
+	u8 red_green_lo;/*Rx1 Rx0 Ry1 Ry0 Gx1 Gx0 Gy1 Gy0 0x19*/ //rgbw四色每种用10bit数据，这是第1bit数据
+	u8 black_white_lo;/*Bx1 Bx0 By1 By0 Wx1 Wx0 Wy1 Wy0 0x1A*///rgbx四色每种分为xy两个属性
+	u8 red_x;/*Red x[9-2] 0x1B*/
+	u8 red_y;/*Red y[9-2] 0x1C*/
+	u8 green_x;/*Green x[9-2] 0x1D*/
+	u8 green_y;/*Green y[9-2] 0x1E*/
+	u8 blue_x;/*Blue x[9-2] 0x1F*/
+	u8 blue_y;/*Blue y[9-2] 0x20*/
+	u8 white_x;/*White x[9-2] 0x21*/
+	u8 white_y;/*White y[9-2] 0x22*/
 	/* Est. timings and mfg rsvd timings*/
-	struct est_timings established_timings;
-	/* Standard timings 1-8*/
-	struct std_timing standard_timings[8];
+	struct est_timings established_timings;//3个字节，Established Timing 1  Established Timing 2   Manufactuer Reserved Timing
+	/* Standard timings 1-8*///每组占用2个字节
+	struct std_timing standard_timings[8];//8组标准的时序描述/*Standard Timing Identification #8 0x34-0x35*/
 	/* Detailing timings 1-4 */
-	struct detailed_timing detailed_timings[4];
+	struct detailed_timing detailed_timings[4];//4组时序细节描述信息，每组占用18个字节Detailed Timing Descriping #1 #2 #3 #4
 	/* Number of 128 byte ext. blocks */
-	u8 extensions;
+	u8 extensions;//扩展描述的个数，每个占用128个字节，一般为0或者1/*Extension Flag 0x7E*/
 	/* Checksum */
-	u8 checksum;
+	u8 checksum;//检查和/*Checksum 0x7F*/
 } __attribute__((packed));
 
 #define EDID_PRODUCT_ID(e) ((e)->prod_code[0] | ((e)->prod_code[1] << 8))
 
-struct drm_encoder;
+struct drm_encoder;//前向申明信息，为使得gcc可以正常编译，编码，解码，显示信息
 struct drm_connector;
 struct drm_display_mode;
-void drm_edid_to_eld(struct drm_connector *connector, struct edid *edid);
+void drm_edid_to_eld(struct drm_connector *connector, struct edid *edid);//edid转换为eld
 int drm_av_sync_delay(struct drm_connector *connector,
 		      struct drm_display_mode *mode);
-struct drm_connector *drm_select_eld(struct drm_encoder *encoder,
+struct drm_connector *drm_select_eld(struct drm_encoder *encoder,//选择其中的一个eld
 				     struct drm_display_mode *mode);
-int drm_load_edid_firmware(struct drm_connector *connector);
+int drm_load_edid_firmware(struct drm_connector *connector);//加载固件方法
 
 #endif /* __DRM_EDID_H__ */

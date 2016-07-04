@@ -132,7 +132,7 @@ static struct edid_quirk {
 
 /*** DDC fetch and block validation ***/
 
-static const u8 edid_header[] = {
+static const u8 edid_header[] = {//头部固定数据
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
 };
 
@@ -140,7 +140,7 @@ static const u8 edid_header[] = {
  * Sanity check the header of the base EDID block.  Return 8 if the header
  * is perfect, down to 0 if it's totally wrong.
  */
-int drm_edid_header_is_valid(const u8 *raw_edid)
+int drm_edid_header_is_valid(const u8 *raw_edid)//头部每个字节检查一遍
 {
 	int i, score = 0;
 
@@ -176,7 +176,7 @@ bool drm_edid_block_valid(u8 *raw_edid)
 
 	for (i = 0; i < EDID_LENGTH; i++)
 		csum += raw_edid[i];
-	if (csum) {
+	if (csum) {//全部的数据相加应该等于0
 		//DRM_ERROR("EDID checksum is invalid, remainder is %d\n", csum);
 
 		/* allow CEA to slide through, switches mangle this */
@@ -185,7 +185,7 @@ bool drm_edid_block_valid(u8 *raw_edid)
 	}
 
 	/* per-block-type checks */
-	switch (raw_edid[0]) {
+	switch (raw_edid[0]) {//最大支持的普通的EDID的规范为1.4
 	case 0: /* base */
 		if (edid->version != 1) {
 			DRM_ERROR("EDID has major version %d, instead of 1\n", edid->version);
@@ -226,7 +226,7 @@ bool drm_edid_is_valid(struct edid *edid)
 	if (!edid)
 		return false;
 
-	for (i = 0; i <= edid->extensions; i++)
+	for (i = 0; i <= edid->extensions; i++)//如果有扩展的EDID部分，每个128字节块检查一遍
 		if (!drm_edid_block_valid(raw + i * EDID_LENGTH))
 			return false;
 
@@ -247,7 +247,7 @@ EXPORT_SYMBOL(drm_edid_is_valid);
  */
 static int
 drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
-		      int block, int len)
+		      int block, int len)//通过DDC拿到EDID数据
 {
 	unsigned char start = block * EDID_LENGTH;
 	int ret, retries = 5;
@@ -264,11 +264,11 @@ drm_do_probe_ddc_edid(struct i2c_adapter *adapter, unsigned char *buf,
 				.addr	= DDC_ADDR,
 				.flags	= 0,
 				.len	= 1,
-				.buf	= &start,
+				.buf	= &start,//总的读取长度
 			}, {
 				.addr	= DDC_ADDR,
 				.flags	= I2C_M_RD,
-				.len	= len,
+				.len	= len,//真实可以存储的长度
 				.buf	= buf,
 			}
 		};
@@ -300,7 +300,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
 	int i, j = 0, valid_extensions = 0;
 	u8 *block, *new;
 
-	if ((block = kmalloc(EDID_LENGTH, GFP_KERNEL)) == NULL)
+	if ((block = kmalloc(EDID_LENGTH, GFP_KERNEL)) == NULL)//先获取128个base的EDID数据
 		return NULL;
 
 	/* base block fetch */
@@ -318,15 +318,15 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
 		goto carp;
 
 	/* if there's no extensions, we're done */
-	if (block[0x7e] == 0)
+	if (block[0x7e] == 0)//如果没有扩展的EDID数据块，则结束
 		return block;
 
-	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);
+	new = krealloc(block, (block[0x7e] + 1) * EDID_LENGTH, GFP_KERNEL);//内存区域扩大
 	if (!new)
 		goto out;
 	block = new;
 
-	for (j = 1; j <= block[0x7e]; j++) {
+	for (j = 1; j <= block[0x7e]; j++) {//剩下的Block数据获取检查
 		for (i = 0; i < 4; i++) {
 			if (drm_do_probe_ddc_edid(adapter,
 				  block + (valid_extensions + 1) * EDID_LENGTH,
@@ -343,7 +343,7 @@ drm_do_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
 			 drm_get_connector_name(connector), j);
 	}
 
-	if (valid_extensions != block[0x7e]) {
+	if (valid_extensions != block[0x7e]) {//如果存在不合法的，则重新调整
 		block[EDID_LENGTH-1] += block[0x7e] - valid_extensions;
 		block[0x7e] = valid_extensions;
 		new = krealloc(block, (valid_extensions + 1) * EDID_LENGTH, GFP_KERNEL);
@@ -387,7 +387,7 @@ drm_probe_ddc(struct i2c_adapter *adapter)
  *
  * Return edid data or NULL if we couldn't find any.
  */
-struct edid *drm_get_edid(struct drm_connector *connector,
+struct edid *drm_get_edid(struct drm_connector *connector,//提供给外部调用，获取edid结构体指针，可能返回NULL
 			  struct i2c_adapter *adapter)
 {
 	struct edid *edid = NULL;
@@ -413,7 +413,7 @@ EXPORT_SYMBOL(drm_get_edid);
  */
 static bool edid_vendor(struct edid *edid, char *vendor)
 {
-	char edid_vendor[3];
+	char edid_vendor[3];//EDID的厂商信息，由3个字节用来拼接
 
 	edid_vendor[0] = ((edid->mfg_id[0] & 0x7c) >> 2) + '@';
 	edid_vendor[1] = (((edid->mfg_id[0] & 0x3) << 3) |
