@@ -7,13 +7,13 @@
  ---
 
  Today, the most extended way to use firmware in the Linux kernel is linking
- it statically in a header file. Which has political and technical issues:
+ it statically in a header file. Which has political and technical issues:(会存在以下的策略和技术问题)
 
-  1) Some firmware is not legal to redistribute.
+  1) Some firmware is not legal to redistribute.（不适合重新发布）
   2) The firmware occupies memory permanently, even though it often is just
-     used once.
+     used once.（永久占用了内存区域，虽然他只会使用一次后再也不会被使用）
   3) Some people, like the Debian crowd, don't consider some firmware free
-     enough and remove entire drivers (e.g.: keyspan).
+     enough and remove entire drivers (e.g.: keyspan).（一些固件不够开放，被一些发行版移除，还有一些驱动）
 
  High level behavior (mixed):
  ============================
@@ -40,53 +40,53 @@
 
  kernel: request_firmware() returns and the driver has the firmware
 	 image in fw_entry->{data,size}. If something went wrong
-	 request_firmware() returns non-zero and fw_entry is set to
-	 NULL.
+	 request_firmware() returns non-zero and fw_entry is set to//驱动调用request_firmware该接口来获得固件的资源，返回一个指针和数据大小，
+	 NULL.							   //如果发生错误，则返回非0值，固件缓冲被设置为NULL
 
  kernel(driver): Driver code calls release_firmware(fw_entry) releasing
-		 the firmware image and any related resource.
+		 the firmware image and any related resource.//使用release_firmware来释放固件文件和相关资源
 
- High level behavior (driver code):
+ High level behavior (driver code)://驱动代码的抽象行为
  ==================================
 
-	 if(request_firmware(&fw_entry, $FIRMWARE, device) == 0)
-	 	copy_fw_to_device(fw_entry->data, fw_entry->size);
-	 release(fw_entry);
+	 if(request_firmware(&fw_entry, $FIRMWARE, device) == 0)//请求固件资源
+	 	copy_fw_to_device(fw_entry->data, fw_entry->size);//将固件拷贝到设备中，写入设备中等
+	 release(fw_entry);//释放固件资源
 
- Sample/simple hotplug script:
+ Sample/simple hotplug script://用户空间的热插拔机制的简单例子
  ============================
 
 	# Both $DEVPATH and $FIRMWARE are already provided in the environment.
 
 	HOTPLUG_FW_DIR=/usr/lib/hotplug/firmware/
 
-	echo 1 > /sys/$DEVPATH/loading
+	echo 1 > /sys/$DEVPATH/loading//下载使能
 	cat $HOTPLUG_FW_DIR/$FIRMWARE > /sysfs/$DEVPATH/data
-	echo 0 > /sys/$DEVPATH/loading
+	echo 0 > /sys/$DEVPATH/loading//下载关闭
 
  Random notes:
  ============
 
  - "echo -1 > /sys/class/firmware/xxx/loading" will cancel the load at
-   once and make request_firmware() return with error.
+   once and make request_firmware() return with error.//中断下载
 
  - firmware_data_read() and firmware_loading_show() are just provided
    for testing and completeness, they are not called in normal use.
 
  - There is also /sys/class/firmware/timeout which holds a timeout in
-   seconds for the whole load operation.
+   seconds for the whole load operation.//下载固件的超时时间设置
 
  - request_firmware_nowait() is also provided for convenience in
    user contexts to request firmware asynchronously, but can't be called
-   in atomic contexts.
+   in atomic contexts.//可以使用异步的接口，但不容许在原子环境中使用
 
 
  about in-kernel persistence:
  ---------------------------
  Under some circumstances, as explained below, it would be interesting to keep
  firmware images in non-swappable kernel memory or even in the kernel image
- (probably within initramfs).
-
+ (probably within initramfs).//存在一些情况，如下解释这样，将会考虑将固件保存在内核的内存中，且不可被swap到其他地方，甚至
+			    //存放在内核镜像文件中
  Note that this functionality has not been implemented.
 
  - Why OPTIONAL in-kernel persistence may be a good idea sometimes:
@@ -104,5 +104,5 @@
 	  
    And the same device can be needed to access the filesystem or not depending
    on the setup, so I think that the choice on what firmware to make
-   persistent should be left to userspace.
+   persistent should be left to userspace.//一些设备需要控制文件系统，不仅仅在设置阶段，因此需要在用户空间留有接口选择
 

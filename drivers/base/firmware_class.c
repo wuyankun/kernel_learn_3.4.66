@@ -567,15 +567,15 @@ err_put_dev:
 }
 
 /**
- * request_firmware: - send firmware request and wait for it
- * @firmware_p: pointer to firmware image
- * @name: name of firmware file
- * @device: device for which firmware is being loaded
+ * request_firmware: - send firmware request and wait for it//接口是阻塞的
+ * @firmware_p: pointer to firmware image//保存固件文件的镜像
+ * @name: name of firmware file//保存固件信息的文件
+ * @device: device for which firmware is being loaded//将固件和特定的设备关联起来管理
  *
  *      @firmware_p will be used to return a firmware image by the name
  *      of @name for device @device.
  *
- *      Should be called from user context where sleeping is allowed.
+ *      Should be called from user context where sleeping is allowed.//可能会引起睡眠调度
  *
  *      @name will be used as $FIRMWARE in the uevent environment and
  *      should be distinctive enough not to be confused with any other
@@ -593,13 +593,13 @@ request_firmware(const struct firmware **firmware_p, const char *name,
 	if (IS_ERR_OR_NULL(fw_priv))
 		return PTR_RET(fw_priv);
 
-	ret = usermodehelper_read_trylock();
+	ret = usermodehelper_read_trylock();//读锁获取
 	if (WARN_ON(ret)) {
 		dev_err(device, "firmware: %s will not be loaded\n", name);
 	} else {
 		ret = _request_firmware_load(fw_priv, true,
 					firmware_loading_timeout());
-		usermodehelper_read_unlock();
+		usermodehelper_read_unlock();//释放读锁
 	}
 	if (ret)
 		_request_firmware_cleanup(firmware_p);
@@ -725,6 +725,6 @@ static void __exit firmware_class_exit(void)
 fs_initcall(firmware_class_init);
 module_exit(firmware_class_exit);
 
-EXPORT_SYMBOL(release_firmware);
+EXPORT_SYMBOL(release_firmware); //向外导出的三个固件相关的接口函数符号
 EXPORT_SYMBOL(request_firmware);
 EXPORT_SYMBOL(request_firmware_nowait);

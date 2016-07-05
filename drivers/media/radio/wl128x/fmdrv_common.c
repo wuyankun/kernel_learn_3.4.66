@@ -1236,7 +1236,7 @@ static int fm_power_down(struct fmdev *fmdev)
 /* Reads init command from FM firmware file and loads to the chip */
 static int fm_download_firmware(struct fmdev *fmdev, const u8 *fw_name)
 {
-	const struct firmware *fw_entry;
+	const struct firmware *fw_entry;//申请缓冲区的结构体指针
 	struct bts_header *fw_header;
 	struct bts_action *action;
 	struct bts_action_delay *delay;
@@ -1246,9 +1246,9 @@ static int fm_download_firmware(struct fmdev *fmdev, const u8 *fw_name)
 	cmd_cnt = 0;
 	set_bit(FM_FW_DW_INPROGRESS, &fmdev->flag);
 
-	ret = request_firmware(&fw_entry, fw_name,
+	ret = request_firmware(&fw_entry, fw_name,//请求获取固件信息，提供固件缓冲区的指针，固件的名字，struct device
 				&fmdev->radio_dev->dev);
-	if (ret < 0) {
+	if (ret < 0) {//返回值检查
 		fmerr("Unable to read firmware(%s) content\n", fw_name);
 		return ret;
 	}
@@ -1257,7 +1257,7 @@ static int fm_download_firmware(struct fmdev *fmdev, const u8 *fw_name)
 	fw_data = (void *)fw_entry->data;
 	fw_len = fw_entry->size;
 
-	fw_header = (struct bts_header *)fw_data;
+	fw_header = (struct bts_header *)fw_data;//解析固件的头部信息，合法性检查
 	if (fw_header->magic != FM_FW_FILE_HEADER_MAGIC) {
 		fmerr("%s not a legal TI firmware file\n", fw_name);
 		ret = -EINVAL;
@@ -1266,10 +1266,10 @@ static int fm_download_firmware(struct fmdev *fmdev, const u8 *fw_name)
 	fmdbg("FW(%s) magic number : 0x%x\n", fw_name, fw_header->magic);
 
 	/* Skip file header info , we already verified it */
-	fw_data += sizeof(struct bts_header);
+	fw_data += sizeof(struct bts_header);//跳过头部数据段
 	fw_len -= sizeof(struct bts_header);
 
-	while (fw_data && fw_len > 0) {
+	while (fw_data && fw_len > 0) {//固件是命令串序列，解析命令串数据，发生给设备
 		action = (struct bts_action *)fw_data;
 
 		switch (action->type) {
@@ -1292,7 +1292,7 @@ static int fm_download_firmware(struct fmdev *fmdev, const u8 *fw_name)
 	}
 	fmdbg("Firmware commands(%d) loaded to chip\n", cmd_cnt);
 rel_fw:
-	release_firmware(fw_entry);
+	release_firmware(fw_entry);//释放占用的固件资源
 	clear_bit(FM_FW_DW_INPROGRESS, &fmdev->flag);
 
 	return ret;

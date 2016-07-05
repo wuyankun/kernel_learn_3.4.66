@@ -310,14 +310,14 @@ int iwmct_fw_load(struct iwmct_priv *priv)
 
 
 	/* get the firmware */
-	ret = request_firmware(&raw, fw_name, &priv->func->dev);
+	ret = request_firmware(&raw, fw_name, &priv->func->dev);//申请固件资源
 	if (ret < 0) {
 		LOG_ERROR(priv, FW_DOWNLOAD, "%s request_firmware failed %d\n",
 			  fw_name, ret);
 		goto exit;
 	}
 
-	if (raw->size < sizeof(struct iwmct_fw_sec_hdr)) {
+	if (raw->size < sizeof(struct iwmct_fw_sec_hdr)) {//判断数据合法性
 		LOG_ERROR(priv, FW_DOWNLOAD, "%s smaller then (%zd) (%zd)\n",
 			  fw_name, sizeof(struct iwmct_fw_sec_hdr), raw->size);
 		goto exit;
@@ -326,7 +326,7 @@ int iwmct_fw_load(struct iwmct_priv *priv)
 	LOG_INFO(priv, FW_DOWNLOAD, "Read firmware '%s'\n", fw_name);
 
 	/* clear parser struct */
-	ret = iwmct_fw_parser_init(priv, raw->data, raw->size, priv->trans_len);
+	ret = iwmct_fw_parser_init(priv, raw->data, raw->size, priv->trans_len);//解析固件数据
 	if (ret < 0) {
 		LOG_ERROR(priv, FW_DOWNLOAD,
 			  "iwmct_parser_init failed: Reason %d\n", ret);
@@ -353,6 +353,6 @@ int iwmct_fw_load(struct iwmct_priv *priv)
 
 exit:
 	kfree(priv->parser.buf);
-	release_firmware(raw);
+	release_firmware(raw);//释放固件资源
 	return ret;
 }

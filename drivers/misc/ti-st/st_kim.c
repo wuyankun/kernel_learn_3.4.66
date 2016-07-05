@@ -272,7 +272,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 	int cmd_size;
 	unsigned long timeout;
 
-	err = read_local_version(kim_gdata, bts_scr_name);
+	err = read_local_version(kim_gdata, bts_scr_name);//通过名字来下载不同的固件文件
 	if (err != 0) {
 		pr_err("kim: failed to read local ver");
 		return err;
@@ -280,7 +280,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 	err =
 	    request_firmware(&kim_gdata->fw_entry, bts_scr_name,
 			     &kim_gdata->kim_pdev->dev);//调用通用接口去打开固件文件
-	if (unlikely((err != 0) || (kim_gdata->fw_entry->data == NULL) ||
+	if (unlikely((err != 0) || (kim_gdata->fw_entry->data == NULL) || //获取固件失败，函数返回非0值，缓冲区指针被设置为NULL，数据大小设置为0
 		     (kim_gdata->fw_entry->size == 0))) {
 		pr_err(" request_firmware failed(errno %ld) for %s", err,
 			   bts_scr_name);
@@ -299,7 +299,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 			   ((struct bts_action *)ptr)->size,
 			   ((struct bts_action *)ptr)->type);
 
-		switch (((struct bts_action *)ptr)->type) {
+		switch (((struct bts_action *)ptr)->type) {//固件数据按照该结构来定义组织数据
 		case ACTION_SEND_COMMAND:	/* action send */
 			pr_debug("S");
 			action_ptr = &(((struct bts_action *)ptr)->data[0]);
@@ -318,7 +318,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 			 * tx buffer to write current firmware command
 			 */
 			cmd_size = ((struct bts_action *)ptr)->size;
-			timeout = jiffies + msecs_to_jiffies(CMD_WR_TIME);
+			timeout = jiffies + msecs_to_jiffies(CMD_WR_TIME);//设置超时时间，未来的某个时刻点
 			do {
 				wr_room_space =
 					st_get_uart_wr_room(kim_gdata->core_data);
@@ -330,7 +330,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 				}
 				mdelay(1); /* wait 1ms before checking room */
 			} while ((wr_room_space < cmd_size) &&
-					time_before(jiffies, timeout));
+					time_before(jiffies, timeout));//每次loop，比较一次时刻点是否超时
 
 			/* Timeout happened ? */
 			if (time_after_eq(jiffies, timeout)) {
@@ -342,7 +342,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 			/* reinit completion before sending for the
 			 * relevant wait
 			 */
-			INIT_COMPLETION(kim_gdata->kim_rcvd);
+			INIT_COMPLETION(kim_gdata->kim_rcvd);//初始化一个完成量
 
 			/*
 			 * Free space found in uart buffer, call 4
@@ -394,7 +394,7 @@ static long download_firmware(struct kim_data_s *kim_gdata)//下载固件文件
 		    ((struct bts_action *)ptr)->size;
 	}
 	/* fw download complete */
-	release_firmware(kim_gdata->fw_entry);
+	release_firmware(kim_gdata->fw_entry);//发生错误，或者使用固件资源后，释放固件资源缓冲区
 	return 0;
 }
 

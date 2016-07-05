@@ -500,8 +500,8 @@ static int wl1273_fm_upload_firmware_patch(struct wl1273_device *radio)
 {
 	struct wl1273_core *core = radio->core;
 	unsigned int packet_num;
-	const struct firmware *fw_p;
-	const char *fw_name = "radio-wl1273-fw.bin";
+	const struct firmware *fw_p;//固件缓冲结构体指针
+	const char *fw_name = "radio-wl1273-fw.bin";//固件文件名称
 	struct device *dev = radio->dev;
 	__u8 *ptr;
 	int r;
@@ -512,13 +512,13 @@ static int wl1273_fm_upload_firmware_patch(struct wl1273_device *radio)
 	 * Uploading the firmware patch is not always necessary,
 	 * so we only print an info message.
 	 */
-	if (request_firmware(&fw_p, fw_name, dev)) {
+	if (request_firmware(&fw_p, fw_name, dev)) {//申请固件数据
 		dev_info(dev, "%s - %s not found\n", __func__, fw_name);
 
 		return 0;
 	}
 
-	ptr = (__u8 *) fw_p->data;
+	ptr = (__u8 *) fw_p->data;//使用数据
 	packet_num = ptr[0];
 	dev_dbg(dev, "%s: packets: %d\n", __func__, packet_num);
 
@@ -533,7 +533,7 @@ static int wl1273_fm_upload_firmware_patch(struct wl1273_device *radio)
 
 	dev_dbg(dev, "%s - download OK, r: %d\n", __func__, r);
 out:
-	release_firmware(fw_p);
+	release_firmware(fw_p);//释放固件占用的内存资源
 	return r;
 }
 
