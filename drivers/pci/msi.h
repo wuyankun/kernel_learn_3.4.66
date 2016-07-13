@@ -16,7 +16,7 @@
 #define is_64bit_address(control)	(!!(control & PCI_MSI_FLAGS_64BIT))
 #define is_mask_bit_support(control)	(!!(control & PCI_MSI_FLAGS_MASKBIT))
 
-#define msix_table_offset_reg(base)	(base + PCI_MSIX_TABLE)
+#define msix_table_offset_reg(base)	(base + PCI_MSIX_TABLE)//宏函数定义，根据协议规定，获得特定的寄存器地址
 #define msix_pba_offset_reg(base)	(base + PCI_MSIX_PBA)
 #define msix_table_size(control) 	((control & PCI_MSIX_FLAGS_QSIZE)+1)
 #define multi_msix_capable(control)	msix_table_size((control))

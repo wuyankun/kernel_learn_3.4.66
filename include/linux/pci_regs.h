@@ -301,9 +301,9 @@
 #define PCI_MSI_MASK_64		16	/* Mask bits register for 64-bit devices */
 
 /* MSI-X registers */
-#define PCI_MSIX_FLAGS		2
+#define PCI_MSIX_FLAGS		2       //对MSIX的capability寄存器结构解析，详细查看msix_capability_init进行查看
 #define  PCI_MSIX_FLAGS_QSIZE	0x7FF
-#define  PCI_MSIX_FLAGS_ENABLE	(1 << 15)
+#define  PCI_MSIX_FLAGS_ENABLE	(1 << 15)//使能bit位，在Flags的内部偏移
 #define  PCI_MSIX_FLAGS_MASKALL	(1 << 14)
 #define PCI_MSIX_TABLE		4
 #define PCI_MSIX_PBA		8

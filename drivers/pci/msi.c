@@ -36,7 +36,7 @@ int arch_msi_check_device(struct pci_dev *dev, int nvec, int type)
 #endif
 
 #ifndef arch_setup_msi_irqs
-# define arch_setup_msi_irqs default_setup_msi_irqs
+# define arch_setup_msi_irqs default_setup_msi_irqs //如果体系架构没有实现，则用这个默认实现,x86有自己的实现x86_setup_msi_irqs
 # define HAVE_DEFAULT_MSI_SETUP_IRQS
 #endif
 
@@ -50,11 +50,11 @@ int default_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 	 * If an architecture wants to support multiple MSI, it needs to
 	 * override arch_setup_msi_irqs()
 	 */
-	if (type == PCI_CAP_ID_MSI && nvec > 1)
+	if (type == PCI_CAP_ID_MSI && nvec > 1)//如果体系架构需要支持多于1个的msi中断，则需要overwrite接口
 		return 1;
 
 	list_for_each_entry(entry, &dev->msi_list, list) {
-		ret = arch_setup_msi_irq(dev, entry);
+		ret = arch_setup_msi_irq(dev, entry);//体系架构相关的进一步初始化
 		if (ret < 0)
 			return ret;
 		if (ret > 0)
@@ -117,7 +117,7 @@ static void msi_set_enable(struct pci_dev *dev, int pos, int enable)
 
 	BUG_ON(!pos);
 
-	pci_read_config_word(dev, pos + PCI_MSI_FLAGS, &control);
+	pci_read_config_word(dev, pos + PCI_MSI_FLAGS, &control);//使能和关闭，是通过控制capability中的Flags的值
 	control &= ~PCI_MSI_FLAGS_ENABLE;
 	if (enable)
 		control |= PCI_MSI_FLAGS_ENABLE;
@@ -189,7 +189,7 @@ static void msi_mask_irq(struct msi_desc *desc, u32 mask, u32 flag)
  * file.  This saves a few milliseconds when initialising devices with lots
  * of MSI-X interrupts.
  */
-static u32 __msix_mask_irq(struct msi_desc *desc, u32 flag)
+static u32 __msix_mask_irq(struct msi_desc *desc, u32 flag)//屏蔽某一个中断，是通过写msix-table中的verctor control的flags
 {
 	u32 mask_bits = desc->masked;
 	unsigned offset = desc->msi_attrib.entry_nr * PCI_MSIX_ENTRY_SIZE +
@@ -291,11 +291,11 @@ void __write_msi_msg(struct msi_desc *entry, struct msi_msg *msg)
 	} else if (entry->msi_attrib.is_msix) {
 		void __iomem *base;
 		base = entry->mask_base +
-			entry->msi_attrib.entry_nr * PCI_MSIX_ENTRY_SIZE;
+			entry->msi_attrib.entry_nr * PCI_MSIX_ENTRY_SIZE;//不同vector对应的offset不同
 
-		writel(msg->address_lo, base + PCI_MSIX_ENTRY_LOWER_ADDR);
+		writel(msg->address_lo, base + PCI_MSIX_ENTRY_LOWER_ADDR);//写入不同的address
 		writel(msg->address_hi, base + PCI_MSIX_ENTRY_UPPER_ADDR);
-		writel(msg->data, base + PCI_MSIX_ENTRY_DATA);
+		writel(msg->data, base + PCI_MSIX_ENTRY_DATA);//写入不同的adata，实测时，adress可能相同，通过不同的adata来区分不同的vector
 	} else {
 		struct pci_dev *dev = entry->dev;
 		int pos = entry->msi_attrib.pos;
@@ -607,11 +607,11 @@ static void __iomem *msix_map_region(struct pci_dev *dev, unsigned pos,
 	u8 bir;
 
 	pci_read_config_dword(dev, msix_table_offset_reg(pos), &table_offset);
-	bir = (u8)(table_offset & PCI_MSIX_FLAGS_BIRMASK);
-	table_offset &= ~PCI_MSIX_FLAGS_BIRMASK;
+	bir = (u8)(table_offset & PCI_MSIX_FLAGS_BIRMASK);//得到msix table 和pending table存储在哪一个bar中
+	table_offset &= ~PCI_MSIX_FLAGS_BIRMASK;//table的偏移量
 	phys_addr = pci_resource_start(dev, bir) + table_offset;
 
-	return ioremap_nocache(phys_addr, nr_entries * PCI_MSIX_ENTRY_SIZE);
+	return ioremap_nocache(phys_addr, nr_entries * PCI_MSIX_ENTRY_SIZE);//将物理地址映射为虚拟地址
 }
 
 static int msix_setup_entries(struct pci_dev *dev, unsigned pos,
@@ -622,7 +622,7 @@ static int msix_setup_entries(struct pci_dev *dev, unsigned pos,
 	int i;
 
 	for (i = 0; i < nvec; i++) {
-		entry = alloc_msi_entry(dev);
+		entry = alloc_msi_entry(dev);//分配一个总的描述类的结构体
 		if (!entry) {
 			if (!i)
 				iounmap(base);
@@ -632,12 +632,12 @@ static int msix_setup_entries(struct pci_dev *dev, unsigned pos,
 			return -ENOMEM;
 		}
 
-		entry->msi_attrib.is_msix	= 1;
-		entry->msi_attrib.is_64		= 1;
-		entry->msi_attrib.entry_nr	= entries[i].entry;
-		entry->msi_attrib.default_irq	= dev->irq;
-		entry->msi_attrib.pos		= pos;
-		entry->mask_base		= base;
+		entry->msi_attrib.is_msix	= 1;//属性描述，这个变量区分是msix还是msi中断
+		entry->msi_attrib.is_64		= 1;//全部使用64位的table，协议只定义了64位的table结构
+		entry->msi_attrib.entry_nr	= entries[i].entry;//关联计数,后续用来计算寄存器偏移量
+		entry->msi_attrib.default_irq	= dev->irq;//设备默认的中断线
+		entry->msi_attrib.pos		= pos;//在配置寄存器中，capability的偏移量
+		entry->mask_base		= base;//msix的table映射出来的虚拟地址基址
 
 		list_add_tail(&entry->list, &dev->msi_list);
 	}
@@ -658,7 +658,7 @@ static void msix_program_entries(struct pci_dev *dev,
 		entries[i].vector = entry->irq;
 		irq_set_msi_desc(entry->irq, entry);
 		entry->masked = readl(entry->mask_base + offset);
-		msix_mask_irq(entry, 1);
+		msix_mask_irq(entry, 1);//使能有效
 		i++;
 	}
 }
@@ -685,18 +685,18 @@ static int msix_capability_init(struct pci_dev *dev,
 
 	/* Ensure MSI-X is disabled while it is set up */
 	control &= ~PCI_MSIX_FLAGS_ENABLE;
-	pci_write_config_word(dev, pos + PCI_MSIX_FLAGS, control);
+	pci_write_config_word(dev, pos + PCI_MSIX_FLAGS, control);//在配置成功前先将状态标识位关闭
 
 	/* Request & Map MSI-X table region */
-	base = msix_map_region(dev, pos, multi_msix_capable(control));
+	base = msix_map_region(dev, pos, multi_msix_capable(control));//计算出存储的bar号，bar内偏移量，并将表空间映射出虚拟地址
 	if (!base)
 		return -ENOMEM;
 
-	ret = msix_setup_entries(dev, pos, base, entries, nvec);
+	ret = msix_setup_entries(dev, pos, base, entries, nvec);//初始化每一个中断线的一些属性信息
 	if (ret)
 		return ret;
 
-	ret = arch_setup_msi_irqs(dev, nvec, PCI_CAP_ID_MSIX);
+	ret = arch_setup_msi_irqs(dev, nvec, PCI_CAP_ID_MSIX);//体系架构相关的初始化，包括中断的分配，msix-addrs和msix-adata的分配等
 	if (ret)
 		goto error;
 
@@ -911,7 +911,7 @@ int pci_msix_table_size(struct pci_dev *dev)
  * of irqs or MSI-X vectors available. Driver should use the returned value to
  * re-send its request.
  **/
-int pci_enable_msix(struct pci_dev *dev, struct msix_entry *entries, int nvec)
+int pci_enable_msix(struct pci_dev *dev, struct msix_entry *entries, int nvec)//还未实现pci_enable_msix_range接口
 {
 	int status, nr_entries;
 	int i, j;
@@ -919,15 +919,15 @@ int pci_enable_msix(struct pci_dev *dev, struct msix_entry *entries, int nvec)
 	if (!entries)
 		return -EINVAL;
 
-	status = pci_msi_check_device(dev, nvec, PCI_CAP_ID_MSIX);
+	status = pci_msi_check_device(dev, nvec, PCI_CAP_ID_MSIX);//检查设备是否支持MSIX，包括上级总线，读取capability字段等
 	if (status)
 		return status;
 
-	nr_entries = pci_msix_table_size(dev);
+	nr_entries = pci_msix_table_size(dev);//读取capability中的contorl字段，得到设备支持的最大msix个数
 	if (nvec > nr_entries)
 		return nr_entries;
 
-	/* Check for any invalid entries */
+	/* Check for any invalid entries *///遍历检查初始化的中断标号有无越界和重复数据
 	for (i = 0; i < nvec; i++) {
 		if (entries[i].entry >= nr_entries)
 			return -EINVAL;		/* invalid entry */
@@ -939,12 +939,12 @@ int pci_enable_msix(struct pci_dev *dev, struct msix_entry *entries, int nvec)
 	WARN_ON(!!dev->msix_enabled);
 
 	/* Check whether driver already requested for MSI irq */
-	if (dev->msi_enabled) {
+	if (dev->msi_enabled) {//设备可以同时支持MSIX和MSI中断，但只能同时使用一种
 		dev_info(&dev->dev, "can't enable MSI-X "
 		       "(MSI IRQ already assigned)\n");
 		return -EINVAL;
 	}
-	status = msix_capability_init(dev, entries, nvec);
+	status = msix_capability_init(dev, entries, nvec);//MSIX相关资源准备开始
 	return status;
 }
 EXPORT_SYMBOL(pci_enable_msix);
