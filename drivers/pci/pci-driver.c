@@ -21,7 +21,7 @@
 #include <linux/suspend.h>
 #include "pci.h"
 
-struct pci_dynid {
+struct pci_dynid {//将pci_device_id展开来
 	struct list_head node;
 	struct pci_device_id id;
 };
@@ -267,10 +267,10 @@ static const struct pci_device_id *pci_match_device(struct pci_driver *drv,
 	}
 	spin_unlock(&drv->dynids.lock);
 
-	return pci_match_id(drv->id_table, dev);
+	return pci_match_id(drv->id_table, dev);//通过pid和vid来进行匹配判断
 }
 
-struct drv_dev_and_id {
+struct drv_dev_and_id {//简化函数参数，让代码好看一点
 	struct pci_driver *drv;
 	struct pci_dev *dev;
 	const struct pci_device_id *id;
@@ -292,7 +292,7 @@ static long local_pci_probe(void *_ddi)
 	pm_runtime_set_active(dev);
 	pm_runtime_enable(dev);
 
-	rc = ddi->drv->probe(ddi->dev, ddi->id);
+	rc = ddi->drv->probe(ddi->dev, ddi->id);//调用驱动实现的probe接口函数，传递给pdev和id信息
 	if (rc) {
 		pm_runtime_disable(dev);
 		pm_runtime_set_suspended(dev);
@@ -305,7 +305,7 @@ static int pci_call_probe(struct pci_driver *drv, struct pci_dev *dev,
 			  const struct pci_device_id *id)
 {
 	int error, node;
-	struct drv_dev_and_id ddi = { drv, dev, id };
+	struct drv_dev_and_id ddi = { drv, dev, id };//将函数参数转变为一个新的结构体指针保存起来
 
 	/* Execute driver initialization on node where the device's
 	   bus is attached to.  This way the driver likely allocates
@@ -323,7 +323,7 @@ static int pci_call_probe(struct pci_driver *drv, struct pci_dev *dev,
 			error = local_pci_probe(&ddi);
 		put_online_cpus();
 	} else
-		error = local_pci_probe(&ddi);
+		error = local_pci_probe(&ddi);//进一步调用驱动本身的探测函数
 	return error;
 }
 
@@ -341,12 +341,12 @@ __pci_device_probe(struct pci_driver *drv, struct pci_dev *pci_dev)
 	const struct pci_device_id *id;
 	int error = 0;
 
-	if (!pci_dev->driver && drv->probe) {
+	if (!pci_dev->driver && drv->probe) {//如果设备存在驱动，驱动存在探测函数接口实现
 		error = -ENODEV;
 
-		id = pci_match_device(drv, pci_dev);
+		id = pci_match_device(drv, pci_dev);//检测驱动和设备是否匹配
 		if (id)
-			error = pci_call_probe(drv, pci_dev, id);
+			error = pci_call_probe(drv, pci_dev, id);//调用驱动的探测函数
 		if (error >= 0) {
 			pci_dev->driver = drv;
 			error = 0;
@@ -355,13 +355,13 @@ __pci_device_probe(struct pci_driver *drv, struct pci_dev *pci_dev)
 	return error;
 }
 
-static int pci_device_probe(struct device * dev)
+static int pci_device_probe(struct device * dev)//传进来的结构为通用的struct device * 指针
 {
 	int error = 0;
 	struct pci_driver *drv;
 	struct pci_dev *pci_dev;
 
-	drv = to_pci_driver(dev->driver);
+	drv = to_pci_driver(dev->driver);//在已知该设备为pci设备的前提下，通过device指针得到驱动和设备的指针
 	pci_dev = to_pci_dev(dev);
 	pci_dev_get(pci_dev);
 	error = __pci_device_probe(drv, pci_dev);
@@ -379,7 +379,7 @@ static int pci_device_remove(struct device * dev)
 	if (drv) {
 		if (drv->remove) {
 			pm_runtime_get_sync(dev);
-			drv->remove(pci_dev);
+			drv->remove(pci_dev);//如果驱动实现了remove接口函数，调用
 			pm_runtime_put_noidle(dev);
 		}
 		pci_dev->driver = NULL;
@@ -1271,11 +1271,11 @@ int pci_uevent(struct device *dev, struct kobj_uevent_env *env)
 }
 #endif
 
-struct bus_type pci_bus_type = {
+struct bus_type pci_bus_type = { //PCI总线的结构
 	.name		= "pci",
-	.match		= pci_bus_match,
+	.match		= pci_bus_match,//设备和驱动的匹配判断接口
 	.uevent		= pci_uevent,
-	.probe		= pci_device_probe,
+	.probe		= pci_device_probe,//设备探测
 	.remove		= pci_device_remove,
 	.shutdown	= pci_device_shutdown,
 	.dev_attrs	= pci_dev_attrs,
@@ -1288,13 +1288,13 @@ static int __init pci_driver_init(void)
 	return bus_register(&pci_bus_type);
 }
 
-postcore_initcall(pci_driver_init);
+postcore_initcall(pci_driver_init);//核心的初始化
 
 EXPORT_SYMBOL_GPL(pci_add_dynid);
 EXPORT_SYMBOL(pci_match_id);
-EXPORT_SYMBOL(__pci_register_driver);
-EXPORT_SYMBOL(pci_unregister_driver);
+EXPORT_SYMBOL(__pci_register_driver);//驱动的注册
+EXPORT_SYMBOL(pci_unregister_driver);//驱动的卸载
 EXPORT_SYMBOL(pci_dev_driver);
-EXPORT_SYMBOL(pci_bus_type);
-EXPORT_SYMBOL(pci_dev_get);
+EXPORT_SYMBOL(pci_bus_type);//pci_bus_type
+EXPORT_SYMBOL(pci_dev_get);//设备增加和减少，使用计数
 EXPORT_SYMBOL(pci_dev_put);
