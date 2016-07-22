@@ -8,12 +8,12 @@
  * See MAINTAINERS file for support contact information.
  */
 
-#include <linux/module.h>
-#include <linux/moduleparam.h>
-#include <linux/pci.h>
-#include <linux/netdevice.h>
-#include <linux/etherdevice.h>
-#include <linux/delay.h>
+#include <linux/module.h>//模块modules_init、modules_exit
+#include <linux/moduleparam.h>//模块参数module_param
+#include <linux/pci.h>//pci驱动接口
+#include <linux/netdevice.h>//网络设备接口
+#include <linux/etherdevice.h>//ethtool设备接口
+#include <linux/delay.h>//delay等延时函数接口
 #include <linux/ethtool.h>
 #include <linux/mii.h>
 #include <linux/if_vlan.h>
@@ -21,15 +21,15 @@
 #include <linux/in.h>
 #include <linux/ip.h>
 #include <linux/tcp.h>
-#include <linux/init.h>
-#include <linux/interrupt.h>
-#include <linux/dma-mapping.h>
+#include <linux/init.h>//__init等接口定义
+#include <linux/interrupt.h>//中断接口定义,request_irq
+#include <linux/dma-mapping.h>//DMA_MASK(32)等接口定义
 #include <linux/pm_runtime.h>
-#include <linux/firmware.h>
+#include <linux/firmware.h>//固件接口定义
 #include <linux/pci-aspm.h>
 #include <linux/prefetch.h>
 
-#include <asm/io.h>
+#include <asm/io.h>//writel等接口定义
 #include <asm/irq.h>
 
 #define RTL8169_VERSION "2.3LK-NAPI"
@@ -45,7 +45,7 @@
 #define FIRMWARE_8168F_2	"rtl_nic/rtl8168f-2.fw"
 #define FIRMWARE_8105E_1	"rtl_nic/rtl8105e-1.fw"
 
-#ifdef RTL8169_DEBUG
+#ifdef RTL8169_DEBUG//调试接口宏函数定义
 #define assert(expr) \
 	if (!(expr)) {					\
 		printk( "Assertion failed! %s,%s,%s,line=%d\n",	\
@@ -77,7 +77,7 @@ static const int multicast_filter_limit = 32;
 #define SafeMtu		0x1c20	/* ... actually life sucks beyond ~7k */
 #define InterFrameGap	0x03	/* 3 means InterFrameGap = the shortest one */
 
-#define R8169_REGS_SIZE		256
+#define R8169_REGS_SIZE		256//BAR空间最大为256个kB
 #define R8169_NAPI_WEIGHT	64
 #define NUM_TX_DESC	64	/* Number of Tx descriptor registers */
 #define NUM_RX_DESC	256	/* Number of Rx descriptor registers */
@@ -85,14 +85,14 @@ static const int multicast_filter_limit = 32;
 #define R8169_TX_RING_BYTES	(NUM_TX_DESC * sizeof(struct TxDesc))
 #define R8169_RX_RING_BYTES	(NUM_RX_DESC * sizeof(struct RxDesc))
 
-#define RTL8169_TX_TIMEOUT	(6*HZ)
+#define RTL8169_TX_TIMEOUT	(6*HZ)//超时时间为6s和10s
 #define RTL8169_PHY_TIMEOUT	(10*HZ)
 
-#define RTL_EEPROM_SIG		cpu_to_le32(0x8129)
+#define RTL_EEPROM_SIG		cpu_to_le32(0x8129)//大小端转换
 #define RTL_EEPROM_SIG_MASK	cpu_to_le32(0xffff)
 #define RTL_EEPROM_SIG_ADDR	0x0000
 
-/* write/read MMIO register */
+/* write/read MMIO register *///直接读写Bar空间的寄存器
 #define RTL_W8(reg, val8)	writeb ((val8), ioaddr + (reg))
 #define RTL_W16(reg, val16)	writew ((val16), ioaddr + (reg))
 #define RTL_W32(reg, val32)	writel ((val32), ioaddr + (reg))
@@ -165,7 +165,7 @@ static const struct {
 	const char *fw_name;
 	u16 jumbo_max;
 	bool jumbo_tx_csum;
-} rtl_chip_infos[] = {
+} rtl_chip_infos[] = {//以后多用结构体数组
 	/* PCI devices. */
 	[RTL_GIGA_MAC_VER_01] =
 		_R("RTL8169",		RTL_TD_0, NULL, JUMBO_7K, true),
@@ -258,7 +258,7 @@ enum cfg_version {
 	RTL_CFG_2
 };
 
-static DEFINE_PCI_DEVICE_TABLE(rtl8169_pci_tbl) = {
+static DEFINE_PCI_DEVICE_TABLE(rtl8169_pci_tbl) = {//支持的设备列表
 	{ PCI_DEVICE(PCI_VENDOR_ID_REALTEK,	0x8129), 0, 0, RTL_CFG_0 },
 	{ PCI_DEVICE(PCI_VENDOR_ID_REALTEK,	0x8136), 0, 0, RTL_CFG_2 },
 	{ PCI_DEVICE(PCI_VENDOR_ID_REALTEK,	0x8167), 0, 0, RTL_CFG_0 },
@@ -283,7 +283,7 @@ static struct {
 	u32 msg_enable;
 } debug = { -1 };
 
-enum rtl_registers {
+enum rtl_registers {//寄存器用了枚举，不是宏定义
 	MAC0		= 0,	/* Ethernet hardware address. */
 	MAC4		= 4,
 	MAR0		= 8,	/* Multicast filter. */
@@ -682,7 +682,7 @@ struct rtl8169_stats {
 	struct u64_stats_sync	syncp;
 };
 
-struct rtl8169_private {
+struct rtl8169_private {//驱动上下文环境
 	void __iomem *mmio_addr;	/* memory map physical address */
 	struct pci_dev *pci_dev;
 	struct net_device *dev;
@@ -698,11 +698,11 @@ struct rtl8169_private {
 	struct rtl8169_stats tx_stats;
 	struct TxDesc *TxDescArray;	/* 256-aligned Tx descriptor ring */
 	struct RxDesc *RxDescArray;	/* 256-aligned Rx descriptor ring */
-	dma_addr_t TxPhyAddr;
+	dma_addr_t TxPhyAddr;//两个DMA地址
 	dma_addr_t RxPhyAddr;
 	void *Rx_databuff[NUM_RX_DESC];	/* Rx data buffers */
 	struct ring_info tx_skb[NUM_TX_DESC];	/* Tx data buffers */
-	struct timer_list timer;
+	struct timer_list timer;//一个定时器
 	u16 cp_cmd;
 
 	u16 event_slow;
@@ -775,7 +775,7 @@ MODULE_FIRMWARE(FIRMWARE_8105E_1);
 MODULE_FIRMWARE(FIRMWARE_8168F_1);
 MODULE_FIRMWARE(FIRMWARE_8168F_2);
 
-static void rtl_lock_work(struct rtl8169_private *tp)
+static void rtl_lock_work(struct rtl8169_private *tp)//工作队列的互斥变量进行包装
 {
 	mutex_lock(&tp->wk.mutex);
 }
@@ -1213,7 +1213,7 @@ static void rtl_irq_disable(struct rtl8169_private *tp)
 {
 	void __iomem *ioaddr = tp->mmio_addr;
 
-	RTL_W16(IntrMask, 0);
+	RTL_W16(IntrMask, 0);//关闭底层的中断，中断掩码设置为0
 	mmiowb();
 }
 
@@ -1596,7 +1596,7 @@ static int rtl8169_set_speed(struct net_device *dev,
 
 	if (netif_running(dev) && (autoneg == AUTONEG_ENABLE) &&
 	    (advertising & ADVERTISED_1000baseT_Full)) {
-		mod_timer(&tp->timer, jiffies + RTL8169_PHY_TIMEOUT);
+		mod_timer(&tp->timer, jiffies + RTL8169_PHY_TIMEOUT);//重新修改定时器的超时时间，再次启动定时器
 	}
 out:
 	return ret;
@@ -1607,7 +1607,7 @@ static int rtl8169_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 	struct rtl8169_private *tp = netdev_priv(dev);
 	int ret;
 
-	del_timer_sync(&tp->timer);
+	del_timer_sync(&tp->timer);//同步删除定时器
 
 	rtl_lock_work(tp);
 	ret = rtl8169_set_speed(dev, cmd->autoneg, ethtool_cmd_speed(cmd),
@@ -1802,7 +1802,7 @@ static void rtl8169_update_counters(struct net_device *dev)
 	if ((RTL_R8(ChipCmd) & CmdRxEnb) == 0)
 		return;
 
-	counters = dma_alloc_coherent(d, sizeof(*counters), &paddr, GFP_KERNEL);
+	counters = dma_alloc_coherent(d, sizeof(*counters), &paddr, GFP_KERNEL);//分配一块DMA缓冲区
 	if (!counters)
 		return;
 
@@ -1813,7 +1813,7 @@ static void rtl8169_update_counters(struct net_device *dev)
 
 	while (wait--) {
 		if ((RTL_R32(CounterAddrLow) & CounterDump) == 0) {
-			memcpy(&tp->counters, counters, sizeof(*counters));
+			memcpy(&tp->counters, counters, sizeof(*counters));//将DMA中的数据拷贝出来
 			break;
 		}
 		udelay(10);
@@ -1822,7 +1822,7 @@ static void rtl8169_update_counters(struct net_device *dev)
 	RTL_W32(CounterAddrLow, 0);
 	RTL_W32(CounterAddrHigh, 0);
 
-	dma_free_coherent(d, sizeof(*counters), counters, paddr);
+	dma_free_coherent(d, sizeof(*counters), counters, paddr);//释放DMA缓冲区
 }
 
 static void rtl8169_get_ethtool_stats(struct net_device *dev,
@@ -1877,7 +1877,7 @@ static const struct ethtool_ops rtl8169_ethtool_ops = {
 static void rtl8169_get_mac_version(struct rtl8169_private *tp,
 				    struct net_device *dev, u8 default_version)
 {
-	void __iomem *ioaddr = tp->mmio_addr;
+	void __iomem *ioaddr = tp->mmio_addr;//得到该bar的虚拟地址,在本函数中并没有使用
 	/*
 	 * The driver currently handles the 8168Bf and the 8168Be identically
 	 * but they can be identified more specifically through the test below
@@ -1889,7 +1889,7 @@ static void rtl8169_get_mac_version(struct rtl8169_private *tp,
 	 *
 	 * (RTL_R32(TxConfig) & 0x700000) == 0x200000 ? 8101Eb : 8101Ec
 	 */
-	static const struct rtl_mac_info {
+	static const struct rtl_mac_info {//定义一个结构体数组
 		u32 mask;
 		u32 val;
 		int mac_version;
@@ -1963,18 +1963,18 @@ static void rtl8169_get_mac_version(struct rtl8169_private *tp,
 		/* Catch-all */
 		{ 0x00000000, 0x00000000,	RTL_GIGA_MAC_NONE   }
 	};
-	const struct rtl_mac_info *p = mac_info;
+	const struct rtl_mac_info *p = mac_info;//申明一个该结构体的指针指向该数组的首地址，用来遍历数组
 	u32 reg;
 
 	reg = RTL_R32(TxConfig);
 	while ((reg & p->mask) != p->val)
 		p++;
-	tp->mac_version = p->mac_version;
+	tp->mac_version = p->mac_version;//遍历找到匹配的mac版本信息,并保存下来
 
 	if (tp->mac_version == RTL_GIGA_MAC_NONE) {
 		netif_notice(tp, probe, dev,
 			     "unknown MAC, using family default\n");
-		tp->mac_version = default_version;
+		tp->mac_version = default_version;//如果没有找到，则使用默认的mac版本信息
 	}
 }
 
@@ -2229,7 +2229,7 @@ static void rtl_phy_write_fw(struct rtl8169_private *tp, struct rtl_fw *rtl_fw)
 	}
 }
 
-static void rtl_release_firmware(struct rtl8169_private *tp)
+static void rtl_release_firmware(struct rtl8169_private *tp)//释放固件资源
 {
 	if (!IS_ERR_OR_NULL(tp->rtl_fw)) {
 		release_firmware(tp->rtl_fw->fw);
@@ -3284,16 +3284,16 @@ static void rtl_phy_work(struct rtl8169_private *tp)
 	tp->phy_reset_enable(tp);
 
 out_mod_timer:
-	mod_timer(timer, jiffies + timeout);
+	mod_timer(timer, jiffies + timeout);//再次修改定时器的超时时间，再次启动定时器
 }
 
 static void rtl_schedule_task(struct rtl8169_private *tp, enum rtl_flag flag)
 {
 	if (!test_and_set_bit(flag, tp->wk.flags))
-		schedule_work(&tp->wk.work);
+		schedule_work(&tp->wk.work);//超时后调度工作队列
 }
 
-static void rtl8169_phy_timer(unsigned long __opaque)
+static void rtl8169_phy_timer(unsigned long __opaque)//定时器超时处理函数
 {
 	struct net_device *dev = (struct net_device *)__opaque;
 	struct rtl8169_private *tp = netdev_priv(dev);
@@ -3378,7 +3378,7 @@ static void rtl_rar_set(struct rtl8169_private *tp, u8 *addr)
 	low  = addr[0] | (addr[1] << 8) | (addr[2] << 16) | (addr[3] << 24);
 	high = addr[4] | (addr[5] << 8);
 
-	rtl_lock_work(tp);
+	rtl_lock_work(tp);//突然想到，临界区保护的是数据，而不是代码
 
 	RTL_W8(Cfg9346, Cfg9346_Unlock);
 
@@ -3752,7 +3752,7 @@ static void rtl_init_rxcfg(struct rtl8169_private *tp)
 {
 	void __iomem *ioaddr = tp->mmio_addr;
 
-	switch (tp->mac_version) {
+	switch (tp->mac_version) {//根据mac的版本，来配置底层的寄存器
 	case RTL_GIGA_MAC_VER_01:
 	case RTL_GIGA_MAC_VER_02:
 	case RTL_GIGA_MAC_VER_03:
@@ -3942,7 +3942,7 @@ static void __devinit rtl_init_jumbo_ops(struct rtl8169_private *tp)
 
 static void rtl_hw_reset(struct rtl8169_private *tp)
 {
-	void __iomem *ioaddr = tp->mmio_addr;
+	void __iomem *ioaddr = tp->mmio_addr;//转换得到这个虚拟地址的作用是什么？
 	int i;
 
 	/* Soft reset the chip. */
@@ -3962,19 +3962,19 @@ static void rtl_request_uncached_firmware(struct rtl8169_private *tp)
 	const char *name;
 	int rc = -ENOMEM;
 
-	name = rtl_lookup_firmware_name(tp);
+	name = rtl_lookup_firmware_name(tp);//不同名字，请求不同的固件文件
 	if (!name)
 		goto out_no_firmware;
 
-	rtl_fw = kzalloc(sizeof(*rtl_fw), GFP_KERNEL);
+	rtl_fw = kzalloc(sizeof(*rtl_fw), GFP_KERNEL);//分配固件内存空间
 	if (!rtl_fw)
 		goto err_warn;
 
-	rc = request_firmware(&rtl_fw->fw, name, &tp->pci_dev->dev);
+	rc = request_firmware(&rtl_fw->fw, name, &tp->pci_dev->dev);//请求固件
 	if (rc < 0)
 		goto err_free;
 
-	rc = rtl_check_firmware(tp, rtl_fw);
+	rc = rtl_check_firmware(tp, rtl_fw);//检查固件格式是否合法
 	if (rc < 0)
 		goto err_release_firmware;
 
@@ -3983,7 +3983,7 @@ out:
 	return;
 
 err_release_firmware:
-	release_firmware(rtl_fw->fw);
+	release_firmware(rtl_fw->fw);//释放固件资源
 err_free:
 	kfree(rtl_fw);
 err_warn:
@@ -3994,7 +3994,7 @@ out_no_firmware:
 	goto out;
 }
 
-static void rtl_request_firmware(struct rtl8169_private *tp)
+static void rtl_request_firmware(struct rtl8169_private *tp)//固件请求
 {
 	if (IS_ERR(tp->rtl_fw))
 		rtl_request_uncached_firmware(tp);
@@ -5400,7 +5400,7 @@ static struct sk_buff *rtl8169_try_rx_copy(void *data,
 	struct device *d = &tp->pci_dev->dev;
 
 	data = rtl8169_align(data);
-	dma_sync_single_for_cpu(d, addr, pkt_size, DMA_FROM_DEVICE);
+	dma_sync_single_for_cpu(d, addr, pkt_size, DMA_FROM_DEVICE);//这是什么新技能
 	prefetch(data);
 	skb = netdev_alloc_skb_ip_align(tp->dev, pkt_size);
 	if (skb)
@@ -5637,7 +5637,7 @@ static void rtl8169_down(struct net_device *dev)
 	struct rtl8169_private *tp = netdev_priv(dev);
 	void __iomem *ioaddr = tp->mmio_addr;
 
-	del_timer_sync(&tp->timer);
+	del_timer_sync(&tp->timer);//同步删除定时器
 
 	napi_disable(&tp->napi);
 	netif_stop_queue(dev);
@@ -6084,7 +6084,7 @@ static unsigned rtl_try_msi(struct rtl8169_private *tp,
 
 	cfg2 = RTL_R8(Config2) & ~MSIEnable;
 	if (cfg->features & RTL_FEATURE_MSI) {
-		if (pci_enable_msi(tp->pci_dev)) {
+		if (pci_enable_msi(tp->pci_dev)) {//成功申请到MSI的中断资源，该函数返回0，否则返回负数的错误码
 			netif_info(tp, hw, tp->dev, "no MSI. Back to INTx.\n");
 		} else {
 			cfg2 |= MSIEnable;
@@ -6099,12 +6099,12 @@ static unsigned rtl_try_msi(struct rtl8169_private *tp,
 static int __devinit
 rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
-	const struct rtl_cfg_info *cfg = rtl_cfg_infos + ent->driver_data;
+	const struct rtl_cfg_info *cfg = rtl_cfg_infos + ent->driver_data;//从table表中获得额外的差异数据
 	const unsigned int region = cfg->region;
-	struct rtl8169_private *tp;
+	struct rtl8169_private *tp;//驱动上下文环境（pcidev, netdev, ...)
 	struct mii_if_info *mii;
-	struct net_device *dev;
-	void __iomem *ioaddr;
+	struct net_device *dev;//从功能上划分为一个netdev设备
+	void __iomem *ioaddr;//bar空间地址映射后的虚拟地址
 	int chipset, i;
 	int rc;
 
@@ -6113,20 +6113,20 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		       MODULENAME, RTL8169_VERSION);
 	}
 
-	dev = alloc_etherdev(sizeof (*tp));
+	dev = alloc_etherdev(sizeof (*tp));//网络设备申请内存区域，是直接申请驱动上下文结构体大小的空间
 	if (!dev) {
 		rc = -ENOMEM;
 		goto out;
 	}
 
-	SET_NETDEV_DEV(dev, &pdev->dev);
-	dev->netdev_ops = &rtl_netdev_ops;
-	tp = netdev_priv(dev);
-	tp->dev = dev;
-	tp->pci_dev = pdev;
+	SET_NETDEV_DEV(dev, &pdev->dev);//将device 设备赋值为netdev的device,用于netdev和pcidev之间沟通数据
+	dev->netdev_ops = &rtl_netdev_ops;//网络设备的ops结构初始化
+	tp = netdev_priv(dev);//从netdev得到netdev的驱动上下文结构的指针，私有数据
+	tp->dev = dev;//保存netdev到驱动上下文中
+	tp->pci_dev = pdev;//保存pcidev到驱动上下文中
 	tp->msg_enable = netif_msg_init(debug.msg_enable, R8169_MSG_DEFAULT);
 
-	mii = &tp->mii;
+	mii = &tp->mii;//mii结构体的初始化，保存到驱动上下文环境中
 	mii->dev = dev;
 	mii->mdio_read = rtl_mdio_read;
 	mii->mdio_write = rtl_mdio_write;
@@ -6140,17 +6140,17 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 				     PCIE_LINK_STATE_CLKPM);
 
 	/* enable device (incl. PCI PM wakeup and hotplug setup) */
-	rc = pci_enable_device(pdev);
+	rc = pci_enable_device(pdev);//激活pci设备
 	if (rc < 0) {
 		netif_err(tp, probe, dev, "enable failure\n");
 		goto err_out_free_dev_1;
 	}
 
 	if (pci_set_mwi(pdev) < 0)
-		netif_info(tp, probe, dev, "Mem-Wr-Inval unavailable\n");
+		netif_info(tp, probe, dev, "Mem-Wr-Inval unavailable\n");//Memery Write Invalid 内存写无效？
 
 	/* make sure PCI base addr 1 is MMIO */
-	if (!(pci_resource_flags(pdev, region) & IORESOURCE_MEM)) {
+	if (!(pci_resource_flags(pdev, region) & IORESOURCE_MEM)) {//检查某个bar类型，确认必须是mem的bar,而不是io的bar，不同类型的bar映射到不同的内存空间
 		netif_err(tp, probe, dev,
 			  "region #%d not an MMIO resource, aborting\n",
 			  region);
@@ -6159,27 +6159,27 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 
 	/* check for weird/broken PCI region reporting */
-	if (pci_resource_len(pdev, region) < R8169_REGS_SIZE) {
+	if (pci_resource_len(pdev, region) < R8169_REGS_SIZE) {//检查某个bar空间的大小，确认必须是小于某个约定的值
 		netif_err(tp, probe, dev,
 			  "Invalid PCI region size(s), aborting\n");
 		rc = -ENODEV;
 		goto err_out_mwi_2;
 	}
 
-	rc = pci_request_regions(pdev, MODULENAME);
+	rc = pci_request_regions(pdev, MODULENAME);//申请到驱动名称的bar资源，防止重复获取了同一设备的资源
 	if (rc < 0) {
 		netif_err(tp, probe, dev, "could not request regions\n");
 		goto err_out_mwi_2;
 	}
 
-	tp->cp_cmd = RxChkSum;
+	tp->cp_cmd = RxChkSum;//初始化一个命令状态字信息
 
-	if ((sizeof(dma_addr_t) > 4) &&
-	    !pci_set_dma_mask(pdev, DMA_BIT_MASK(64)) && use_dac) {
+	if ((sizeof(dma_addr_t) > 4) &&//判断dma_addr_t的结构类型占用的字节数，绝对当前的结构是64bit还是32bit
+	    !pci_set_dma_mask(pdev, DMA_BIT_MASK(64)) && use_dac) {//如果是64bit体系结构，则申请64bit的DMA
 		tp->cp_cmd |= PCIDAC;
 		dev->features |= NETIF_F_HIGHDMA;
 	} else {
-		rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+		rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));//否则使用32bit的DMA，目前还没有使能设备总线主模式能力
 		if (rc < 0) {
 			netif_err(tp, probe, dev, "DMA configuration failed\n");
 			goto err_out_free_res_3;
@@ -6187,29 +6187,29 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 
 	/* ioremap MMIO region */
-	ioaddr = ioremap(pci_resource_start(pdev, region), R8169_REGS_SIZE);
+	ioaddr = ioremap(pci_resource_start(pdev, region), R8169_REGS_SIZE);//将某个bar空间的物理地址，映射为虚拟地址空间，长度为指定长度
 	if (!ioaddr) {
 		netif_err(tp, probe, dev, "cannot remap MMIO, aborting\n");
 		rc = -EIO;
 		goto err_out_free_res_3;
 	}
-	tp->mmio_addr = ioaddr;
+	tp->mmio_addr = ioaddr;//保存该虚拟地址空间
 
 	if (!pci_is_pcie(pdev))
-		netif_info(tp, probe, dev, "not PCI Express\n");
+		netif_info(tp, probe, dev, "not PCI Express\n");//判断当前的设备接入的是PCI接口还是PCIE的接口
 
 	/* Identify chip attached to board */
-	rtl8169_get_mac_version(tp, dev, cfg->default_ver);
+	rtl8169_get_mac_version(tp, dev, cfg->default_ver);//芯片相关的信息初始化工作,获取mac的版本信息
 
-	rtl_init_rxcfg(tp);
+	rtl_init_rxcfg(tp);//根据mac的版本信息，初始化rx的底层配置寄存器
 
-	rtl_irq_disable(tp);
+	rtl_irq_disable(tp);//关闭底层的中断，将chip的中断掩码设置为0
 
-	rtl_hw_reset(tp);
+	rtl_hw_reset(tp);//重置一下chip
 
 	rtl_ack_events(tp, 0xffff);
 
-	pci_set_master(pdev);
+	pci_set_master(pdev);//设置为pci设备总线主模式，只有主模式才能访问内存的，使用DMA
 
 	/*
 	 * Pretend we are using VLANs; This bypasses a nasty bug where
@@ -6222,7 +6222,7 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	rtl_init_pll_power_ops(tp);
 	rtl_init_jumbo_ops(tp);
 
-	rtl8169_print_mac_version(tp);
+	rtl8169_print_mac_version(tp);//mac地址调试打印信息
 
 	chipset = tp->mac_version;
 	tp->txd_version = rtl_chip_infos[chipset].txd_version;
@@ -6234,7 +6234,7 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		tp->features |= RTL_FEATURE_WOL;
 	if ((RTL_R8(Config5) & (UWF | BWF | MWF)) != 0)
 		tp->features |= RTL_FEATURE_WOL;
-	tp->features |= rtl_try_msi(tp, cfg);
+	tp->features |= rtl_try_msi(tp, cfg);//尝试使用MSI中断方式
 	RTL_W8(Cfg9346, Cfg9346_Lock);
 
 	if (rtl_tbi_enabled(tp)) {
@@ -6253,15 +6253,15 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		tp->do_ioctl = rtl_xmii_ioctl;
 	}
 
-	mutex_init(&tp->wk.mutex);
+	mutex_init(&tp->wk.mutex);//初始化一个互斥量
 
 	/* Get MAC address */
 	for (i = 0; i < ETH_ALEN; i++)
 		dev->dev_addr[i] = RTL_R8(MAC0 + i);
-	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
+	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);//获取MAC地址信息
 
-	SET_ETHTOOL_OPS(dev, &rtl8169_ethtool_ops);
-	dev->watchdog_timeo = RTL8169_TX_TIMEOUT;
+	SET_ETHTOOL_OPS(dev, &rtl8169_ethtool_ops);//ethtool 的ops关联
+	dev->watchdog_timeo = RTL8169_TX_TIMEOUT;//watchdog看门狗超时时间的设置
 
 	netif_napi_add(dev, &tp->napi, rtl8169_poll, R8169_NAPI_WEIGHT);
 
@@ -6288,17 +6288,17 @@ rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	tp->opts1_mask = (tp->mac_version != RTL_GIGA_MAC_VER_01) ?
 		~(RxBOVF | RxFOVF) : ~0;
 
-	init_timer(&tp->timer);
-	tp->timer.data = (unsigned long) dev;
-	tp->timer.function = rtl8169_phy_timer;
+	init_timer(&tp->timer);//初始化一个定时器
+	tp->timer.data = (unsigned long) dev;//定时器结构的初始化，上下文环境传递
+	tp->timer.function = rtl8169_phy_timer;//超时处理回调函数
 
 	tp->rtl_fw = RTL_FIRMWARE_UNKNOWN;
 
-	rc = register_netdev(dev);
+	rc = register_netdev(dev);//注册这个net dev设备
 	if (rc < 0)
 		goto err_out_msi_4;
 
-	pci_set_drvdata(pdev, dev);
+	pci_set_drvdata(pdev, dev);//pci设备关联驱动上下文环境
 
 	netif_info(tp, probe, dev, "%s at 0x%p, %pM, XID %08x IRQ %d\n",
 		   rtl_chip_infos[chipset].name, ioaddr, dev->dev_addr,
@@ -6344,7 +6344,7 @@ static struct pci_driver rtl8169_pci_driver = {
 	.name		= MODULENAME,
 	.id_table	= rtl8169_pci_tbl,
 	.probe		= rtl_init_one,
-	.remove		= __devexit_p(rtl_remove_one),
+	.remove		= __devexit_p(rtl_remove_one),//设备移除的宏，存放在汇编的__exit区域
 	.shutdown	= rtl_shutdown,
 	.driver.pm	= RTL8169_PM_OPS,
 };
