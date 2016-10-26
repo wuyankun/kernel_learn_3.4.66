@@ -1,17 +1,17 @@
-This document explains the thinking about the revamped and streamlined
+This document explains the thinking about the revamped(修正的) and streamlined（流水线）
 nice-levels implementation in the new Linux scheduler.
 
 Nice levels were always pretty weak under Linux and people continuously
-pestered us to make nice +19 tasks use up much less CPU time.
+pestered(使...烦恼) us to make nice +19 tasks use up much less CPU time.
 
 Unfortunately that was not that easy to implement under the old
 scheduler, (otherwise we'd have done it long ago) because nice level
-support was historically coupled to timeslice length, and timeslice
+support was historically coupled to timeslice length, and timeslice(时间片)
 units were driven by the HZ tick, so the smallest timeslice was 1/HZ.
 
 In the O(1) scheduler (in 2003) we changed negative nice levels to be
 much stronger than they were before in 2.4 (and people were happy about
-that change), and we also intentionally calibrated the linear timeslice
+that change), and we also intentionallyi(故意地) calibrated（校正） the linear timeslice
 rule so that nice +19 level would be _exactly_ 1 jiffy. To better
 understand it, the timeslice graph went like this (cheesy ASCII art
 alert!):
@@ -36,29 +36,29 @@ So that if someone wanted to really renice tasks, +19 would give a much
 bigger hit than the normal linear rule would do. (The solution of
 changing the ABI to extend priorities was discarded early on.)
 
-This approach worked to some degree for some time, but later on with
+This approach worked to some degree(程度) for some time, but later on with
 HZ=1000 it caused 1 jiffy to be 1 msec, which meant 0.1% CPU usage which
-we felt to be a bit excessive. Excessive _not_ because it's too small of
-a CPU utilization, but because it causes too frequent (once per
-millisec) rescheduling. (and would thus trash the cache, etc. Remember,
+we felt to be a bit excessivei(过度). Excessive _not_ because it's too small of
+a CPU utilization, but because it causes too frequent(频繁) (once per
+millisec) rescheduling. (and would thus trash(丢弃) the cache, etc. Remember,
 this was long ago when hardware was weaker and caches were smaller, and
-people were running number crunching apps at nice +19.)
+people were running number crunching(碎片的) apps at nice +19.)
 
 So for HZ=1000 we changed nice +19 to 5msecs, because that felt like the
-right minimal granularity - and this translates to 5% CPU utilization.
+right minimal granularity（粒度） - and this translates to 5% CPU utilization.
 But the fundamental HZ-sensitive property for nice+19 still remained,
 and we never got a single complaint about nice +19 being too _weak_ in
 terms of CPU utilization, we only got complaints about it (still) being
 too _strong_ :-)
 
-To sum it up: we always wanted to make nice levels more consistent, but
-within the constraints of HZ and jiffies and their nasty design level
-coupling to timeslices and granularity it was not really viable.
+To sum it up: we always wanted to make nice levels more consistent（一致的）, but
+within the constraints(构成) of HZ and jiffies and their nasty(肮脏的下流的) design level
+coupling(对应) to timeslices and granularity it was not really viable(可行的).
 
 The second (less frequent but still periodically occurring) complaint
-about Linux's nice level support was its assymetry around the origo
+about Linux's nice level support was its assymetry around the origo(起点)
 (which you can see demonstrated in the picture above), or more
-accurately: the fact that nice level behavior depended on the _absolute_
+accurately(精确的): the fact that nice level behavior depended on the _absolute_
 nice level as well, while the nice API itself is fundamentally
 "relative":
 
@@ -67,23 +67,23 @@ nice level as well, while the nice API itself is fundamentally
    asmlinkage long sys_nice(int increment)
 
 (the first one is the glibc API, the second one is the syscall API.)
-Note that the 'inc' is relative to the current nice level. Tools like
+Note that the 'inc' is relative（相对的） to the current nice level. Tools like
 bash's "nice" command mirror this relative API.
 
 With the old scheduler, if you for example started a niced task with +1
 and another task with +2, the CPU split between the two tasks would
 depend on the nice level of the parent shell - if it was at nice -10 the
-CPU split was different than if it was at +5 or +10.
+CPU split was different than if it was at +5 or +10.（nice值是相对于当前任务的nice值）
 
 A third complaint against Linux's nice level support was that negative
-nice levels were not 'punchy enough', so lots of people had to resort to
-run audio (and other multimedia) apps under RT priorities such as
-SCHED_FIFO. But this caused other problems: SCHED_FIFO is not starvation
-proof, and a buggy SCHED_FIFO app can also lock up the system for good.
+nice levels were not 'punchy（足够的） enough', so lots of people had to resort(求助) to
+run audio (and other multimedia) apps under RT priorities(优选级) such as
+SCHED_FIFO. But this caused other problems: SCHED_FIFO is not starvation(绝对求证的)
+proof, and a buggy SCHED_FIFO app can also lock up the system for good.(会引起死锁)
 
-The new scheduler in v2.6.23 addresses all three types of complaints:
+The new scheduler in v2.6.23 addresses(处理) all three types of complaints:
 
-To address the first complaint (of nice levels being not "punchy"
+To address the first complaint (of nice levels being not "punchy"(nice值是和HZ是独立的的百分比)
 enough), the scheduler was decoupled from 'time slice' and HZ concepts
 (and granularity was made a separate concept from nice levels) and thus
 it was possible to implement better and more consistent nice +19
@@ -99,10 +99,10 @@ utilization "split" between them as running a nice -5 and a nice -4
 task. (one will get 55% of the CPU, the other 45%.) That is why nice
 levels were changed to be "multiplicative" (or exponential) - that way
 it does not matter which nice level you start out from, the 'relative
-result' will always be the same.
+result' will always be the same.(无论从什么级别的nice任务，效果是一样的，不是绝对的，跟父任务无关)
 
 The third complaint (of negative nice levels not being "punchy" enough
-and forcing audio apps to run under the more dangerous SCHED_FIFO
+and forcing audio apps to run under the more dangerous SCHED_FIFO(解决实时性问题采用了新的调度算法)
 scheduling policy) is addressed by the new scheduler almost
 automatically: stronger negative nice levels are an automatic
-side-effect of the recalibrated dynamic range of nice levels.
+side-effect of the recalibrated dynamic range of nice levels.(越负数的级别是一种副作用自动校准的动态范围的nice级别)
