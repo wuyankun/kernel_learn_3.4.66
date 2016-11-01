@@ -15,7 +15,7 @@
 
 #include "boot.h"
 
-#define SMAP	0x534d4150	/* ASCII "SMAP" */
+#define SMAP	0x534d4150	/* ASCII "SMAP" *///握手字段
 
 static int detect_memory_e820(void)
 {
@@ -45,13 +45,13 @@ static int detect_memory_e820(void)
 	 */
 
 	do {
-		intcall(0x15, &ireg, &oreg);
+		intcall(0x15, &ireg, &oreg);//使用BIOS的0x15中断，传入参数，传出信息
 		ireg.ebx = oreg.ebx; /* for next iteration... */
 
 		/* BIOSes which terminate the chain with CF = 1 as opposed
 		   to %ebx = 0 don't always report the SMAP signature on
 		   the final, failing, probe. */
-		if (oreg.eflags & X86_EFLAGS_CF)
+		if (oreg.eflags & X86_EFLAGS_CF)//BIOS也许会将CF置为1，来结束循环获取内存布局信息
 			break;
 
 		/* Some BIOSes stop returning SMAP in the middle of
@@ -59,16 +59,16 @@ static int detect_memory_e820(void)
 		   screwed up the map at that point, we might have a
 		   partial map, the full map, or complete garbage, so
 		   just return failure. */
-		if (oreg.eax != SMAP) {
+		if (oreg.eax != SMAP) {//如果握手信息不对，则提前退出
 			count = 0;
 			break;
 		}
 
 		*desc++ = buf;
-		count++;
+		count++;//计数增加，结构体个数
 	} while (ireg.ebx && count < ARRAY_SIZE(boot_params.e820_map));
 
-	return boot_params.e820_entries = count;
+	return boot_params.e820_entries = count;//布局实体个数信息
 }
 
 static int detect_memory_e801(void)
@@ -119,17 +119,17 @@ static int detect_memory_88(void)
 	return -(oreg.eflags & X86_EFLAGS_CF); /* 0 or -1 */
 }
 
-int detect_memory(void)
+int detect_memory(void)//在实模式下，探测物理内存分布
 {
 	int err = -1;
 
-	if (detect_memory_e820() > 0)
+	if (detect_memory_e820() > 0)//最新的架构，使用0x820地址从BIOS中获取内存布局信息
 		err = 0;
 
-	if (!detect_memory_e801())
+	if (!detect_memory_e801())//兼容旧的机器，使用0xe801
 		err = 0;
 
-	if (!detect_memory_88())
+	if (!detect_memory_88())//兼容旧的机器，使用0x88
 		err = 0;
 
 	return err;
