@@ -59,7 +59,7 @@ static const unsigned int tacc_mant[] = {
 /*
  * Given the decoded CSD structure, decode the raw CID to our CID structure.
  */
-static int mmc_decode_cid(struct mmc_card *card)
+static int mmc_decode_cid(struct mmc_card *card)//解析SD/emmc卡的CID寄存器组
 {
 	u32 *resp = card->raw_cid;
 
@@ -123,7 +123,7 @@ static void mmc_set_erase_size(struct mmc_card *card)
 /*
  * Given a 128-bit response, decode to our card CSD structure.
  */
-static int mmc_decode_csd(struct mmc_card *card)
+static int mmc_decode_csd(struct mmc_card *card)//解析SD/eMMC卡的CSD内部寄存器组，固定的含义，接口规范
 {
 	struct mmc_csd *csd = &card->csd;
 	unsigned int e, m, a, b;
@@ -177,7 +177,7 @@ static int mmc_decode_csd(struct mmc_card *card)
 /*
  * Read extended CSD.
  */
-static int mmc_get_ext_csd(struct mmc_card *card, u8 **new_ext_csd)
+static int mmc_get_ext_csd(struct mmc_card *card, u8 **new_ext_csd)//获取SD/eMMC卡的EXT_CSD内部寄存器组，不需要全部保存，仅记录部分属性
 {
 	int err;
 	u8 *ext_csd;
@@ -238,7 +238,7 @@ static int mmc_get_ext_csd(struct mmc_card *card, u8 **new_ext_csd)
 /*
  * Decode extended CSD.
  */
-static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
+static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)//解析EXT_CSD内部寄存器组
 {
 	int err = 0, idx;
 	unsigned int part_size;
@@ -284,7 +284,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 		if (card->ext_csd.sectors > (2u * 1024 * 1024 * 1024) / 512)
 			mmc_card_set_blockaddr(card);
 	}
-	card->ext_csd.raw_card_type = ext_csd[EXT_CSD_CARD_TYPE];
+	card->ext_csd.raw_card_type = ext_csd[EXT_CSD_CARD_TYPE];//卡的类型信息
 	switch (ext_csd[EXT_CSD_CARD_TYPE] & EXT_CSD_CARD_TYPE_MASK) {
 	case EXT_CSD_CARD_TYPE_SDR_ALL:
 	case EXT_CSD_CARD_TYPE_SDR_ALL_DDR_1_8V:
@@ -304,7 +304,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	case EXT_CSD_CARD_TYPE_SDR_1_8V_DDR_1_8V:
 	case EXT_CSD_CARD_TYPE_SDR_1_8V_DDR_1_2V:
 	case EXT_CSD_CARD_TYPE_SDR_1_8V_DDR_52:
-		card->ext_csd.hs_max_dtr = 200000000;
+		card->ext_csd.hs_max_dtr = 200000000;//最大的hs频率
 		card->ext_csd.card_type = EXT_CSD_CARD_TYPE_SDR_1_8V;
 		break;
 	case EXT_CSD_CARD_TYPE_DDR_52 | EXT_CSD_CARD_TYPE_52 |
@@ -364,6 +364,8 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 		 * There are two boot regions of equal size, defined in
 		 * multiples of 128K.
 		 */
+
+
 		if (ext_csd[EXT_CSD_BOOT_MULT] && mmc_boot_partition_access(card->host)) {
 			for (idx = 0; idx < MMC_NUM_BOOT_PARTITION; idx++) {
 				part_size = ext_csd[EXT_CSD_BOOT_MULT] << 17;
@@ -506,7 +508,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 		card->erased_byte = 0x0;
 
 	/* eMMC v4.5 or later */
-	if (card->ext_csd.rev >= 6) {
+	if (card->ext_csd.rev >= 6) {//不同的eMMC的规格，解析规则不一样
 		card->ext_csd.feature_support |= MMC_DISCARD_FEATURE;
 
 		card->ext_csd.generic_cmd6_time = 10 *
@@ -545,7 +547,7 @@ static inline void mmc_free_ext_csd(u8 *ext_csd)
 }
 
 
-static int mmc_compare_ext_csds(struct mmc_card *card, unsigned bus_width)
+static int mmc_compare_ext_csds(struct mmc_card *card, unsigned bus_width)//进行内容比对
 {
 	u8 *bw_ext_csd;
 	int err;
@@ -564,7 +566,7 @@ static int mmc_compare_ext_csds(struct mmc_card *card, unsigned bus_width)
 	if (bus_width == MMC_BUS_WIDTH_1)
 		goto out;
 
-	/* only compare read only fields */
+	/* only compare read only fields *///如注释，仅比对只读部分的数据是否一致
 	err = !((card->ext_csd.raw_partition_support ==
 			bw_ext_csd[EXT_CSD_PARTITION_SUPPORT]) &&
 		(card->ext_csd.raw_erased_mem_count ==
@@ -607,6 +609,7 @@ out:
 	return err;
 }
 
+//属性宏，构建dev_attr_cid等属性item
 MMC_DEV_ATTR(cid, "%08x%08x%08x%08x\n", card->raw_cid[0], card->raw_cid[1],
 	card->raw_cid[2], card->raw_cid[3]);
 MMC_DEV_ATTR(csd, "%08x%08x%08x%08x\n", card->raw_csd[0], card->raw_csd[1],
@@ -623,7 +626,7 @@ MMC_DEV_ATTR(serial, "0x%08x\n", card->cid.serial);
 MMC_DEV_ATTR(enhanced_area_offset, "%llu\n",
 		card->ext_csd.enhanced_area_offset);
 MMC_DEV_ATTR(enhanced_area_size, "%u\n", card->ext_csd.enhanced_area_size);
-
+//属性组赋值，填充
 static struct attribute *mmc_std_attrs[] = {
 	&dev_attr_cid.attr,
 	&dev_attr_csd.attr,
@@ -640,16 +643,16 @@ static struct attribute *mmc_std_attrs[] = {
 	&dev_attr_enhanced_area_size.attr,
 	NULL,
 };
-
+//属性组组填充item
 static struct attribute_group mmc_std_attr_group = {
 	.attrs = mmc_std_attrs,
 };
-
+//属性组组
 static const struct attribute_group *mmc_attr_groups[] = {
 	&mmc_std_attr_group,
 	NULL,
 };
-
+//套路？
 static struct device_type mmc_type = {
 	.groups = mmc_attr_groups,
 };
@@ -686,7 +689,7 @@ static int mmc_select_powerclass(struct mmc_card *card,
 
 	switch (1 << host->ios.vdd) {
 	case MMC_VDD_165_195:
-		if (host->ios.clock <= 26000000)
+		if (host->ios.clock <= 26000000)//根据时钟进一步划分电源供电类型
 			index = EXT_CSD_PWR_CL_26_195;
 		else if	(host->ios.clock <= 52000000)
 			index = (bus_width <= EXT_CSD_BUS_WIDTH_8) ?
@@ -743,7 +746,7 @@ static int mmc_select_powerclass(struct mmc_card *card,
  * Selects the desired buswidth and switch to the HS200 mode
  * if bus width set without error
  */
-static int mmc_select_hs200(struct mmc_card *card)
+static int mmc_select_hs200(struct mmc_card *card)//切换到HS200的模式，可以判断返回值，查看工作状态模式
 {
 	int idx, err = 0;
 	struct mmc_host *host;
@@ -819,7 +822,7 @@ err:
  * we're trying to reinitialise.
  */
 static int mmc_init_card(struct mmc_host *host, u32 ocr,
-	struct mmc_card *oldcard)
+	struct mmc_card *oldcard)//初始化一个SD/eMMC卡，解析内部寄存器，进行初始化
 {
 	struct mmc_card *card;
 	int err, ddr = 0;
@@ -833,7 +836,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 
 	/* Set correct bus mode for MMC before attempting init */
 	if (!mmc_host_is_spi(host))
-		mmc_set_bus_mode(host, MMC_BUSMODE_OPENDRAIN);
+		mmc_set_bus_mode(host, MMC_BUSMODE_OPENDRAIN);//open drain
 
 	/* Initialization should be done at 3.3 V I/O voltage. */
 	mmc_set_signal_voltage(host, MMC_SIGNAL_VOLTAGE_330, 0);
@@ -865,7 +868,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 	 * Fetch CID from card.
 	 */
 	if (mmc_host_is_spi(host))
-		err = mmc_send_cid(host, cid);
+		err = mmc_send_cid(host, cid);//从函数命名来看，也是单主模式？？
 	else
 		err = mmc_all_send_cid(host, cid);
 	if (err)
@@ -901,7 +904,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 		if (err)
 			goto free_card;
 
-		mmc_set_bus_mode(host, MMC_BUSMODE_PUSHPULL);
+		mmc_set_bus_mode(host, MMC_BUSMODE_PUSHPULL);//push pull
 	}
 
 	if (!oldcard) {
@@ -1421,7 +1424,7 @@ static int mmc_awake(struct mmc_host *host)
 	return err;
 }
 
-static const struct mmc_bus_ops mmc_ops = {
+static const struct mmc_bus_ops mmc_ops = {//可以统一的
 	.awake = mmc_awake,
 	.sleep = mmc_sleep,
 	.remove = mmc_remove,
@@ -1447,7 +1450,7 @@ static void mmc_attach_bus_ops(struct mmc_host *host)
 {
 	const struct mmc_bus_ops *bus_ops;
 
-	if (!mmc_card_is_removable(host))
+	if (!mmc_card_is_removable(host))//可移除的和不可移除的使用两套ops
 		bus_ops = &mmc_ops_unsafe;
 	else
 		bus_ops = &mmc_ops;
@@ -1457,7 +1460,7 @@ static void mmc_attach_bus_ops(struct mmc_host *host)
 /*
  * Starting point for MMC card init.
  */
-int mmc_attach_mmc(struct mmc_host *host)
+int mmc_attach_mmc(struct mmc_host *host)//MMC卡初始化的入口点
 {
 	int err;
 	u32 ocr;
@@ -1467,7 +1470,7 @@ int mmc_attach_mmc(struct mmc_host *host)
 
 	/* Set correct bus mode for MMC before attempting attach */
 	if (!mmc_host_is_spi(host))
-		mmc_set_bus_mode(host, MMC_BUSMODE_OPENDRAIN);
+		mmc_set_bus_mode(host, MMC_BUSMODE_OPENDRAIN);//判断是否使用SPI模式
 
 	err = mmc_send_op_cond(host, 0, &ocr);
 	if (err)
@@ -1497,7 +1500,7 @@ int mmc_attach_mmc(struct mmc_host *host)
 		ocr &= ~0x7F;
 	}
 
-	host->ocr = mmc_select_voltage(host, ocr);
+	host->ocr = mmc_select_voltage(host, ocr);//工作电压选择
 
 	/*
 	 * Can we support the voltage of the card?
@@ -1510,7 +1513,7 @@ int mmc_attach_mmc(struct mmc_host *host)
 	/*
 	 * Detect and init the card.
 	 */
-	err = mmc_init_card(host, host->ocr, NULL);
+	err = mmc_init_card(host, host->ocr, NULL);//初始化卡的相关信息
 	if (err)
 		goto err;
 
