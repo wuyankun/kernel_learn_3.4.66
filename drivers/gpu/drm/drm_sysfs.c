@@ -37,7 +37,7 @@ static struct device_type drm_sysfs_device_minor = {
  * Just figures out what the actual struct drm_device associated with
  * @dev is and calls its suspend hook, if present.
  */
-static int drm_class_suspend(struct device *dev, pm_message_t state)
+static int drm_class_suspend(struct device *dev, pm_message_t state)//支持drm的电源管理
 {
 	if (dev->type == &drm_sysfs_device_minor) {
 		struct drm_minor *drm_minor = to_drm_minor(dev);
@@ -77,7 +77,7 @@ static char *drm_devnode(struct device *dev, umode_t *mode)
 	return kasprintf(GFP_KERNEL, "dri/%s", dev_name(dev));
 }
 
-static CLASS_ATTR_STRING(version, S_IRUGO,
+static CLASS_ATTR_STRING(version, S_IRUGO,//version属性文件的内容构成
 		CORE_NAME " "
 		__stringify(CORE_MAJOR) "."
 		__stringify(CORE_MINOR) "."
@@ -95,25 +95,25 @@ static CLASS_ATTR_STRING(version, S_IRUGO,
  * Note, the pointer created here is to be destroyed when finished by making a
  * call to drm_sysfs_destroy().
  */
-struct class *drm_sysfs_create(struct module *owner, char *name)
+struct class *drm_sysfs_create(struct module *owner, char *name)//创建drm目录，并在目录下创建version属性文件
 {
 	struct class *class;
 	int err;
 
-	class = class_create(owner, name);
+	class = class_create(owner, name);//创建一个class
 	if (IS_ERR(class)) {
 		err = PTR_ERR(class);
 		goto err_out;
 	}
 
-	class->suspend = drm_class_suspend;
+	class->suspend = drm_class_suspend;//该class支持电源管理，实现的接口
 	class->resume = drm_class_resume;
 
-	err = class_create_file(class, &class_attr_version.attr);
+	err = class_create_file(class, &class_attr_version.attr);//class下附带的属性文件
 	if (err)
 		goto err_out_class;
 
-	class->devnode = drm_devnode;
+	class->devnode = drm_devnode;//设备节点
 
 	return class;
 
@@ -128,7 +128,7 @@ err_out:
  *
  * Destroy the DRM device class.
  */
-void drm_sysfs_destroy(void)
+void drm_sysfs_destroy(void)//drm目录和属性文件verison的销毁
 {
 	if ((drm_class == NULL) || (IS_ERR(drm_class)))
 		return;
@@ -151,7 +151,7 @@ static void drm_sysfs_device_release(struct device *dev)
 }
 
 /*
- * Connector properties
+ * Connector properties//连接器的一些属性设置查询等
  */
 static ssize_t status_show(struct device *device,
 			   struct device_attribute *attr,
@@ -169,7 +169,7 @@ static ssize_t status_show(struct device *device,
 	mutex_unlock(&connector->dev->mode_config.mutex);
 
 	return snprintf(buf, PAGE_SIZE, "%s\n",
-			drm_get_connector_status_name(status));
+			drm_get_connector_status_name(status));//连接器的状态信息，是否保持连接
 }
 
 static ssize_t dpms_show(struct device *device,
@@ -188,7 +188,7 @@ static ssize_t dpms_show(struct device *device,
 		return 0;
 
 	return snprintf(buf, PAGE_SIZE, "%s\n",
-			drm_get_dpms_name((int)dpms_status));
+			drm_get_dpms_name((int)dpms_status));//dpms的状态信息，ON/OFF
 }
 
 static ssize_t enabled_show(struct device *device,
@@ -197,7 +197,7 @@ static ssize_t enabled_show(struct device *device,
 {
 	struct drm_connector *connector = to_drm_connector(device);
 
-	return snprintf(buf, PAGE_SIZE, "%s\n", connector->encoder ? "enabled" :
+	return snprintf(buf, PAGE_SIZE, "%s\n", connector->encoder ? "enabled" ://编码器enable、disable
 			"disabled");
 }
 
@@ -225,7 +225,7 @@ static ssize_t edid_show(struct file *filp, struct kobject *kobj,
 		count = size - off;
 	memcpy(buf, edid + off, count);
 
-	return count;
+	return count;//显示EDID信息
 }
 
 static ssize_t modes_show(struct device *device,
@@ -241,10 +241,10 @@ static ssize_t modes_show(struct device *device,
 				    mode->name);
 	}
 
-	return written;
+	return written;//显示支持的模式名称，连接器
 }
 
-static ssize_t subconnector_show(struct device *device,
+static ssize_t subconnector_show(struct device *device,//子的连接器？
 			   struct device_attribute *attr,
 			   char *buf)
 {
@@ -376,10 +376,10 @@ int drm_sysfs_connector_add(struct drm_connector *connector)
 	connector->kdev.release = drm_sysfs_device_release;
 
 	DRM_DEBUG("adding \"%s\" to sysfs\n",
-		  drm_get_connector_name(connector));
+		  drm_get_connector_name(connector));///sys/class/drm/下存放
 
 	dev_set_name(&connector->kdev, "card%d-%s",
-		     dev->primary->index, drm_get_connector_name(connector));
+		     dev->primary->index, drm_get_connector_name(connector));//实际内容举例：card0-DP-2  card0-HDMI-A-1   card0-VGA-1  card0-LVDS-1  card0-HDMI-A-2  card0-DP-3  
 	ret = device_register(&connector->kdev);
 
 	if (ret) {
@@ -421,7 +421,7 @@ int drm_sysfs_connector_add(struct drm_connector *connector)
 		goto err_out_files;
 
 	/* Let userspace know we have a new connector */
-	drm_sysfs_hotplug_event(dev);
+	drm_sysfs_hotplug_event(dev);//让用户空间知道，我们有一个新的连接器
 
 	return 0;
 
@@ -482,7 +482,7 @@ void drm_sysfs_hotplug_event(struct drm_device *dev)
 
 	DRM_DEBUG("generating hotplug event\n");
 
-	kobject_uevent_env(&dev->primary->kdev.kobj, KOBJ_CHANGE, envp);
+	kobject_uevent_env(&dev->primary->kdev.kobj, KOBJ_CHANGE, envp);//在uevnt中增加一个环境变量变化通知
 }
 EXPORT_SYMBOL(drm_sysfs_hotplug_event);
 
@@ -495,7 +495,7 @@ EXPORT_SYMBOL(drm_sysfs_hotplug_event);
  * as the parent for the Linux device, and make sure it has a file containing
  * the driver we're using (for userspace compatibility).
  */
-int drm_sysfs_device_add(struct drm_minor *minor)
+int drm_sysfs_device_add(struct drm_minor *minor)//在/sys/class下面初始化目录，如果是显卡则是card，单显卡则为card0
 {
 	int err;
 	char *minor_str;
@@ -506,7 +506,7 @@ int drm_sysfs_device_add(struct drm_minor *minor)
 	minor->kdev.release = drm_sysfs_device_release;
 	minor->kdev.devt = minor->device;
 	minor->kdev.type = &drm_sysfs_device_minor;
-	if (minor->type == DRM_MINOR_CONTROL)
+	if (minor->type == DRM_MINOR_CONTROL)//实际目录效果如下：card0  renderD128   controlD64 
 		minor_str = "controlD%d";
         else if (minor->type == DRM_MINOR_RENDER)
                 minor_str = "renderD%d";
