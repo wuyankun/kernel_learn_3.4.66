@@ -46,7 +46,7 @@
 #include <asm/irq_regs.h>
 
 /* Whether we react on sysrq keys or just ignore them */
-static int __read_mostly sysrq_enabled = SYSRQ_DEFAULT_ENABLE;
+static int __read_mostly sysrq_enabled = SYSRQ_DEFAULT_ENABLE; //新的编译优化前缀
 static bool __read_mostly sysrq_always_enabled;
 
 static bool sysrq_on(void)
@@ -72,7 +72,7 @@ static int __init sysrq_always_enabled_setup(char *str)
 	return 1;
 }
 
-__setup("sysrq_always_enabled", sysrq_always_enabled_setup);
+__setup("sysrq_always_enabled", sysrq_always_enabled_setup);//这是宏的实现？
 
 
 static void sysrq_handle_loglevel(int key)
@@ -127,7 +127,7 @@ static void sysrq_handle_crash(int key)
 {
 	char *killer = NULL;
 
-	panic_on_oops = 1;	/* force panic */
+	panic_on_oops = 1;	/* force panic */ //强制panic
 	wmb();
 	*killer = 1;
 }
@@ -138,7 +138,7 @@ static struct sysrq_key_op sysrq_crash_op = {
 	.enable_mask	= SYSRQ_ENABLE_DUMP,
 };
 
-static void sysrq_handle_reboot(int key)
+static void sysrq_handle_reboot(int key)//紧急重新启动的写法
 {
 	lockdep_off();
 	local_irq_enable();
@@ -155,7 +155,7 @@ static void sysrq_handle_sync(int key)
 {
 	emergency_sync();
 }
-static struct sysrq_key_op sysrq_sync_op = {
+static struct sysrq_key_op sysrq_sync_op = {//紧急同步数据的写法
 	.handler	= sysrq_handle_sync,
 	.help_msg	= "Sync",
 	.action_msg	= "Emergency Sync",
@@ -167,7 +167,7 @@ static void sysrq_handle_show_timers(int key)
 	sysrq_timer_list_show();
 }
 
-static struct sysrq_key_op sysrq_show_timers_op = {
+static struct sysrq_key_op sysrq_show_timers_op = {//显示所有的timer的接口
 	.handler	= sysrq_handle_show_timers,
 	.help_msg	= "show-all-timers(Q)",
 	.action_msg	= "Show clockevent devices & pending hrtimers (no others)",
@@ -177,7 +177,7 @@ static void sysrq_handle_mountro(int key)
 {
 	emergency_remount();
 }
-static struct sysrq_key_op sysrq_mountro_op = {
+static struct sysrq_key_op sysrq_mountro_op = {//紧急remount的实现
 	.handler	= sysrq_handle_mountro,
 	.help_msg	= "Unmount",
 	.action_msg	= "Emergency Remount R/O",
@@ -191,7 +191,7 @@ static void sysrq_handle_showlocks(int key)
 }
 
 static struct sysrq_key_op sysrq_showlocks_op = {
-	.handler	= sysrq_handle_showlocks,
+	.handler	= sysrq_handle_showlocks,//死锁调试接口
 	.help_msg	= "show-all-locks(D)",
 	.action_msg	= "Show Locks Held",
 };
@@ -278,7 +278,7 @@ static void sysrq_handle_showstate_blocked(int key)
 {
 	show_state_filter(TASK_UNINTERRUPTIBLE);
 }
-static struct sysrq_key_op sysrq_showstate_blocked_op = {
+static struct sysrq_key_op sysrq_showstate_blocked_op = {//显示死锁的信息
 	.handler	= sysrq_handle_showstate_blocked,
 	.help_msg	= "show-blocked-tasks(W)",
 	.action_msg	= "Show Blocked State",
@@ -306,7 +306,7 @@ static void sysrq_handle_showmem(int key)
 {
 	show_mem(0);
 }
-static struct sysrq_key_op sysrq_showmem_op = {
+static struct sysrq_key_op sysrq_showmem_op = {//显示内存信息
 	.handler	= sysrq_handle_showmem,
 	.help_msg	= "show-memory-usage(M)",
 	.action_msg	= "Show Memory",
@@ -337,7 +337,7 @@ static void sysrq_handle_term(int key)
 	send_sig_all(SIGTERM);
 	console_loglevel = 8;
 }
-static struct sysrq_key_op sysrq_term_op = {
+static struct sysrq_key_op sysrq_term_op = {//终止所有的进程
 	.handler	= sysrq_handle_term,
 	.help_msg	= "terminate-all-tasks(E)",
 	.action_msg	= "Terminate All Tasks",
@@ -380,7 +380,7 @@ static void sysrq_handle_kill(int key)
 	send_sig_all(SIGKILL);
 	console_loglevel = 8;
 }
-static struct sysrq_key_op sysrq_kill_op = {
+static struct sysrq_key_op sysrq_kill_op = {//杀死所有的进程
 	.handler	= sysrq_handle_kill,
 	.help_msg	= "kill-all-tasks(I)",
 	.action_msg	= "Kill All Tasks",
@@ -391,7 +391,7 @@ static void sysrq_handle_unrt(int key)
 {
 	normalize_rt_tasks();
 }
-static struct sysrq_key_op sysrq_unrt_op = {
+static struct sysrq_key_op sysrq_unrt_op = {//实时进程调整
 	.handler	= sysrq_handle_unrt,
 	.help_msg	= "nice-all-RT-tasks(N)",
 	.action_msg	= "Nice All RT Tasks",
@@ -399,9 +399,9 @@ static struct sysrq_key_op sysrq_unrt_op = {
 };
 
 /* Key Operations table and lock */
-static DEFINE_SPINLOCK(sysrq_key_table_lock);
+static DEFINE_SPINLOCK(sysrq_key_table_lock);//分配一个自旋锁
 
-static struct sysrq_key_op *sysrq_key_table[36] = {
+static struct sysrq_key_op *sysrq_key_table[36] = {//功能数组，不同按键对应不同的index，不同index值是不同的函数指针op
 	&sysrq_loglevel_op,		/* 0 */
 	&sysrq_loglevel_op,		/* 1 */
 	&sysrq_loglevel_op,		/* 2 */
@@ -459,7 +459,7 @@ static struct sysrq_key_op *sysrq_key_table[36] = {
 };
 
 /* key2index calculation, -1 on invalid index */
-static int sysrq_key_table_key2index(int key)
+static int sysrq_key_table_key2index(int key)//将按键转换为index值
 {
 	int retval;
 
@@ -482,7 +482,7 @@ struct sysrq_key_op *__sysrq_get_key_op(int key)
 
 	i = sysrq_key_table_key2index(key);
 	if (i != -1)
-	        op_p = sysrq_key_table[i];
+	        op_p = sysrq_key_table[i];//通过index值，来决定函数指针，实现不同的功能
 
         return op_p;
 }
@@ -492,7 +492,7 @@ static void __sysrq_put_key_op(int key, struct sysrq_key_op *op_p)
         int i = sysrq_key_table_key2index(key);
 
         if (i != -1)
-                sysrq_key_table[i] = op_p;
+                sysrq_key_table[i] = op_p;//可以改变按键对应的功能
 }
 
 void __handle_sysrq(int key, bool check_mask)
@@ -502,7 +502,7 @@ void __handle_sysrq(int key, bool check_mask)
 	int i;
 	unsigned long flags;
 
-	spin_lock_irqsave(&sysrq_key_table_lock, flags);
+	spin_lock_irqsave(&sysrq_key_table_lock, flags);//自旋锁关中断
 	/*
 	 * Raise the apparent loglevel to maximum so that the sysrq header
 	 * is shown to provide the user with positive feedback.  We do not
@@ -514,7 +514,7 @@ void __handle_sysrq(int key, bool check_mask)
 	printk(KERN_INFO "SysRq : ");
 
         op_p = __sysrq_get_key_op(key);
-        if (op_p) {
+        if (op_p) {//合法字符，将进入处理流程
 		/*
 		 * Should we check for enabled operations (/proc/sysrq-trigger
 		 * should not) and is the invoked operation enabled?
@@ -527,7 +527,7 @@ void __handle_sysrq(int key, bool check_mask)
 			printk("This sysrq operation is disabled.\n");
 		}
 	} else {
-		printk("HELP : ");
+		printk("HELP : ");//非法字符时，输出Help的内容
 		/* Only print the help msg once per handler */
 		for (i = 0; i < ARRAY_SIZE(sysrq_key_table); i++) {
 			if (sysrq_key_table[i]) {
@@ -547,7 +547,7 @@ void __handle_sysrq(int key, bool check_mask)
 	spin_unlock_irqrestore(&sysrq_key_table_lock, flags);
 }
 
-void handle_sysrq(int key)
+void handle_sysrq(int key)//处理按键字符串
 {
 	if (sysrq_on())
 		__handle_sysrq(key, true);
@@ -868,7 +868,7 @@ static ssize_t write_sysrq_trigger(struct file *file, const char __user *buf,
 	if (count) {
 		char c;
 
-		if (get_user(c, buf))
+		if (get_user(c, buf))//从用户输入中依次处理一个字符
 			return -EFAULT;
 		__handle_sysrq(c, false);
 	}
@@ -876,7 +876,7 @@ static ssize_t write_sysrq_trigger(struct file *file, const char __user *buf,
 	return count;
 }
 
-static const struct file_operations proc_sysrq_trigger_operations = {
+static const struct file_operations proc_sysrq_trigger_operations = {//fops
 	.write		= write_sysrq_trigger,
 	.llseek		= noop_llseek,
 };
@@ -884,7 +884,7 @@ static const struct file_operations proc_sysrq_trigger_operations = {
 static void sysrq_init_procfs(void)
 {
 	if (!proc_create("sysrq-trigger", S_IWUSR, NULL,
-			 &proc_sysrq_trigger_operations))
+			 &proc_sysrq_trigger_operations))//proc下创建文件的接口,名字，属性，NULL，操作方法fops
 		pr_err("Failed to register proc interface\n");
 }
 
@@ -896,9 +896,9 @@ static inline void sysrq_init_procfs(void)
 
 #endif /* CONFIG_PROC_FS */
 
-static int __init sysrq_init(void)
+static int __init sysrq_init(void)//sysrq模块初始化
 {
-	sysrq_init_procfs();
+	sysrq_init_procfs();//proc文件初始化
 
 	if (sysrq_on())
 		sysrq_register_handler();
