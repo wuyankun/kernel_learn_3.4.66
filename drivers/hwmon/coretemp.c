@@ -41,7 +41,7 @@
 #include <asm/processor.h>
 #include <asm/cpu_device_id.h>
 
-#define DRVNAME	"coretemp"
+#define DRVNAME	"coretemp" //驱动名称,核心温度
 
 /*
  * force_tjmax only matters when TjMax can't be read from the CPU itself.
@@ -49,20 +49,20 @@
  */
 static int force_tjmax;
 module_param_named(tjmax, force_tjmax, int, 0444);
-MODULE_PARM_DESC(tjmax, "TjMax value in degrees Celsius");
+MODULE_PARM_DESC(tjmax, "TjMax value in degrees Celsius");//不明白含义
 
 #define BASE_SYSFS_ATTR_NO	2	/* Sysfs Base attr no for coretemp */
-#define NUM_REAL_CORES		32	/* Number of Real cores per cpu */
+#define NUM_REAL_CORES		32	/* Number of Real cores per cpu *///每个CPU最多支持32个真核
 #define CORETEMP_NAME_LENGTH	17	/* String Length of attrs */
 #define MAX_CORE_ATTRS		4	/* Maximum no of basic attrs */
 #define TOTAL_ATTRS		(MAX_CORE_ATTRS + 1)
 #define MAX_CORE_DATA		(NUM_REAL_CORES + BASE_SYSFS_ATTR_NO)
 
-#define TO_PHYS_ID(cpu)		(cpu_data(cpu).phys_proc_id)
-#define TO_CORE_ID(cpu)		(cpu_data(cpu).cpu_core_id)
+#define TO_PHYS_ID(cpu)		(cpu_data(cpu).phys_proc_id)//CPU的物理核心ID
+#define TO_CORE_ID(cpu)		(cpu_data(cpu).cpu_core_id)//核心的ID值
 #define TO_ATTR_NO(cpu)		(TO_CORE_ID(cpu) + BASE_SYSFS_ATTR_NO)
 
-#ifdef CONFIG_SMP
+#ifdef CONFIG_SMP//支持对称多核处理架构
 #define for_each_sibling(i, cpu)	for_each_cpu(i, cpu_sibling_mask(cpu))
 #else
 #define for_each_sibling(i, cpu)	for (i = 0; false; )
@@ -75,7 +75,7 @@ MODULE_PARM_DESC(tjmax, "TjMax value in degrees Celsius");
  * @cpu_core_id: The CPU Core from which temperature values should be read
  *		This value is passed as "id" field to rdmsr/wrmsr functions.
  * @status_reg: One of IA32_THERM_STATUS or IA32_PACKAGE_THERM_STATUS,
- *		from where the temperature values should be read.
+ *		from where the temperature values should be read.//从这两个寄存器中获取到
  * @attr_size:  Total number of pre-core attrs displayed in the sysfs.
  * @is_pkg_data: If this is 1, the temp_data holds pkgtemp data.
  *		Otherwise, temp_data holds coretemp data.
@@ -98,24 +98,24 @@ struct temp_data {
 };
 
 /* Platform Data per Physical CPU */
-struct platform_data {
+struct platform_data {   //平台数据结构体自定义，奇怪，搞清楚
 	struct device *hwmon_dev;
 	u16 phys_proc_id;
 	struct temp_data *core_data[MAX_CORE_DATA];
 	struct device_attribute name_attr;
 };
 
-struct pdev_entry {
+struct pdev_entry {//链表的实体结构体
 	struct list_head list;
 	struct platform_device *pdev;
 	u16 phys_proc_id;
 };
 
-static LIST_HEAD(pdev_list);
-static DEFINE_MUTEX(pdev_list_mutex);
+static LIST_HEAD(pdev_list);//创建了一个链表
+static DEFINE_MUTEX(pdev_list_mutex);//互斥量
 
 static ssize_t show_name(struct device *dev,
-			struct device_attribute *devattr, char *buf)
+			struct device_attribute *devattr, char *buf)//显示名字
 {
 	return sprintf(buf, "%s\n", DRVNAME);
 }
@@ -130,7 +130,7 @@ static ssize_t show_label(struct device *dev,
 	if (tdata->is_pkg_data)
 		return sprintf(buf, "Physical id %u\n", pdata->phys_proc_id);
 
-	return sprintf(buf, "Core %u\n", tdata->cpu_core_id);
+	return sprintf(buf, "Core %u\n", tdata->cpu_core_id);//显示标签
 }
 
 static ssize_t show_crit_alarm(struct device *dev,
@@ -143,7 +143,7 @@ static ssize_t show_crit_alarm(struct device *dev,
 
 	rdmsr_on_cpu(tdata->cpu, tdata->status_reg, &eax, &edx);
 
-	return sprintf(buf, "%d\n", (eax >> 5) & 1);
+	return sprintf(buf, "%d\n", (eax >> 5) & 1);//报警信息
 }
 
 static ssize_t show_tjmax(struct device *dev,
@@ -188,11 +188,11 @@ static ssize_t show_temp(struct device *dev,
 	}
 
 	mutex_unlock(&tdata->update_lock);
-	return tdata->valid ? sprintf(buf, "%d\n", tdata->temp) : -EAGAIN;
+	return tdata->valid ? sprintf(buf, "%d\n", tdata->temp) : -EAGAIN;//显示温度
 }
 
 static int __cpuinit adjust_tjmax(struct cpuinfo_x86 *c, u32 id,
-				  struct device *dev)
+				  struct device *dev)//猜测提供数据校准功能
 {
 	/* The 100C is default for both mobile and non mobile CPUs */
 
@@ -326,7 +326,7 @@ static int __cpuinit get_tjmax(struct cpuinfo_x86 *c, u32 id,
 	return adjust_tjmax(c, id, dev);
 }
 
-static int __devinit create_name_attr(struct platform_data *pdata,
+static int __devinit create_name_attr(struct platform_data *pdata,//创建属性文件
 				      struct device *dev)
 {
 	sysfs_attr_init(&pdata->name_attr.attr);
@@ -336,7 +336,7 @@ static int __devinit create_name_attr(struct platform_data *pdata,
 	return device_create_file(dev, &pdata->name_attr);
 }
 
-static int __cpuinit create_core_attrs(struct temp_data *tdata,
+static int __cpuinit create_core_attrs(struct temp_data *tdata,//创建核心属性结构体
 				       struct device *dev, int attr_no)
 {
 	int err, i;
@@ -370,7 +370,7 @@ exit_free:
 }
 
 
-static int __cpuinit chk_ucode_version(unsigned int cpu)
+static int __cpuinit chk_ucode_version(unsigned int cpu)//部分CPU错误，需升级BIOS版本
 {
 	struct cpuinfo_x86 *c = &cpu_data(cpu);
 
@@ -387,14 +387,14 @@ static int __cpuinit chk_ucode_version(unsigned int cpu)
 	return 0;
 }
 
-static struct platform_device __cpuinit *coretemp_get_pdev(unsigned int cpu)
+static struct platform_device __cpuinit *coretemp_get_pdev(unsigned int cpu)//通过CPU的编号获取对应的平台设备
 {
 	u16 phys_proc_id = TO_PHYS_ID(cpu);
 	struct pdev_entry *p;
 
 	mutex_lock(&pdev_list_mutex);
 
-	list_for_each_entry(p, &pdev_list, list)
+	list_for_each_entry(p, &pdev_list, list)//初始化一个平台设备的链表
 		if (p->phys_proc_id == phys_proc_id) {
 			mutex_unlock(&pdev_list_mutex);
 			return p->pdev;
@@ -453,12 +453,12 @@ static int __cpuinit create_core_data(struct platform_device *pdev,
 	if (pdata->core_data[attr_no] != NULL)
 		return 0;
 
-	tdata = init_temp_data(cpu, pkg_flag);
+	tdata = init_temp_data(cpu, pkg_flag);//初始化温度结构体
 	if (!tdata)
 		return -ENOMEM;
 
 	/* Test if we can access the status register */
-	err = rdmsr_safe_on_cpu(cpu, tdata->status_reg, &eax, &edx);
+	err = rdmsr_safe_on_cpu(cpu, tdata->status_reg, &eax, &edx);//读取相关的寄存器
 	if (err)
 		goto exit_free;
 
@@ -483,7 +483,7 @@ static int __cpuinit create_core_data(struct platform_device *pdev,
 	pdata->core_data[attr_no] = tdata;
 
 	/* Create sysfs interfaces */
-	err = create_core_attrs(tdata, &pdev->dev, attr_no);
+	err = create_core_attrs(tdata, &pdev->dev, attr_no);//创建属性文件的接口
 	if (err)
 		goto exit_free;
 
@@ -494,7 +494,7 @@ exit_free:
 	return err;
 }
 
-static void __cpuinit coretemp_add_core(unsigned int cpu, int pkg_flag)
+static void __cpuinit coretemp_add_core(unsigned int cpu, int pkg_flag)//核心设备添加
 {
 	struct platform_device *pdev = coretemp_get_pdev(cpu);
 	int err;
@@ -508,7 +508,7 @@ static void __cpuinit coretemp_add_core(unsigned int cpu, int pkg_flag)
 }
 
 static void coretemp_remove_core(struct platform_data *pdata,
-				struct device *dev, int indx)
+				struct device *dev, int indx)//核心设备移除
 {
 	int i;
 	struct temp_data *tdata = pdata->core_data[indx];
@@ -523,7 +523,7 @@ static void coretemp_remove_core(struct platform_data *pdata,
 
 static int __devinit coretemp_probe(struct platform_device *pdev)
 {
-	struct platform_data *pdata;
+	struct platform_data *pdata; //平台数据指针
 	int err;
 
 	/* Initialize the per-package data structures */
@@ -531,14 +531,14 @@ static int __devinit coretemp_probe(struct platform_device *pdev)
 	if (!pdata)
 		return -ENOMEM;
 
-	err = create_name_attr(pdata, &pdev->dev);
+	err = create_name_attr(pdata, &pdev->dev);//创建属性文件
 	if (err)
 		goto exit_free;
 
-	pdata->phys_proc_id = pdev->id;
-	platform_set_drvdata(pdev, pdata);
+	pdata->phys_proc_id = pdev->id;//id信息
+	platform_set_drvdata(pdev, pdata);//管理平台数据到平台设备中
 
-	pdata->hwmon_dev = hwmon_device_register(&pdev->dev);
+	pdata->hwmon_dev = hwmon_device_register(&pdev->dev);//硬件监控设备注册，platform_data中包含的内容挺多
 	if (IS_ERR(pdata->hwmon_dev)) {
 		err = PTR_ERR(pdata->hwmon_dev);
 		dev_err(&pdev->dev, "Class registration failed (%d)\n", err);
@@ -556,60 +556,60 @@ exit_free:
 
 static int __devexit coretemp_remove(struct platform_device *pdev)
 {
-	struct platform_data *pdata = platform_get_drvdata(pdev);
+	struct platform_data *pdata = platform_get_drvdata(pdev);//从设备获取关联的平台数据
 	int i;
 
-	for (i = MAX_CORE_DATA - 1; i >= 0; --i)
+	for (i = MAX_CORE_DATA - 1; i >= 0; --i)//移除一些数据
 		if (pdata->core_data[i])
 			coretemp_remove_core(pdata, &pdev->dev, i);
 
-	device_remove_file(&pdev->dev, &pdata->name_attr);
-	hwmon_device_unregister(pdata->hwmon_dev);
-	platform_set_drvdata(pdev, NULL);
+	device_remove_file(&pdev->dev, &pdata->name_attr);//移除属性文件
+	hwmon_device_unregister(pdata->hwmon_dev);//去注册hw监控设备
+	platform_set_drvdata(pdev, NULL);//平台数据置为NULL
 	kfree(pdata);
 	return 0;
 }
 
-static struct platform_driver coretemp_driver = {
+static struct platform_driver coretemp_driver = {//平台驱动结构体
 	.driver = {
 		.owner = THIS_MODULE,
-		.name = DRVNAME,
+		.name = DRVNAME,//平台设备使用名字进行match，驱动和设备的
 	},
-	.probe = coretemp_probe,
+	.probe = coretemp_probe,//入口probe
 	.remove = __devexit_p(coretemp_remove),
 };
 
-static int __cpuinit coretemp_device_add(unsigned int cpu)
+static int __cpuinit coretemp_device_add(unsigned int cpu) //增加一个这样的设备
 {
 	int err;
-	struct platform_device *pdev;
-	struct pdev_entry *pdev_entry;
+	struct platform_device *pdev;//平台设备结构体
+	struct pdev_entry *pdev_entry;//平台设备链表
 
 	mutex_lock(&pdev_list_mutex);
 
-	pdev = platform_device_alloc(DRVNAME, TO_PHYS_ID(cpu));
+	pdev = platform_device_alloc(DRVNAME, TO_PHYS_ID(cpu));//分配一个平台设备
 	if (!pdev) {
 		err = -ENOMEM;
 		pr_err("Device allocation failed\n");
 		goto exit;
 	}
 
-	pdev_entry = kzalloc(sizeof(struct pdev_entry), GFP_KERNEL);
+	pdev_entry = kzalloc(sizeof(struct pdev_entry), GFP_KERNEL);//链表中增加一个实体
 	if (!pdev_entry) {
 		err = -ENOMEM;
 		goto exit_device_put;
 	}
 
-	err = platform_device_add(pdev);
+	err = platform_device_add(pdev);//在系统中添加一个平台设备，平台设备的名称为驱动的名称
 	if (err) {
 		pr_err("Device addition failed (%d)\n", err);
 		goto exit_device_free;
 	}
 
-	pdev_entry->pdev = pdev;
+	pdev_entry->pdev = pdev;//链表实体初始化
 	pdev_entry->phys_proc_id = pdev->id;
 
-	list_add_tail(&pdev_entry->list, &pdev_list);
+	list_add_tail(&pdev_entry->list, &pdev_list);//添加到链表的尾部
 	mutex_unlock(&pdev_list_mutex);
 
 	return 0;
@@ -623,7 +623,7 @@ exit:
 	return err;
 }
 
-static void __cpuinit coretemp_device_remove(unsigned int cpu)
+static void __cpuinit coretemp_device_remove(unsigned int cpu)//设备移除，链表删除，删除平台设备
 {
 	struct pdev_entry *p, *n;
 	u16 phys_proc_id = TO_PHYS_ID(cpu);
@@ -653,10 +653,10 @@ static bool __cpuinit is_any_core_online(struct platform_data *pdata)
 	return false;
 }
 
-static void __cpuinit get_core_online(unsigned int cpu)
+static void __cpuinit get_core_online(unsigned int cpu)//__cpuinit的汇编段
 {
 	struct cpuinfo_x86 *c = &cpu_data(cpu);
-	struct platform_device *pdev = coretemp_get_pdev(cpu);
+	struct platform_device *pdev = coretemp_get_pdev(cpu);//通过序号获得对应的CPU的平台设备
 	int err;
 
 	/*
@@ -664,12 +664,12 @@ static void __cpuinit get_core_online(unsigned int cpu)
 	 * sensors. We check this bit only, all the early CPUs
 	 * without thermal sensors will be filtered out.
 	 */
-	if (!cpu_has(c, X86_FEATURE_DTHERM))
+	if (!cpu_has(c, X86_FEATURE_DTHERM))//再次检查是否支持温度传感器
 		return;
 
 	if (!pdev) {
 		/* Check the microcode version of the CPU */
-		if (chk_ucode_version(cpu))
+		if (chk_ucode_version(cpu))//部分CPU设计缺陷，检查编码
 			return;
 
 		/*
@@ -678,7 +678,7 @@ static void __cpuinit get_core_online(unsigned int cpu)
 		 * online. So, initialize per-pkg data structures and
 		 * then bring this core online.
 		 */
-		err = coretemp_device_add(cpu);
+		err = coretemp_device_add(cpu);//增加一个这样的设备
 		if (err)
 			return;
 		/*
@@ -692,7 +692,7 @@ static void __cpuinit get_core_online(unsigned int cpu)
 	 * Physical CPU device already exists.
 	 * So, just add interfaces for this core.
 	 */
-	coretemp_add_core(cpu, 0);
+	coretemp_add_core(cpu, 0);//物理设备，增加一个核心
 }
 
 static void __cpuinit put_core_offline(unsigned int cpu)
@@ -744,7 +744,7 @@ static void __cpuinit put_core_offline(unsigned int cpu)
 }
 
 static int __cpuinit coretemp_cpu_callback(struct notifier_block *nfb,
-				 unsigned long action, void *hcpu)
+				 unsigned long action, void *hcpu)//CPU的插拔处理感觉
 {
 	unsigned int cpu = (unsigned long) hcpu;
 
@@ -760,7 +760,7 @@ static int __cpuinit coretemp_cpu_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block coretemp_cpu_notifier __refdata = {
+static struct notifier_block coretemp_cpu_notifier __refdata = {//回调接口的结构体
 	.notifier_call = coretemp_cpu_callback,
 };
 
@@ -779,24 +779,24 @@ static int __init coretemp_init(void)
 	 * sensors. We check this bit only, all the early CPUs
 	 * without thermal sensors will be filtered out.
 	 */
-	if (!x86_match_cpu(coretemp_ids))
+	if (!x86_match_cpu(coretemp_ids)) //检查CPU的支持情况，旧的CPU不包含温度的sensor,将直接被过滤掉
 		return -ENODEV;
 
-	err = platform_driver_register(&coretemp_driver);
+	err = platform_driver_register(&coretemp_driver);//平台设备类型，X86上如何使用平台设备，学习一下
 	if (err)
 		goto exit;
 
 	for_each_online_cpu(i)
-		get_core_online(i);
+		get_core_online(i);//业务相关的初始化
 
-#ifndef CONFIG_HOTPLUG_CPU
+#ifndef CONFIG_HOTPLUG_CPU//不考虑CPU的热插拔支持
 	if (list_empty(&pdev_list)) {
 		err = -ENODEV;
 		goto exit_driver_unreg;
 	}
 #endif
 
-	register_hotcpu_notifier(&coretemp_cpu_notifier);
+	register_hotcpu_notifier(&coretemp_cpu_notifier);//注册回调接口
 	return 0;
 
 #ifndef CONFIG_HOTPLUG_CPU
