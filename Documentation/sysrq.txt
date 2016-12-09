@@ -4,7 +4,7 @@ Documentation for sysrq.c
 *  What is the magic SysRq key?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 It is a 'magical' key combo you can hit which the kernel will respond to
-regardless of whatever else it is doing, unless it is completely locked up.
+regardless of whatever else it is doing, unless it is completely locked up.//除非完全锁住，不然系统不管在干神马都会响应组合按键的。
 
 *  How do I enable the magic SysRq key?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,9 +14,9 @@ configuring the kernel. When running a kernel with SysRq compiled in,
 the SysRq key. By default the file contains 1 which means that every
 possible SysRq request is allowed (in older versions SysRq was disabled
 by default, and you were required to specifically enable it at run-time
-but this is not the case any more). Here is the list of possible values
+but this is not the case any more). Here is the list of possible values//最新内核默认配置为1，打开所有支持的功能
 in /proc/sys/kernel/sysrq:
-   0 - disable sysrq completely
+   0 - disable sysrq completely//写0完全关闭掉这个功能。
    1 - enable all functions of sysrq
   >1 - bitmask of allowed sysrq functions (see below for detailed function
        description):
@@ -27,9 +27,9 @@ in /proc/sys/kernel/sysrq:
          32 - enable remount read-only
          64 - enable signalling of processes (term, kill, oom-kill)
         128 - allow reboot/poweroff
-        256 - allow nicing of all RT tasks
+        256 - allow nicing of all RT tasks//？这个功能可以调整RT 线程的优选级
 
-You can set the value in the file by the following command:
+You can set the value in the file by the following command://这个文件对用户是可以读写的
     echo "number" >/proc/sys/kernel/sysrq
 
 Note that the value of /proc/sys/kernel/sysrq influences only the invocation
@@ -43,13 +43,13 @@ On x86   - You press the key combo 'ALT-SysRq-<command key>'. Note - Some
            also known as the 'Print Screen' key. Also some keyboards cannot
 	   handle so many keys being pressed at the same time, so you might
 	   have better luck with "press Alt", "press SysRq", "release SysRq",
-	   "press <command key>", release everything.
+	   "press <command key>", release everything.//一些键盘这个按键的丝印是打印屏幕，一些键盘处理不了这么多按键组合，部分键盘可以按照序列依次操作单独按键
 
 On SPARC - You press 'ALT-STOP-<command key>', I believe.
 
 On the serial console (PC style standard serial ports only) -
            You send a BREAK, then within 5 seconds a command key. Sending
-           BREAK twice is interpreted as a normal BREAK.
+           BREAK twice is interpreted as a normal BREAK.//在终端里面，可以通过按下Break来实现
 
 On PowerPC - Press 'ALT - Print Screen (or F13) - <command key>,  
              Print Screen (or F13) - <command key> may suffice.
@@ -57,7 +57,7 @@ On PowerPC - Press 'ALT - Print Screen (or F13) - <command key>,
 On other - If you know of the key combos for other architectures, please
            let me know so I can add them to this section.
 
-On all -  write a character to /proc/sysrq-trigger.  e.g.:
+On all -  write a character to /proc/sysrq-trigger.  e.g.://在所以的平台上，都可以通过/proc/sysrq-tigger的值来触发
 
 		echo t > /proc/sysrq-trigger
 
