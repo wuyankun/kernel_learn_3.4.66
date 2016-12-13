@@ -1,5 +1,5 @@
 /*
- * Opticon USB barcode to serial driver
+ * Opticon USB barcode to serial driver //欧光条码USB转串口的驱动,德国厂家，日本有生产厂
  *
  * Copyright (C) 2011 Martin Jansen <martin.jansen@opticon.com>
  * Copyright (C) 2008 - 2009 Greg Kroah-Hartman <gregkh@suse.de>
@@ -29,12 +29,12 @@
 #define URB_UPPER_LIMIT	8
 
 /* This driver works for the Opticon 1D barcode reader
- * an examples of 1D barcode types are EAN, UPC, Code39, IATA etc.. */
+ * an examples of 1D barcode types are EAN, UPC, Code39, IATA etc.. */ //Code39是一维码,驱动只支持一维码
 #define DRIVER_DESC	"Opticon USB barcode to serial driver (1D)"
 
 static bool debug;
 
-static const struct usb_device_id id_table[] = {
+static const struct usb_device_id id_table[] = {//支持的设备列表
 	{ USB_DEVICE(0x065a, 0x0009) },
 	{ },
 };
@@ -59,7 +59,7 @@ struct opticon_private {
 
 
 
-static void opticon_read_bulk_callback(struct urb *urb)
+static void opticon_read_bulk_callback(struct urb *urb)//提交了读取批量端点的urb后的执行结果回调
 {
 	struct opticon_private *priv = urb->context;
 	unsigned char *data = urb->transfer_buffer;
@@ -92,7 +92,7 @@ static void opticon_read_bulk_callback(struct urb *urb)
 	usb_serial_debug_data(debug, &port->dev, __func__, urb->actual_length,
 			      data);
 
-	if (urb->actual_length > 2) {
+	if (urb->actual_length > 2) {//实际urb的返回数据长度
 		data_length = urb->actual_length - 2;
 
 		/*
@@ -139,7 +139,7 @@ exit:
 	spin_lock(&priv->lock);
 
 	/* Continue trying to always read if we should */
-	if (!priv->throttled) {
+	if (!priv->throttled) {//是否支持连续读取
 		usb_fill_bulk_urb(priv->bulk_read_urb, priv->udev,
 				  usb_rcvbulkpipe(priv->udev,
 						  priv->bulk_address),
@@ -155,7 +155,7 @@ exit:
 	spin_unlock(&priv->lock);
 }
 
-static int send_control_msg(struct usb_serial_port *port, u8 requesttype,
+static int send_control_msg(struct usb_serial_port *port, u8 requesttype,//使用控制端点，向设备发送一些指令
 				u8 val)
 {
 	struct usb_serial *serial = port->serial;
@@ -178,7 +178,7 @@ static int send_control_msg(struct usb_serial_port *port, u8 requesttype,
 	return retval;
 }
 
-static int opticon_open(struct tty_struct *tty, struct usb_serial_port *port)
+static int opticon_open(struct tty_struct *tty, struct usb_serial_port *port)//open是ttyUSB的入口
 {
 	struct opticon_private *priv = usb_get_serial_data(port->serial);
 	unsigned long flags;
@@ -186,7 +186,7 @@ static int opticon_open(struct tty_struct *tty, struct usb_serial_port *port)
 
 	dbg("%s - port %d", __func__, port->number);
 
-	spin_lock_irqsave(&priv->lock, flags);
+	spin_lock_irqsave(&priv->lock, flags);//关中断，初始化一些结构体的属性信息
 	priv->throttled = false;
 	priv->actually_throttled = false;
 	priv->port = port;
@@ -201,12 +201,12 @@ static int opticon_open(struct tty_struct *tty, struct usb_serial_port *port)
 			  usb_rcvbulkpipe(priv->udev,
 					  priv->bulk_address),
 			  priv->bulk_in_buffer, priv->buffer_size,
-			  opticon_read_bulk_callback, priv);
+			  opticon_read_bulk_callback, priv);//填充批量读取IN的urb
 
 	/* clear the halt status of the enpoint */
-	usb_clear_halt(priv->udev, priv->bulk_read_urb->pipe);
+	usb_clear_halt(priv->udev, priv->bulk_read_urb->pipe);//?不懂，清除端点的关机状态
 
-	result = usb_submit_urb(priv->bulk_read_urb, GFP_KERNEL);
+	result = usb_submit_urb(priv->bulk_read_urb, GFP_KERNEL);//提交该urb
 	if (result)
 		dev_err(&port->dev,
 			"%s - failed resubmitting read urb, error %d\n",
@@ -224,7 +224,7 @@ static void opticon_close(struct usb_serial_port *port)
 	dbg("%s - port %d", __func__, port->number);
 
 	/* shutdown our urbs */
-	usb_kill_urb(priv->bulk_read_urb);
+	usb_kill_urb(priv->bulk_read_urb);//关闭简单杀死urb
 }
 
 static void opticon_write_control_callback(struct urb *urb)
@@ -247,11 +247,11 @@ static void opticon_write_control_callback(struct urb *urb)
 	--priv->outstanding_urbs;
 	spin_unlock_irqrestore(&priv->lock, flags);
 
-	usb_serial_port_softint(priv->port);
+	usb_serial_port_softint(priv->port);//?接口的含义是
 }
 
 static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
-			 const unsigned char *buf, int count)
+			 const unsigned char *buf, int count)//写入，用户空间写入数据
 {
 	struct opticon_private *priv = usb_get_serial_data(port->serial);
 	struct usb_serial *serial = port->serial;
@@ -264,7 +264,7 @@ static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
 	dbg("%s - port %d", __func__, port->number);
 
 	spin_lock_irqsave(&priv->lock, flags);
-	if (priv->outstanding_urbs > URB_UPPER_LIMIT) {
+	if (priv->outstanding_urbs > URB_UPPER_LIMIT) {//带外的urb的个数超出限制
 		spin_unlock_irqrestore(&priv->lock, flags);
 		dbg("%s - write limit hit", __func__);
 		return 0;
@@ -272,7 +272,7 @@ static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
 	priv->outstanding_urbs++;
 	spin_unlock_irqrestore(&priv->lock, flags);
 
-	buffer = kmalloc(count, GFP_ATOMIC);
+	buffer = kmalloc(count, GFP_ATOMIC);//内存
 	if (!buffer) {
 		dev_err(&port->dev, "out of memory\n");
 		count = -ENOMEM;
@@ -280,7 +280,7 @@ static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
 		goto error_no_buffer;
 	}
 
-	urb = usb_alloc_urb(0, GFP_ATOMIC);
+	urb = usb_alloc_urb(0, GFP_ATOMIC);//申请urb
 	if (!urb) {
 		dev_err(&port->dev, "no more free urbs\n");
 		count = -ENOMEM;
@@ -293,14 +293,14 @@ static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 	/* The conncected devices do not have a bulk write endpoint,
 	 * to transmit data to de barcode device the control endpoint is used */
-	dr = kmalloc(sizeof(struct usb_ctrlrequest), GFP_NOIO);
+	dr = kmalloc(sizeof(struct usb_ctrlrequest), GFP_NOIO);//设备没有批量out端点，使用控制端点进行输出
 	if (!dr) {
 		dev_err(&port->dev, "out of memory\n");
 		count = -ENOMEM;
 		goto error_no_dr;
 	}
 
-	dr->bRequestType = USB_TYPE_VENDOR | USB_RECIP_INTERFACE | USB_DIR_OUT;
+	dr->bRequestType = USB_TYPE_VENDOR | USB_RECIP_INTERFACE | USB_DIR_OUT;//标准用法
 	dr->bRequest = 0x01;
 	dr->wValue = 0;
 	dr->wIndex = 0;
@@ -309,10 +309,10 @@ static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
 	usb_fill_control_urb(urb, serial->dev,
 		usb_sndctrlpipe(serial->dev, 0),
 		(unsigned char *)dr, buffer, count,
-		opticon_write_control_callback, priv);
+		opticon_write_control_callback, priv);//填充urb
 
 	/* send it down the pipe */
-	status = usb_submit_urb(urb, GFP_ATOMIC);
+	status = usb_submit_urb(urb, GFP_ATOMIC);//提交urb
 	if (status) {
 		dev_err(&port->dev,
 		"%s - usb_submit_urb(write endpoint) failed status = %d\n",
@@ -323,7 +323,7 @@ static int opticon_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 	/* we are done with this urb, so let the host driver
 	 * really free it when it is finished with it */
-	usb_free_urb(urb);
+	usb_free_urb(urb);//?
 
 	return count;
 error:
@@ -352,7 +352,7 @@ static int opticon_write_room(struct tty_struct *tty)
 	 * but let's pick a nice big number to tell the tty
 	 * layer that we have lots of free space, unless we don't.
 	 */
-	spin_lock_irqsave(&priv->lock, flags);
+	spin_lock_irqsave(&priv->lock, flags);//当带外的urb使用数量达到2/3个时，提示警告
 	if (priv->outstanding_urbs > URB_UPPER_LIMIT * 2 / 3) {
 		spin_unlock_irqrestore(&priv->lock, flags);
 		dbg("%s - write limit hit", __func__);
@@ -370,7 +370,7 @@ static void opticon_throttle(struct tty_struct *tty)
 	unsigned long flags;
 
 	dbg("%s - port %d", __func__, port->number);
-	spin_lock_irqsave(&priv->lock, flags);
+	spin_lock_irqsave(&priv->lock, flags);//关中断，改变flag
 	priv->throttled = true;
 	spin_unlock_irqrestore(&priv->lock, flags);
 }
@@ -385,7 +385,7 @@ static void opticon_unthrottle(struct tty_struct *tty)
 
 	dbg("%s - port %d", __func__, port->number);
 
-	spin_lock_irqsave(&priv->lock, flags);
+	spin_lock_irqsave(&priv->lock, flags);//关中断，改变flag
 	priv->throttled = false;
 	was_throttled = priv->actually_throttled;
 	priv->actually_throttled = false;
@@ -400,7 +400,7 @@ static void opticon_unthrottle(struct tty_struct *tty)
 	}
 }
 
-static int opticon_tiocmget(struct tty_struct *tty)
+static int opticon_tiocmget(struct tty_struct *tty)//获取RTS,CTS线的电平状态
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct opticon_private *priv = usb_get_serial_data(port->serial);
@@ -423,7 +423,7 @@ static int opticon_tiocmget(struct tty_struct *tty)
 }
 
 static int opticon_tiocmset(struct tty_struct *tty,
-			   unsigned int set, unsigned int clear)
+			   unsigned int set, unsigned int clear)//设置RTS,CTS的电平状态,控制发送节奏
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct opticon_private *priv = usb_get_serial_data(port->serial);
@@ -444,7 +444,7 @@ static int opticon_tiocmset(struct tty_struct *tty,
 	changed = rts ^ priv->rts;
 	spin_unlock_irqrestore(&priv->lock, flags);
 
-	if (!changed)
+	if (!changed)//如果需要设置的状态和当前状态一致，则直接返回0，成功
 		return 0;
 
 	/* Send the new RTS state to the connected device */
@@ -452,7 +452,7 @@ static int opticon_tiocmset(struct tty_struct *tty,
 }
 
 static int get_serial_info(struct opticon_private *priv,
-			   struct serial_struct __user *serial)
+			   struct serial_struct __user *serial)//用户获取串口信息接口,结合IOCTL使用
 {
 	struct serial_struct tmp;
 
@@ -478,7 +478,7 @@ static int get_serial_info(struct opticon_private *priv,
 }
 
 static int opticon_ioctl(struct tty_struct *tty,
-			 unsigned int cmd, unsigned long arg)
+			 unsigned int cmd, unsigned long arg)//提供给用户ioctl的使用接口
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct opticon_private *priv = usb_get_serial_data(port->serial);
@@ -503,34 +503,34 @@ static int opticon_startup(struct usb_serial *serial)
 	bool bulk_in_found = false;
 
 	/* create our private serial structure */
-	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);//分配上下文结构体
 	if (priv == NULL) {
 		dev_err(&serial->dev->dev, "%s - Out of memory\n", __func__);
 		return -ENOMEM;
 	}
-	spin_lock_init(&priv->lock);
+	spin_lock_init(&priv->lock);//上下文环境中部分属性初始化
 	priv->serial = serial;
 	priv->port = serial->port[0];
 	priv->udev = serial->dev;
 	priv->outstanding_urbs = 0;	/* Init the outstanding urbs */
 
 	/* find our bulk endpoint */
-	intf = serial->interface->altsetting;
-	for (i = 0; i < intf->desc.bNumEndpoints; ++i) {
+	intf = serial->interface->altsetting;//获取当前激活接口
+	for (i = 0; i < intf->desc.bNumEndpoints; ++i) {//遍历接口提供的所有的端点
 		struct usb_endpoint_descriptor *endpoint;
 
 		endpoint = &intf->endpoint[i].desc;
-		if (!usb_endpoint_is_bulk_in(endpoint))
+		if (!usb_endpoint_is_bulk_in(endpoint))//检测合法性,是批量in的端点，out是走控制端点
 			continue;
 
-		priv->bulk_read_urb = usb_alloc_urb(0, GFP_KERNEL);
+		priv->bulk_read_urb = usb_alloc_urb(0, GFP_KERNEL);//申请urb
 		if (!priv->bulk_read_urb) {
 			dev_err(&priv->udev->dev, "out of memory\n");
 			goto error;
 		}
 
-		priv->buffer_size = usb_endpoint_maxp(endpoint) * 2;
-		priv->bulk_in_buffer = kmalloc(priv->buffer_size, GFP_KERNEL);
+		priv->buffer_size = usb_endpoint_maxp(endpoint) * 2;//这里倍数2的作用是？
+		priv->bulk_in_buffer = kmalloc(priv->buffer_size, GFP_KERNEL);//分配缓冲区
 		if (!priv->bulk_in_buffer) {
 			dev_err(&priv->udev->dev, "out of memory\n");
 			goto error;
@@ -538,7 +538,7 @@ static int opticon_startup(struct usb_serial *serial)
 
 		priv->bulk_address = endpoint->bEndpointAddress;
 
-		bulk_in_found = true;
+		bulk_in_found = true;//查找到一个bulk_in的端点就结束遍历
 		break;
 		}
 
@@ -548,7 +548,7 @@ static int opticon_startup(struct usb_serial *serial)
 		goto error;
 	}
 
-	usb_set_serial_data(serial, priv);
+	usb_set_serial_data(serial, priv);//关联驱动上下文环境结构体
 	return 0;
 
 error:
@@ -564,8 +564,8 @@ static void opticon_disconnect(struct usb_serial *serial)
 
 	dbg("%s", __func__);
 
-	usb_kill_urb(priv->bulk_read_urb);
-	usb_free_urb(priv->bulk_read_urb);
+	usb_kill_urb(priv->bulk_read_urb);//取消urb的请求
+	usb_free_urb(priv->bulk_read_urb);//释放urb占用资源
 }
 
 static void opticon_release(struct usb_serial *serial)
@@ -574,8 +574,8 @@ static void opticon_release(struct usb_serial *serial)
 
 	dbg("%s", __func__);
 
-	kfree(priv->bulk_in_buffer);
-	kfree(priv);
+	kfree(priv->bulk_in_buffer);//释放反复使用的buffer资源
+	kfree(priv);//释放上下文结构体
 }
 
 static int opticon_suspend(struct usb_interface *intf, pm_message_t message)
@@ -583,7 +583,7 @@ static int opticon_suspend(struct usb_interface *intf, pm_message_t message)
 	struct usb_serial *serial = usb_get_intfdata(intf);
 	struct opticon_private *priv = usb_get_serial_data(serial);
 
-	usb_kill_urb(priv->bulk_read_urb);
+	usb_kill_urb(priv->bulk_read_urb);//暂停就是取消urb
 	return 0;
 }
 
@@ -597,16 +597,16 @@ static int opticon_resume(struct usb_interface *intf)
 	mutex_lock(&port->port.mutex);
 	/* This is protected by the port mutex against close/open */
 	if (test_bit(ASYNCB_INITIALIZED, &port->port.flags))
-		result = usb_submit_urb(priv->bulk_read_urb, GFP_NOIO);
+		result = usb_submit_urb(priv->bulk_read_urb, GFP_NOIO);//恢复就是重新提交urb
 	else
 		result = 0;
 	mutex_unlock(&port->port.mutex);
 	return result;
 }
 
-static struct usb_driver opticon_driver = {
+static struct usb_driver opticon_driver = {//usb的“接口”的驱动，一个接口需要一个驱动，USB设备可以是mfd
 	.name =		"opticon",
-	.probe =	usb_serial_probe,
+	.probe =	usb_serial_probe,//使用标准的探测和断开
 	.disconnect =	usb_serial_disconnect,
 	.suspend =	opticon_suspend,
 	.resume =	opticon_resume,
@@ -638,7 +638,7 @@ static struct usb_serial_driver * const serial_drivers[] = {
 	&opticon_device, NULL
 };
 
-module_usb_serial_driver(opticon_driver, serial_drivers);
+module_usb_serial_driver(opticon_driver, serial_drivers);//usb级别的驱动和usb转串口的驱动
 
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
