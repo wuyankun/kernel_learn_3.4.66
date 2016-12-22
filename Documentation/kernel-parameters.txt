@@ -15,12 +15,12 @@ Module parameters for modules that are built into the kernel image
 are specified on the kernel command line with the module name plus
 '.' plus parameter name, with '=' and value if appropriate, such as:
 
-	usbcore.blinkenlights=1
+	usbcore.blinkenlights=1 //回想在关闭nouveau时，有时需要在内核参数添加nouveau.modeset=0不理解，看到这个解释应该明白了
 
 Hyphens (dashes) and underscores are equivalent in parameter names, so
 	log_buf_len=1M print-fatal-signals=1
 can also be entered as
-	log-buf-len=1M print_fatal_signals=1
+	log-buf-len=1M print_fatal_signals=1 //前后的顺序可以置换
 
 
 This document may not be entirely up to date and comprehensive. The command
@@ -28,7 +28,7 @@ This document may not be entirely up to date and comprehensive. The command
 module. Loadable modules, after being loaded into the running kernel, also
 reveal their parameters in /sys/module/${modulename}/parameters/. Some of these
 parameters may be changed at runtime by the command
-"echo -n ${value} > /sys/module/${modulename}/parameters/${parm}".
+"echo -n ${value} > /sys/module/${modulename}/parameters/${parm}".//对于加载的模块，可以通过modinfo -p 来查询模块支持的参数
 
 The parameters listed below are only valid if certain kernel build options were
 enabled and if respective hardware is present. The text in square brackets at
@@ -56,7 +56,7 @@ parameter is applicable:
 	HW	Appropriate hardware is enabled.
 	IA-64	IA-64 architecture is enabled.
 	IMA     Integrity measurement architecture is enabled.
-	IOSCHED	More than one I/O scheduler is enabled.
+	IOSCHED	More than one I/O scheduler is enabled.//IO调度策略调整
 	IP_PNP	IP DHCP, BOOTP, or RARP is enabled.
 	IPV6	IPv6 support is enabled.
 	ISAPNP	ISA PnP code is enabled.
@@ -145,12 +145,12 @@ The number of kernel parameters is not limited, but the length of the
 complete command line (parameters including spaces etc.) is limited to
 a fixed number of characters. This limit depends on the architecture
 and is between 256 and 4096 characters. It is defined in the file
-./include/asm/setup.h as COMMAND_LINE_SIZE.
+./include/asm/setup.h as COMMAND_LINE_SIZE.//内核启动参数实际上是没有限制的，但cmdline的长度存在体系架构相关的限制长度
 
 Finally, the [KMG] suffix is commonly described after a number of kernel
 parameter values. These 'K', 'M', and 'G' letters represent the _binary_
 multipliers 'Kilo', 'Mega', and 'Giga', equalling 2^10, 2^20, and 2^30
-bytes respectively. Such letter suffixes can also be entirely omitted.
+bytes respectively. Such letter suffixes can also be entirely omitted.//单位简写和实际的二进制单位对应，大写
 
 
 	acpi=		[HW,ACPI,X86]

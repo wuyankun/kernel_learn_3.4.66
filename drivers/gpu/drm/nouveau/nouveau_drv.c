@@ -41,9 +41,9 @@ MODULE_PARM_DESC(agpmode, "AGP mode (0 to disable AGP)");
 int nouveau_agpmode = -1;
 module_param_named(agpmode, nouveau_agpmode, int, 0400);
 
-MODULE_PARM_DESC(modeset, "Enable kernel modesetting");
+MODULE_PARM_DESC(modeset, "Enable kernel modesetting");//这里就是为什么关闭nouveau时传入novueau.modeset=0的原因了，默认为-1
 int nouveau_modeset = -1;
-module_param_named(modeset, nouveau_modeset, int, 0400);
+module_param_named(modeset, nouveau_modeset, int, 0400);//这些信息供modeinfo进行查询已加载模块的模块参数信息
 
 MODULE_PARM_DESC(vbios, "Override default VBIOS location");
 char *nouveau_vbios;
@@ -457,7 +457,7 @@ static struct drm_driver driver = {
 
 static struct pci_driver nouveau_pci_driver = {
 		.name = DRIVER_NAME,
-		.id_table = pciidlist,
+		.id_table = pciidlist,//关注nvidia所以的Display类型的显卡
 		.probe = nouveau_pci_probe,
 		.remove = nouveau_pci_remove,
 		.suspend = nouveau_pci_suspend,
@@ -475,7 +475,7 @@ static int __init nouveau_init(void)
 #endif
 	}
 
-	if (!nouveau_modeset)
+	if (!nouveau_modeset)//如果modeset设置为0，则模块初始化直接退出，实际上并没有接管设备,这样在blacklist起作用前，内核扫描pci设备时，进行跳过处理
 		return 0;
 
 	nouveau_register_dsm_handler();
@@ -491,7 +491,7 @@ static void __exit nouveau_exit(void)
 	nouveau_unregister_dsm_handler();
 }
 
-module_init(nouveau_init);
+module_init(nouveau_init);//模块入口
 module_exit(nouveau_exit);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
