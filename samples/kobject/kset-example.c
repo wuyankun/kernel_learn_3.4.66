@@ -22,7 +22,7 @@
  * created and if an integer is written to these files, it can be later
  * read out of it.
  */
-
+//kset就如kobject的集合一样，这里提供了一个例子程序，后续可以测试使用
 
 /*
  * This is our "object" that we will create a few of and register them with
