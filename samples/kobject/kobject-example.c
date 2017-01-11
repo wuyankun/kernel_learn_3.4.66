@@ -101,7 +101,7 @@ static struct attribute_group attr_group = {
 
 static struct kobject *example_kobj;
 
-static int __init example_init(void)
+static int __init example_init(void) //如同一个例子程序一样，用来编写这种代码
 {
 	int retval;
 
