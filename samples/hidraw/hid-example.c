@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 		printf("Raw Phys: %s\n", buf);
 
 	/* Get Raw Info */
-	res = ioctl(fd, HIDIOCGRAWINFO, &info);
+	res = ioctl(fd, HIDIOCGRAWINFO, &info);//其实HID设备也有一些属性信息是可以获取的
 	if (res < 0) {
 		perror("HIDIOCGRAWINFO");
 	} else {
