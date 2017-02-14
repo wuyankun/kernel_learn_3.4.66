@@ -1,14 +1,15 @@
-/proc/sys/net/ipv4/* Variables:
+/proc/sys/net/ipv4/* Variables: 关于ipv4的一些属性设置和含义说明
 
 ip_forward - BOOLEAN
 	0 - disabled (default)
 	not 0 - enabled
 
-	Forward Packets between interfaces.
+	Forward Packets between interfaces.//在不同的网口间进行转发
+        在ubuntu发行版中，通过修改/etc/sysctl.conf 中的net.ipv4.ip_forward=1来达到目的
 
 	This variable is special, its change resets all configuration
 	parameters to their default state (RFC1122 for hosts, RFC1812
-	for routers)
+	for routers)//改变这个变量的值，将会使得所有可配置的参数恢复到默认值
 
 ip_default_ttl - INTEGER
 	Default value of TTL field (Time To Live) for outgoing (but not
