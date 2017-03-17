@@ -113,14 +113,14 @@ static inline int phy_aneg_done(struct phy_device *phydev)
 
 /* A structure for mapping a particular speed and duplex
  * combination to a particular SUPPORTED and ADVERTISED value */
-struct phy_setting {
+struct phy_setting {//phy芯片设置，速度，双工模式，设置
 	int speed;
 	int duplex;
 	u32 setting;
 };
 
 /* A mapping of all SUPPORTED settings to speed/duplex */
-static const struct phy_setting settings[] = {
+static const struct phy_setting settings[] = { //配置种类
 	{
 		.speed = 10000,
 		.duplex = DUPLEX_FULL,
@@ -214,7 +214,7 @@ static void phy_sanitize_settings(struct phy_device *phydev)
 	int idx;
 
 	/* Sanitize settings based on PHY capabilities */
-	if ((features & SUPPORTED_Autoneg) == 0)
+	if ((features & SUPPORTED_Autoneg) == 0)//自协商网络模式
 		phydev->autoneg = AUTONEG_DISABLE;
 
 	idx = phy_find_valid(phy_find_setting(phydev->speed, phydev->duplex),
@@ -236,7 +236,7 @@ static void phy_sanitize_settings(struct phy_device *phydev)
  *   choose the next best ones from the ones selected, so we don't
  *   care if ethtool tries to give us bad values.
  */
-int phy_ethtool_sset(struct phy_device *phydev, struct ethtool_cmd *cmd)
+int phy_ethtool_sset(struct phy_device *phydev, struct ethtool_cmd *cmd)//对ethtool命令的支持处理
 {
 	u32 speed = ethtool_cmd_speed(cmd);
 
@@ -310,7 +310,7 @@ EXPORT_SYMBOL(phy_ethtool_gset);
  * current state.  Use at own risk.
  */
 int phy_mii_ioctl(struct phy_device *phydev,
-		struct ifreq *ifr, int cmd)
+		struct ifreq *ifr, int cmd)//对mii工具的支持,ioctl
 {
 	struct mii_ioctl_data *mii_data = if_mii(ifr);
 	u16 val = mii_data->val_in;

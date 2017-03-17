@@ -274,7 +274,7 @@ static int mdio_bus_match(struct device *dev, struct device_driver *drv)
 	struct phy_driver *phydrv = to_phy_driver(drv);
 
 	return ((phydrv->phy_id & phydrv->phy_id_mask) ==
-		(phydev->phy_id & phydrv->phy_id_mask));
+		(phydev->phy_id & phydrv->phy_id_mask));//设备和驱动的匹配规则
 }
 
 #ifdef CONFIG_PM

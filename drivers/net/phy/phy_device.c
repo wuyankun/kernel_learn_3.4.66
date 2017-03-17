@@ -631,7 +631,7 @@ static int genphy_setup_forced(struct phy_device *phydev)
  * genphy_restart_aneg - Enable and Restart Autonegotiation
  * @phydev: target phy_device struct
  */
-int genphy_restart_aneg(struct phy_device *phydev)
+int genphy_restart_aneg(struct phy_device *phydev)//网络工作模式自协商
 {
 	int ctl;
 
@@ -701,7 +701,7 @@ EXPORT_SYMBOL(genphy_config_aneg);
  *   current link value.  In order to do this, we need to read
  *   the status register twice, keeping the second value.
  */
-int genphy_update_link(struct phy_device *phydev)
+int genphy_update_link(struct phy_device *phydev)//读写相关的寄存器，完成基本的业务
 {
 	int status;
 
@@ -831,10 +831,10 @@ static int genphy_config_init(struct phy_device *phydev)
 	 * all possible port types */
 	features = (SUPPORTED_TP | SUPPORTED_MII
 			| SUPPORTED_AUI | SUPPORTED_FIBRE |
-			SUPPORTED_BNC);
+			SUPPORTED_BNC);//端口类型
 
 	/* Do we support autonegotiation? */
-	val = phy_read(phydev, MII_BMSR);
+	val = phy_read(phydev, MII_BMSR);//通过mdio总线读取这个寄存器值，获取支持的特征信息
 
 	if (val < 0)
 		return val;
@@ -874,7 +874,7 @@ int genphy_suspend(struct phy_device *phydev)
 
 	mutex_lock(&phydev->lock);
 
-	value = phy_read(phydev, MII_BMCR);
+	value = phy_read(phydev, MII_BMCR);//休眠和唤醒都是往这个寄存器写入值
 	phy_write(phydev, MII_BMCR, (value | BMCR_PDOWN));
 
 	mutex_unlock(&phydev->lock);
@@ -913,17 +913,17 @@ static int phy_probe(struct device *dev)
 	struct device_driver *drv;
 	int err = 0;
 
-	phydev = to_phy_device(dev);
+	phydev = to_phy_device(dev);//由device找到phy_device
 
-	drv = phydev->dev.driver;
-	phydrv = to_phy_driver(drv);
+	drv = phydev->dev.driver;             //device=====>phy_device
+	phydrv = to_phy_driver(drv);          //driver=====>phy_driver
 	phydev->drv = phydrv;
 
 	/* Disable the interrupt if the PHY doesn't support it */
 	if (!(phydrv->flags & PHY_HAS_INTERRUPT))
 		phydev->irq = PHY_POLL;
 
-	mutex_lock(&phydev->lock);
+	mutex_lock(&phydev->lock);//互斥锁，用来锁下面三个数据的？
 
 	/* Start out supporting everything. Eventually,
 	 * a controller will attach, and may modify one
@@ -932,10 +932,10 @@ static int phy_probe(struct device *dev)
 	phydev->advertising = phydrv->features;
 
 	/* Set the state to READY by default */
-	phydev->state = PHY_READY;
+	phydev->state = PHY_READY;//状态机？
 
 	if (phydev->drv->probe)
-		err = phydev->drv->probe(phydev);
+		err = phydev->drv->probe(phydev);//如果驱动制定了自己的探测函数，则调用
 
 	mutex_unlock(&phydev->lock);
 
@@ -968,12 +968,12 @@ int phy_driver_register(struct phy_driver *new_driver)
 {
 	int retval;
 
-	new_driver->driver.name = new_driver->name;
-	new_driver->driver.bus = &mdio_bus_type;
-	new_driver->driver.probe = phy_probe;
+	new_driver->driver.name = new_driver->name;//符合device层的设置
+	new_driver->driver.bus = &mdio_bus_type;//总线类型和驱动名称
+	new_driver->driver.probe = phy_probe;//探测和移除
 	new_driver->driver.remove = phy_remove;
 
-	retval = driver_register(&new_driver->driver);
+	retval = driver_register(&new_driver->driver);//调用device层注册接口
 
 	if (retval) {
 		printk(KERN_ERR "%s: Error %d in registering driver\n",
@@ -1011,11 +1011,11 @@ static int __init phy_init(void)
 {
 	int rc;
 
-	rc = mdio_bus_init();
+	rc = mdio_bus_init();//mdio总线注册
 	if (rc)
 		return rc;
 
-	rc = phy_driver_register(&genphy_driver);
+	rc = phy_driver_register(&genphy_driver);//通用phy驱动注册
 	if (rc)
 		mdio_bus_exit();
 
@@ -1028,5 +1028,5 @@ static void __exit phy_exit(void)
 	mdio_bus_exit();
 }
 
-subsys_initcall(phy_init);
+subsys_initcall(phy_init);//子系统初始化调用
 module_exit(phy_exit);
