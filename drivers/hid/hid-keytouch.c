@@ -28,11 +28,11 @@ static __u8 keytouch_fixed_rdesc[] = {
 };
 
 static __u8 *keytouch_report_fixup(struct hid_device *hdev, __u8 *rdesc,
-		unsigned int *rsize)
+		unsigned int *rsize)//hid_device rdesc  rsize
 {
-	hid_info(hdev, "fixing up Keytouch IEC report descriptor\n");
+	hid_info(hdev, "fixing up Keytouch IEC report descriptor\n"); //report descriptor   report size
 
-	rdesc = keytouch_fixed_rdesc;
+	rdesc = keytouch_fixed_rdesc;//设备hid report descriptor错误，用上诉的数组代替，修正硬件错误
 	*rsize = sizeof(keytouch_fixed_rdesc);
 
 	return rdesc;
@@ -44,10 +44,10 @@ static const struct hid_device_id keytouch_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, keytouch_devices);
 
-static struct hid_driver keytouch_driver = {
+static struct hid_driver keytouch_driver = {//hid_driver结构体
 	.name = "keytouch",
 	.id_table = keytouch_devices,
-	.report_fixup = keytouch_report_fixup,
+	.report_fixup = keytouch_report_fixup,//hid_driver特殊的方法 report_fixup
 };
 
 static int __init keytouch_init(void)
