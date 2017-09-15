@@ -340,12 +340,12 @@ static long hidraw_ioctl(struct file *file, unsigned int cmd,
 	}
 
 	switch (cmd) {
-		case HIDIOCGRDESCSIZE://HID_IOC_G_RD_ESC_SIZE
+		case HIDIOCGRDESCSIZE://HID_IOC_G_RDESC_SIZE(report descriptor size)
 			if (put_user(dev->hid->rsize, (int __user *)arg))
 				ret = -EFAULT;
 			break;
 
-		case HIDIOCGRDESC://HID_IOC_G_RD_ESC
+		case HIDIOCGRDESC://HID_IOC_G_RDESC(report descriptor)
 			{
 				__u32 len;
 
