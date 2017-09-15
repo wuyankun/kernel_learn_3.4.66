@@ -18,17 +18,17 @@
 
 #include "hid-ids.h"
 
-#define ks_map_key(c)	hid_map_usage(hi, usage, bit, max, EV_KEY, (c))
+#define ks_map_key(c)	hid_map_usage(hi, usage, bit, max, EV_KEY, (c))//通用实现
 
 static int ks_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 		struct hid_field *field, struct hid_usage *usage,
-		unsigned long **bit, int *max)
+		unsigned long **bit, int *max)//hid_device  hid_input  hid_field  hid_usage **bit *max
 {
 	if ((usage->hid & HID_USAGE_PAGE) != HID_UP_MSVENDOR)
 		return 0;
 
 	switch (usage->hid & HID_USAGE) {
-	case 0x01: ks_map_key(BTN_MIDDLE);	break;
+	case 0x01: ks_map_key(BTN_MIDDLE);	break;//轨迹球，鼠标中键和侧边键
 	case 0x02: ks_map_key(BTN_SIDE);	break;
 	default:
 		return 0;
@@ -42,10 +42,10 @@ static const struct hid_device_id ks_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, ks_devices);
 
-static struct hid_driver ks_driver = {
+static struct hid_driver ks_driver = {//hid_driver结构体
 	.name = "kensington",
 	.id_table = ks_devices,
-	.input_mapping = ks_input_mapping,
+	.input_mapping = ks_input_mapping,//独特的方法,input_mapping
 };
 
 static int __init ks_init(void)
