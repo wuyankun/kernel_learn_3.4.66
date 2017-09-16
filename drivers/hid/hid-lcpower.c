@@ -49,10 +49,10 @@ static const struct hid_device_id ts_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, ts_devices);
 
-static struct hid_driver ts_driver = {
+static struct hid_driver ts_driver = {//hid_driver
 	.name = "LC RC1000MCE",
 	.id_table = ts_devices,
-	.input_mapping = ts_input_mapping,
+	.input_mapping = ts_input_mapping,//input_mapping
 };
 
 static int __init ts_init(void)
