@@ -49,10 +49,10 @@ static const struct hid_device_id saitek_devices[] = {
 
 MODULE_DEVICE_TABLE(hid, saitek_devices);
 
-static struct hid_driver saitek_driver = {
+static struct hid_driver saitek_driver = {//hid_driver 
 	.name = "saitek",
 	.id_table = saitek_devices,
-	.report_fixup = saitek_report_fixup
+	.report_fixup = saitek_report_fixup//report_fixup
 };
 
 static int __init saitek_init(void)
