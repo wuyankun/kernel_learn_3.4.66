@@ -172,10 +172,10 @@ static const struct hid_device_id sjoy_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, sjoy_devices);
 
-static struct hid_driver sjoy_driver = {
+static struct hid_driver sjoy_driver = {//hid_driver
 	.name = "smartjoyplus",
 	.id_table = sjoy_devices,
-	.probe = sjoy_probe,
+	.probe = sjoy_probe,//probe
 };
 
 static int __init sjoy_init(void)
