@@ -190,11 +190,11 @@ static const struct hid_device_id samsung_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, samsung_devices);
 
-static struct hid_driver samsung_driver = {
+static struct hid_driver samsung_driver = {//hid_driver
 	.name = "samsung",
 	.id_table = samsung_devices,
-	.report_fixup = samsung_report_fixup,
-	.input_mapping = samsung_input_mapping,
+	.report_fixup = samsung_report_fixup,//report_fixup
+	.input_mapping = samsung_input_mapping,//input_mapping
 	.probe = samsung_probe,
 };
 
