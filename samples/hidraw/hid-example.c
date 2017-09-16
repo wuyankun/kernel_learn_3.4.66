@@ -40,7 +40,7 @@
 
 const char *bus_str(int bus);
 
-int main(int argc, char **argv)
+int main(int argc, char **argv)//结合drivers/hid/hidraw.c学习
 {
 	int fd;
 	int i, res, desc_size = 0;
