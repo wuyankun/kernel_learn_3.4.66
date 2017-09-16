@@ -273,7 +273,7 @@ static __u8 easypen_m610x_rdesc_fixed[] = {
 static __u8 *kye_report_fixup(struct hid_device *hdev, __u8 *rdesc,
 		unsigned int *rsize)
 {
-	switch (hdev->product) {
+	switch (hdev->product) {//根据产品的类型,修改对应设备哦报告描述符信息
 	case USB_DEVICE_ID_KYE_ERGO_525V:
 		/* the fixups that need to be done:
 		 *   - change led usage page to button for extra buttons
@@ -299,7 +299,7 @@ static __u8 *kye_report_fixup(struct hid_device *hdev, __u8 *rdesc,
 		}
 		break;
 	case USB_DEVICE_ID_KYE_EASYPEN_I405X:
-		if (*rsize == EASYPEN_I405X_RDESC_ORIG_SIZE) {
+		if (*rsize == EASYPEN_I405X_RDESC_ORIG_SIZE) {//参见上面的大数组
 			rdesc = easypen_i405x_rdesc_fixed;
 			*rsize = sizeof(easypen_i405x_rdesc_fixed);
 		}
@@ -328,7 +328,7 @@ static __u8 *kye_report_fixup(struct hid_device *hdev, __u8 *rdesc,
  * The specific report ID and data were discovered by sniffing the
  * Windows driver traffic.
  */
-static int kye_tablet_enable(struct hid_device *hdev)
+static int kye_tablet_enable(struct hid_device *hdev)//不懂
 {
 	struct list_head *list;
 	struct list_head *head;
@@ -366,17 +366,17 @@ static int kye_tablet_enable(struct hid_device *hdev)
 	return 0;
 }
 
-static int kye_probe(struct hid_device *hdev, const struct hid_device_id *id)
+static int kye_probe(struct hid_device *hdev, const struct hid_device_id *id)//probe函数，hid_device  hid_device_id
 {
 	int ret;
 
-	ret = hid_parse(hdev);
+	ret = hid_parse(hdev);//封装函数hid_parse，第一个参数为hid_device
 	if (ret) {
 		hid_err(hdev, "parse failed\n");
 		goto err;
 	}
 
-	ret = hid_hw_start(hdev, HID_CONNECT_DEFAULT);
+	ret = hid_hw_start(hdev, HID_CONNECT_DEFAULT);//封装函数hid_hw_start，第一个参数为hid_device
 	if (ret) {
 		hid_err(hdev, "hw start failed\n");
 		goto err;
@@ -386,7 +386,7 @@ static int kye_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	case USB_DEVICE_ID_KYE_EASYPEN_I405X:
 	case USB_DEVICE_ID_KYE_MOUSEPEN_I608X:
 	case USB_DEVICE_ID_KYE_EASYPEN_M610X:
-		ret = kye_tablet_enable(hdev);
+		ret = kye_tablet_enable(hdev);//自定义函数，第一个参数为hid_device
 		if (ret) {
 			hid_err(hdev, "tablet enabling failed\n");
 			goto enabling_err;
@@ -413,11 +413,11 @@ static const struct hid_device_id kye_devices[] = {
 };
 MODULE_DEVICE_TABLE(hid, kye_devices);
 
-static struct hid_driver kye_driver = {
+static struct hid_driver kye_driver = {//hid_driver结构体
 	.name = "kye",
 	.id_table = kye_devices,
-	.probe = kye_probe,
-	.report_fixup = kye_report_fixup,
+	.probe = kye_probe,//probe方法
+	.report_fixup = kye_report_fixup,//report_fixup方法
 };
 
 static int __init kye_init(void)
