@@ -14,10 +14,10 @@ config QUOTA
 	  For further details, read the Quota mini-HOWTO, available from
 	  <http://www.tldp.org/docs.html#howto>, or the documentation provided
 	  with the quota tools. Probably the quota support is only useful for
-	  multi user systems. If unsure, say N.
+	  multi user systems. If unsure, say N.//磁盘配额管理总开关
 
 config QUOTA_NETLINK_INTERFACE
-	bool "Report quota messages through netlink interface"
+	bool "Report quota messages through netlink interface"//是否通过netlink进行消息上报
 	depends on QUOTACTL && NET
 	help
 	  If you say Y here, quota warnings (about exceeding softlimit, reaching
@@ -32,7 +32,7 @@ config PRINT_QUOTA_WARNING
 	  If you say Y here, quota warnings (about exceeding softlimit, reaching
 	  hardlimit, etc.) will be printed to the process' controlling terminal.
 	  Note that this behavior is currently deprecated and may go away in
-	  future. Please use notification via netlink socket instead.
+	  future. Please use notification via netlink socket instead.//将警告信息直接输出到控制台上，未来会移除这种方式
 
 config QUOTA_DEBUG
 	bool "Additional quota sanity checks"
@@ -40,7 +40,7 @@ config QUOTA_DEBUG
 	default n
 	help
 	  If you say Y here, quota subsystem will perform some additional
-	  sanity checks of quota internal structures. If unsure, say N.
+	  sanity checks of quota internal structures. If unsure, say N.//调试
 
 # Generic support for tree structured quota files. Selected when needed.
 config QUOTA_TREE
