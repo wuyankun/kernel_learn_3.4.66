@@ -1,15 +1,15 @@
-Explaining the dreaded "No init found." boot hang message
+Explaining the dreaded(可怕的，令人敬畏的) "No init found." boot hang message
 =========================================================
 
-OK, so you've got this pretty unintuitive message (currently located
+OK, so you've got this pretty(相当的) unintuitive message (currently located
 in init/main.c) and are wondering what the H*** went wrong.
 Some high-level reasons for failure (listed roughly in order of execution)
 to load the init binary are:
-A) Unable to mount root FS
-B) init binary doesn't exist on rootfs
-C) broken console device
-D) binary exists but dependencies not available
-E) binary cannot be loaded
+A) Unable to mount root FS(不能挂载根文件系统)
+B) init binary doesn't exist on rootfs(init二进制不在根文件系统上)
+C) broken console device(控制台设备异常)
+D) binary exists but dependencies not available(init二进制文件存在，但依赖不可用)
+E) binary cannot be loaded(二进制文件不能被加载)
 
 Detailed explanations:
 0) Set "debug" kernel parameter (in bootloader config file or CONFIG_CMDLINE)
@@ -18,14 +18,14 @@ A) make sure you have the correct root FS type
    (and root= kernel parameter points to the correct partition),
    required drivers such as storage hardware (such as SCSI or USB!)
    and filesystem (ext3, jffs2 etc.) are builtin (alternatively as modules,
-   to be pre-loaded by an initrd)
+   to be pre-loaded by an initrd)(文件系统和磁盘驱动必须是编译进入内核的，如果是模块则需要在initrd中)
 C) Possibly a conflict in console= setup --> initial console unavailable.
    E.g. some serial consoles are unreliable due to serial IRQ issues (e.g.
-   missing interrupt-based configuration).
+   missing interrupt-based configuration).(一些串口不可用，因为中断的问题，可用尝试指代另外的一个串口设备)
    Try using a different console= device or e.g. netconsole= .
 D) e.g. required library dependencies of the init binary such as
    /lib/ld-linux.so.2 missing or broken. Use readelf -d <INIT>|grep NEEDED
-   to find out which libraries are required.
+   to find out which libraries are required.(缺少一些必须的依赖库，可用通过readelf来查找)
 E) make sure the binary's architecture matches your hardware.
    E.g. i386 vs. x86_64 mismatch, or trying to load x86 on ARM hardware.
    In case you tried loading a non-binary file here (shell script?),
