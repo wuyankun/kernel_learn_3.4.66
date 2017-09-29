@@ -566,7 +566,7 @@ static void e1000e_update_rdt_wa(struct e1000_ring *rx_ring, unsigned int i)
 		u32 rctl = er32(RCTL);
 		ew32(RCTL, rctl & ~E1000_RCTL_EN);
 		e_err("ME firmware caused invalid RDT - resetting\n");
-		schedule_work(&adapter->reset_task);
+		schedule_work(&adapter->reset_task);//调度工作task
 	}
 }
 
@@ -6133,16 +6133,16 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 		goto err_alloc_etherdev;
 
 	err = -ENOMEM;
-	netdev = alloc_etherdev(sizeof(struct e1000_adapter));//分配一个以太网设备
+	netdev = alloc_etherdev(sizeof(struct e1000_adapter));//分配一个以太网设备,传入的参数是驱动上下文的结构体大小
 	if (!netdev)
 		goto err_alloc_etherdev;
 
 	SET_NETDEV_DEV(netdev, &pdev->dev);//关联device设备
 
-	netdev->irq = pdev->irq;//从pci的配置寄存器中拿到中断号,传统中断号，一段分配MSIX和MSI中断，该号被覆盖，这里保存一下
+	netdev->irq = pdev->irq;//从pci的配置寄存器中拿到中断号,传统中断号，一但分配MSI中断，该号被覆盖，这里保存一下，MSIX不更改该值
 
 	pci_set_drvdata(pdev, netdev);//pci关联网络设备
-	adapter = netdev_priv(netdev);
+	adapter = netdev_priv(netdev);//从netdev得到驱动上下文环境的指针
 	hw = &adapter->hw;//adapter才是驱动上下文环境指针
 	adapter->netdev = netdev;
 	adapter->pdev = pdev;
@@ -6294,7 +6294,7 @@ static int __devinit e1000_probe(struct pci_dev *pdev,
 	adapter->phy_info_timer.function = e1000_update_phy_info;
 	adapter->phy_info_timer.data = (unsigned long) adapter;
 
-	INIT_WORK(&adapter->reset_task, e1000_reset_task);
+	INIT_WORK(&adapter->reset_task, e1000_reset_task);//定义5个工作task
 	INIT_WORK(&adapter->watchdog_task, e1000_watchdog_task);
 	INIT_WORK(&adapter->downshift_task, e1000e_downshift_workaround);
 	INIT_WORK(&adapter->update_phy_task, e1000e_update_phy_task);
@@ -6427,7 +6427,7 @@ static void __devexit e1000_remove(struct pci_dev *pdev)
 	del_timer_sync(&adapter->watchdog_timer);//安全的删除timer资源，timer可能还没到期
 	del_timer_sync(&adapter->phy_info_timer);
 
-	cancel_work_sync(&adapter->reset_task);
+	cancel_work_sync(&adapter->reset_task);//安全的取消工作task
 	cancel_work_sync(&adapter->watchdog_task);
 	cancel_work_sync(&adapter->downshift_task);
 	cancel_work_sync(&adapter->update_phy_task);
