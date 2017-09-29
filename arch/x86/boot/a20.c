@@ -127,7 +127,7 @@ static void enable_a20_fast(void)
 
 #define A20_ENABLE_LOOPS 255	/* Number of times to try */
 
-int enable_a20(void)
+int enable_a20(void) //打开A20地址线门，使得可以访问1MB以上的内存，使用20以上的地址线
 {
        int loops = A20_ENABLE_LOOPS;
        int kbc_err;
