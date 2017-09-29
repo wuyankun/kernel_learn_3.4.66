@@ -689,16 +689,16 @@ static int mmc_select_powerclass(struct mmc_card *card,
 
 	switch (1 << host->ios.vdd) {
 	case MMC_VDD_165_195:
-		if (host->ios.clock <= 26000000)//根据时钟进一步划分电源供电类型
+		if (host->ios.clock <= 26000000)//根据时钟进一步划分电源供电类型,26Mhz
 			index = EXT_CSD_PWR_CL_26_195;
-		else if	(host->ios.clock <= 52000000)
+		else if	(host->ios.clock <= 52000000)//52Mhz
 			index = (bus_width <= EXT_CSD_BUS_WIDTH_8) ?
 				EXT_CSD_PWR_CL_52_195 :
 				EXT_CSD_PWR_CL_DDR_52_195;
-		else if (host->ios.clock <= 200000000)
+		else if (host->ios.clock <= 200000000)//200Mhz
 			index = EXT_CSD_PWR_CL_200_195;
 		break;
-	case MMC_VDD_27_28:
+	case MMC_VDD_27_28:/*电压范围*/
 	case MMC_VDD_28_29:
 	case MMC_VDD_29_30:
 	case MMC_VDD_30_31:
@@ -707,13 +707,13 @@ static int mmc_select_powerclass(struct mmc_card *card,
 	case MMC_VDD_33_34:
 	case MMC_VDD_34_35:
 	case MMC_VDD_35_36:
-		if (host->ios.clock <= 26000000)
+		if (host->ios.clock <= 26000000)//26Mhz时钟，根据时钟确定使用何种模式
 			index = EXT_CSD_PWR_CL_26_360;
-		else if	(host->ios.clock <= 52000000)
+		else if	(host->ios.clock <= 52000000)//26Mhz-52Mhz时钟
 			index = (bus_width <= EXT_CSD_BUS_WIDTH_8) ?
 				EXT_CSD_PWR_CL_52_360 :
 				EXT_CSD_PWR_CL_DDR_52_360;
-		else if (host->ios.clock <= 200000000)
+		else if (host->ios.clock <= 200000000)//52Mhz-200Mhz
 			index = EXT_CSD_PWR_CL_200_360;
 		break;
 	default:
@@ -722,9 +722,9 @@ static int mmc_select_powerclass(struct mmc_card *card,
 		return -EINVAL;
 	}
 
-	pwrclass_val = ext_csd[index];
+	pwrclass_val = ext_csd[index];//根据电压，时钟计算出当前电压的类型信息
 
-	if (bus_width & (EXT_CSD_BUS_WIDTH_8 | EXT_CSD_DDR_BUS_WIDTH_8))
+	if (bus_width & (EXT_CSD_BUS_WIDTH_8 | EXT_CSD_DDR_BUS_WIDTH_8))//判断使用的总线宽度
 		pwrclass_val = (pwrclass_val & EXT_CSD_PWR_CL_8BIT_MASK) >>
 				EXT_CSD_PWR_CL_8BIT_SHIFT;
 	else
@@ -736,7 +736,7 @@ static int mmc_select_powerclass(struct mmc_card *card,
 		err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
 				 EXT_CSD_POWER_CLASS,
 				 pwrclass_val,
-				 card->ext_csd.generic_cmd6_time);
+				 card->ext_csd.generic_cmd6_time);//切换工作模式，结合电压，时钟，带宽信息，发送命令切换
 	}
 
 	return err;
