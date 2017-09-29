@@ -99,13 +99,13 @@ probe routine to see if the DMA controller on the machine can properly
 support the DMA addressing limitation your device has.  It is good
 style to do this even if your device holds the default setting,
 because this shows that you did think about these issues wrt. your
-device.
+device.(即使设备使用内核默认的DMA设置，依然需要检查，表明你关心这些存在的问题)
 
 The query is performed via a call to dma_set_mask():
 
 	int dma_set_mask(struct device *dev, u64 mask);
 
-The query for consistent allocations is performed via a call to
+The query for consistent(始终是一致的) allocations is performed via a call to
 dma_set_coherent_mask():
 
 	int dma_set_coherent_mask(struct device *dev, u64 mask);
@@ -117,11 +117,13 @@ the machine given the address mask you provided.  In general, the
 device struct of your device is embedded in the bus specific device
 struct of your device.  For example, a pointer to the device struct of
 your PCI device is pdev->dev (pdev is a pointer to the PCI device
-struct of your device).
+struct of your device).(这些接口成功返回0，代表你的设备可以运行在你声明的模式下)
 
 If it returns non-zero, your device cannot perform DMA properly on
 this platform, and attempting to do so will result in undefined
 behavior.  You must either use a different mask, or not use DMA.
+(如果返回非0值，则表示你的设备不支持，强制使用，将会导致一个未定义的行为，
+你必须使用另外一个mask值，或者不要使用DMA)
 
 This means that in the failure case, you have three options:
 
@@ -134,10 +136,10 @@ when you end up performing either #2 or #3.  In this manner, if a user
 of your driver reports that performance is bad or that the device is not
 even detected, you can ask them for the kernel messages to find out
 exactly why.
-
+(如果出现不支持需要的类型时，推荐打出提示信息，可以选择终止初始化过程。)
 The standard 32-bit addressing device would do something like this:
 
-	if (dma_set_mask(dev, DMA_BIT_MASK(32))) {
+	if (dma_set_mask(dev, DMA_BIT_MASK(32))) {//32位地址设备的判断
 		printk(KERN_WARNING
 		       "mydev: No suitable DMA available.\n");
 		goto ignore_this_device;
@@ -150,11 +152,13 @@ platform is not capable of 64-bit addressing.  Rather, it may fail in
 this case simply because 32-bit addressing is done more efficiently
 than 64-bit addressing.  For example, Sparc64 PCI SAC addressing is
 more efficient than DAC addressing.
+(在64位体系架构上，也可能得到的结果不支持，但并不表明是平台不具备64位的
+编码能力，有可能是因为32位寻址更加高效)
 
 Here is how you would handle a 64-bit capable device which can drive
 all 64-bits when accessing streaming DMA:
 
-	int using_dac;
+	int using_dac;//DAC是神马的缩写
 
 	if (!dma_set_mask(dev, DMA_BIT_MASK(64))) {
 		using_dac = 1;
@@ -189,7 +193,7 @@ dma_set_coherent_mask() will always be able to set the same or a
 smaller mask as dma_set_mask(). However for the rare case that a
 device driver only uses consistent allocations, one would have to
 check the return value from dma_set_coherent_mask().
-
+(分配一致的标识类型总是能够设置成功，但极少数情况一些设备只支持一致的dma)
 Finally, if your device can only drive the low 24-bits of
 address you might do something like:
 
@@ -201,7 +205,7 @@ address you might do something like:
 
 When dma_set_mask() is successful, and returns zero, the kernel saves
 away this mask you have provided.  The kernel will use this
-information later when you make DMA mappings.
+information later when you make DMA mappings.(内核会保留这个标识，在使用DMA映射时，会使用这个信息)
 
 There is a case which we are aware of at this time, which is worth
 mentioning in this documentation.  If your device supports multiple
@@ -211,6 +215,7 @@ DMA addressing limitations, you may wish to probe each mask and
 only provide the functionality which the machine can handle.  It
 is important that the last call to dma_set_mask() be for the
 most specific mask.
+(多功能设备，最终需要设置支持的DMA地址的最小子集，限制越多的放置在最后)
 
 Here is pseudo-code showing how this might be done:
 
