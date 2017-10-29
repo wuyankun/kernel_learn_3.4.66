@@ -1145,7 +1145,7 @@ bytes respectively. Such letter suffixes can also be entirely omitted.//单位�
 	isapnp=		[ISAPNP]
 			Format: <RDP>,<reset>,<pci_scan>,<verbosity>
 
-	isolcpus=	[KNL,SMP] Isolate CPUs from the general scheduler.
+	isolcpus=	[KNL,SMP] Isolate CPUs from the general scheduler.//从通用调度中隔离出某几个CPU出来
 			Format:
 			<cpu number>,...,<cpu number>
 			or
@@ -1155,14 +1155,14 @@ bytes respectively. Such letter suffixes can also be entirely omitted.//单位�
 			<cpu number>,...,<cpu number>-<cpu number>
 
 			This option can be used to specify one or more CPUs
-			to isolate from the general SMP balancing and scheduling
+			to isolate from the general SMP balancing and scheduling//可以将1个或者多个从SMP调度算法中隔离
 			algorithms. You can move a process onto or off an
 			"isolated" CPU via the CPU affinity syscalls or cpuset.
-			<cpu number> begins at 0 and the maximum value is
+			<cpu number> begins at 0 and the maximum value is//可以通过affinity系统调用或者cpuset来影响既定设置
 			"number of CPUs in system - 1".
 
-			This option is the preferred way to isolate CPUs. The
-			alternative -- manually setting the CPU mask of all
+			This option is the preferred way to isolate CPUs. The//这是最好的方式来隔离CPU，手动设置所有进程的CPU
+			alternative -- manually setting the CPU mask of all//掩码可能会导致问题
 			tasks in the system -- can cause problems and
 			suboptimal load balancer performance.
 
