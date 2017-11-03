@@ -1,6 +1,6 @@
 To choose IO schedulers at boot time, use the argument 'elevator=deadline'.
 'noop' and 'cfq' (the default) are also available. IO schedulers are assigned
-globally at boot time only presently.
+globally at boot time only presently.//在启动时间设置IO的调度算法,电梯=算法
 
 Each io queue has a set of io scheduler tunables associated with it. These
 tunables control how the io scheduler works. You can find these entries
@@ -17,11 +17,11 @@ As of the Linux 2.6.10 kernel, it is now possible to change the
 IO scheduler for a given block device on the fly (thus making it possible,
 for instance, to set the CFQ scheduler for the system default, but
 set a specific device to use the deadline or noop schedulers - which
-can improve that device's throughput).
+can improve that device's throughput).//可以设置指定的设备使用deadline或者noop算法，默认采用cfq算法
 
 To set a specific scheduler, simply do this:
 
-echo SCHEDNAME > /sys/block/DEV/queue/scheduler
+echo SCHEDNAME > /sys/block/DEV/queue/scheduler//echo特定的算法名字到scheduler属性文件中
 
 where SCHEDNAME is the name of a defined IO scheduler, and DEV is the
 device name (hda, hdb, sga, or whatever you happen to have).
