@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/tegra2_clocks.c
+ * arch/arm/mach-tegra/tegra2_clocks.c //图睿,nvdia基于arm公版提出的自己的芯片系列
  *
  * Copyright (C) 2010 Google, Inc.
  *
