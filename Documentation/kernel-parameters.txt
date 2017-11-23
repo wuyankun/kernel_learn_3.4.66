@@ -780,7 +780,7 @@ bytes respectively. Such letter suffixes can also be entirely omitted.//单位�
 			See comment before function elanfreq_setup() in
 			arch/x86/kernel/cpu/cpufreq/elanfreq.c.
 
-	elevator=	[IOSCHED]
+	elevator=	[IOSCHED]//指定block device使用的io调度算法，单词的含义是电梯
 			Format: {"cfq" | "deadline" | "noop"}
 			See Documentation/block/cfq-iosched.txt and
 			Documentation/block/deadline-iosched.txt for details.
