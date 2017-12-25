@@ -1,5 +1,5 @@
 /*
- * Generic parallel printer driver
+ * Generic parallel printer driver//并口打印机驱动程序
  *
  * Copyright (C) 1992 by Jim Weigand and Linus Torvalds
  * Copyright (C) 1992,1993 by Michael K. Johnson
@@ -823,7 +823,7 @@ static struct console lpcons = {
 
 /* --- initialisation code ------------------------------------- */
 
-static int parport_nr[LP_NO] = { [0 ... LP_NO-1] = LP_PARPORT_UNSPEC };
+static int parport_nr[LP_NO] = { [0 ... LP_NO-1] = LP_PARPORT_UNSPEC };//支持这种写法的编码？奇怪
 static char *parport[LP_NO];
 static bool reset;
 
@@ -831,7 +831,7 @@ module_param_array(parport, charp, NULL, 0);
 module_param(reset, bool, 0);
 
 #ifndef MODULE
-static int __init lp_setup (char *str)
+static int __init lp_setup (char *str)//对传入的参数进行解析
 {
 	static int parport_ptr;
 	int x;
@@ -845,7 +845,7 @@ static int __init lp_setup (char *str)
 			return 0;
 		}
 	} else if (!strncmp(str, "parport", 7)) {
-		int n = simple_strtoul(str+7, NULL, 10);
+		int n = simple_strtoul(str+7, NULL, 10); //str_start str_end, 10进制
 		if (parport_ptr < LP_NO)
 			parport_nr[parport_ptr++] = n;
 		else
