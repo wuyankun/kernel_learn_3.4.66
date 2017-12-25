@@ -2095,7 +2095,7 @@ static int process_ctrl_td(struct xhci_hcd *xhci, struct xhci_td *td,
  */
 static int process_isoc_td(struct xhci_hcd *xhci, struct xhci_td *td,
 	union xhci_trb *event_trb, struct xhci_transfer_event *event,
-	struct xhci_virt_ep *ep, int *status)
+	struct xhci_virt_ep *ep, int *status)//同步端点
 {
 	struct xhci_ring *ep_ring;
 	struct urb_priv *urb_priv;
@@ -2137,7 +2137,7 @@ static int process_isoc_td(struct xhci_hcd *xhci, struct xhci_td *td,
 		break;
 	case COMP_DEV_ERR:
 	case COMP_STALL:
-	case COMP_TX_ERR:
+	case COMP_TX_ERR://发生设备错误，STALL，发送失败，上报协议错误
 		frame->status = -EPROTO;
 		skip_td = true;
 		break;
@@ -2312,9 +2312,9 @@ static int process_bulk_intr_td(struct xhci_hcd *xhci, struct xhci_td *td,
  * At this point, the host controller is probably hosed and should be reset.
  */
 static int handle_tx_event(struct xhci_hcd *xhci,
-		struct xhci_transfer_event *event)
+		struct xhci_transfer_event *event)//处理发送事件，如果返回错误，意味着获取一个传输事件，一个损坏的slot id 端点id dma地址
 {
-	struct xhci_virt_device *xdev;
+	struct xhci_virt_device *xdev;//主控被限制，应该被重置
 	struct xhci_virt_ep *ep;
 	struct xhci_ring *ep_ring;
 	unsigned int slot_id;
@@ -2332,7 +2332,7 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 	int ret = 0;
 	int td_num = 0;
 
-	slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->flags));
+	slot_id = TRB_TO_SLOT_ID(le32_to_cpu(event->flags));//错误的slot
 	xdev = xhci->devs[slot_id];
 	if (!xdev) {
 		xhci_err(xhci, "ERROR Transfer event pointed to bad slot\n");
@@ -2350,7 +2350,7 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 	}
 
 	/* Endpoint ID is 1 based, our index is zero based */
-	ep_index = TRB_TO_EP_ID(le32_to_cpu(event->flags)) - 1;
+	ep_index = TRB_TO_EP_ID(le32_to_cpu(event->flags)) - 1;//错误的端点
 	ep = &xdev->eps[ep_index];
 	ep_ring = xhci_dma_to_transfer_ring(ep, le64_to_cpu(event->buffer));
 	ep_ctx = xhci_get_ep_ctx(xhci, xdev->out_ctx, ep_index);
@@ -2411,7 +2411,7 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 		status = -EILSEQ;
 		break;
 	case COMP_SPLIT_ERR:
-	case COMP_TX_ERR:
+	case COMP_TX_ERR://发送错误或者分割发生错误
 		xhci_dbg(xhci, "Transfer error on endpoint\n");
 		status = -EPROTO;
 		break;
@@ -2452,7 +2452,7 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 		goto cleanup;
 	case COMP_DEV_ERR:
 		xhci_warn(xhci, "WARN: detect an incompatible device");
-		status = -EPROTO;
+		status = -EPROTO;//设备错误，不兼容的设备
 		break;
 	case COMP_MISSED_INT:
 		/*
@@ -2655,7 +2655,7 @@ cleanup:
  * Returns >0 for "possibly more events to process" (caller should call again),
  * otherwise 0 if done.  In future, <0 returns should indicate error code.
  */
-static int xhci_handle_event(struct xhci_hcd *xhci)
+static int xhci_handle_event(struct xhci_hcd *xhci)//处理事件
 {
 	union xhci_trb *event;
 	int update_ptrs = 1;
@@ -2689,7 +2689,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 		update_ptrs = 0;
 		break;
 	case TRB_TYPE(TRB_TRANSFER):
-		ret = handle_tx_event(xhci, &event->trans_event);
+		ret = handle_tx_event(xhci, &event->trans_event);//处理tx事件
 		if (ret < 0)
 			xhci->error_bitmask |= 1 << 9;
 		else
@@ -2729,11 +2729,11 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
  * we might get bad data out of the event ring.  Section 4.10.2.7 has a list of
  * indicators of an event TRB error, but we check the status *first* to be safe.
  */
-irqreturn_t xhci_irq(struct usb_hcd *hcd)
+irqreturn_t xhci_irq(struct usb_hcd *hcd)//中断处理
 {
 	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
 	u32 status;
-	union xhci_trb *trb;
+	union xhci_trb *trb;//传输控制块
 	u64 temp_64;
 	union xhci_trb *event_ring_deq;
 	dma_addr_t deq;
@@ -2741,16 +2741,16 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
 	spin_lock(&xhci->lock);
 	trb = xhci->event_ring->dequeue;
 	/* Check if the xHC generated the interrupt, or the irq is shared */
-	status = xhci_readl(xhci, &xhci->op_regs->status);
+	status = xhci_readl(xhci, &xhci->op_regs->status);//读取操作寄存器的状态信息
 	if (status == 0xffffffff)
-		goto hw_died;
+		goto hw_died;//读到是全ff则硬件已死亡
 
 	if (!(status & STS_EINT)) {
 		spin_unlock(&xhci->lock);
 		return IRQ_NONE;
 	}
 	if (status & STS_FATAL) {
-		xhci_warn(xhci, "WARNING: Host System Error\n");
+		xhci_warn(xhci, "WARNING: Host System Error\n");//主系统错误
 		xhci_halt(xhci);
 hw_died:
 		spin_unlock(&xhci->lock);
@@ -2763,7 +2763,7 @@ hw_died:
 	 * Write 1 to clear the interrupt status.
 	 */
 	status |= STS_EINT;
-	xhci_writel(xhci, status, &xhci->op_regs->status);
+	xhci_writel(xhci, status, &xhci->op_regs->status);//清除操作寄存器的中断状态
 	/* FIXME when MSI-X is supported and there are multiple vectors */
 	/* Clear the MSI-X event interrupt status */
 
@@ -2772,10 +2772,10 @@ hw_died:
 		/* Acknowledge the PCI interrupt */
 		irq_pending = xhci_readl(xhci, &xhci->ir_set->irq_pending);
 		irq_pending |= IMAN_IP;
-		xhci_writel(xhci, irq_pending, &xhci->ir_set->irq_pending);
+		xhci_writel(xhci, irq_pending, &xhci->ir_set->irq_pending);//应答PCI的中断
 	}
 
-	if (xhci->xhc_state & XHCI_STATE_DYING) {
+	if (xhci->xhc_state & XHCI_STATE_DYING) {//整个模块处于DYING状态
 		xhci_dbg(xhci, "xHCI dying, ignoring interrupt. "
 				"Shouldn't IRQs be disabled?\n");
 		/* Clear the event handler busy flag (RW1C);
@@ -2793,7 +2793,7 @@ hw_died:
 	/* FIXME this should be a delayed service routine
 	 * that clears the EHB.
 	 */
-	while (xhci_handle_event(xhci) > 0) {}
+	while (xhci_handle_event(xhci) > 0) {}//处理事件类型
 
 	temp_64 = xhci_read_64(xhci, &xhci->ir_set->erst_dequeue);
 	/* If necessary, update the HW's version of the event ring deq ptr. */

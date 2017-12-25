@@ -24,9 +24,9 @@
 #include <linux/slab.h>
 #include <linux/module.h>
 
-#include "xhci.h"
+#include "xhci.h"//总的头文件
 
-/* Device for a quirk */
+/* Device for a quirk *///一些特殊厂家和特殊设备需要做一些特殊的修正
 #define PCI_VENDOR_ID_FRESCO_LOGIC	0x1b73
 #define PCI_DEVICE_ID_FRESCO_LOGIC_PDK	0x1000
 #define PCI_DEVICE_ID_FRESCO_LOGIC_FL1400	0x1400
@@ -34,7 +34,7 @@
 #define PCI_VENDOR_ID_ETRON		0x1b6f
 #define PCI_DEVICE_ID_ASROCK_P67	0x7023
 
-static const char hcd_name[] = "xhci_hcd";
+static const char hcd_name[] = "xhci_hcd";//pci设备的名称
 
 /* called after powerup, by probe or system-pm "wakeup" */
 static int xhci_pci_reinit(struct xhci_hcd *xhci, struct pci_dev *pdev)
@@ -53,7 +53,7 @@ static int xhci_pci_reinit(struct xhci_hcd *xhci, struct pci_dev *pdev)
 	return 0;
 }
 
-static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
+static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)//特殊设备做一些特殊的修正
 {
 	struct pci_dev		*pdev = to_pci_dev(dev);
 
@@ -120,11 +120,11 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 	struct pci_dev		*pdev = to_pci_dev(hcd->self.controller);
 	int			retval;
 
-	retval = xhci_gen_setup(hcd, xhci_pci_quirks);
+	retval = xhci_gen_setup(hcd, xhci_pci_quirks);//对特殊设备做一些修正
 	if (retval)
 		return retval;
 
-	xhci = hcd_to_xhci(hcd);
+	xhci = hcd_to_xhci(hcd);//找到驱动上下文
 	if (!usb_hcd_is_primary_hcd(hcd))
 		return 0;
 
@@ -132,7 +132,7 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 	xhci_dbg(xhci, "Got SBRN %u\n", (unsigned int) xhci->sbrn);
 
 	/* Find any debug ports */
-	retval = xhci_pci_reinit(xhci, pdev);
+	retval = xhci_pci_reinit(xhci, pdev);//检测是否支持MWI特性
 	if (!retval)
 		return retval;
 
@@ -147,27 +147,27 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 static int xhci_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
 	int retval;
-	struct xhci_hcd *xhci;
-	struct hc_driver *driver;
-	struct usb_hcd *hcd;
+	struct xhci_hcd *xhci;//驱动上下文结构体
+	struct hc_driver *driver;//主控驱动
+	struct usb_hcd *hcd;//主控设备
 
-	driver = (struct hc_driver *)id->driver_data;
+	driver = (struct hc_driver *)id->driver_data;//传入的是个主控驱动结构体实现
 	/* Register the USB 2.0 roothub.
 	 * FIXME: USB core must know to register the USB 2.0 roothub first.
 	 * This is sort of silly, because we could just set the HCD driver flags
 	 * to say USB 2.0, but I'm not sure what the implications would be in
 	 * the other parts of the HCD code.
 	 */
-	retval = usb_hcd_pci_probe(dev, id);
+	retval = usb_hcd_pci_probe(dev, id);//通过设备dev和id得到一个hcd设备
 
 	if (retval)
 		return retval;
 
 	/* USB 2.0 roothub is stored in the PCI device now. */
 	hcd = dev_get_drvdata(&dev->dev);
-	xhci = hcd_to_xhci(hcd);
+	xhci = hcd_to_xhci(hcd);//通过hcd设备得到驱动上下文
 	xhci->shared_hcd = usb_create_shared_hcd(driver, &dev->dev,
-				pci_name(dev), hcd);
+				pci_name(dev), hcd);//创建一个shared_hcd设备
 	if (!xhci->shared_hcd) {
 		retval = -ENOMEM;
 		goto dealloc_usb2_hcd;
@@ -176,10 +176,10 @@ static int xhci_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	/* Set the xHCI pointer before xhci_pci_setup() (aka hcd_driver.reset)
 	 * is called by usb_add_hcd().
 	 */
-	*((struct xhci_hcd **) xhci->shared_hcd->hcd_priv) = xhci;
+	*((struct xhci_hcd **) xhci->shared_hcd->hcd_priv) = xhci;//将驱动上下文和shared_hcd关联起来
 
 	retval = usb_add_hcd(xhci->shared_hcd, dev->irq,
-			IRQF_SHARED);
+			IRQF_SHARED);//添加一个shared_hcd设备到usb core中，使用pci设备的中断，共享中断类型
 	if (retval)
 		goto put_usb3_hcd;
 	/* Roothub already marked as USB 3.0 speed */
@@ -196,17 +196,17 @@ static void xhci_pci_remove(struct pci_dev *dev)
 {
 	struct xhci_hcd *xhci;
 
-	xhci = hcd_to_xhci(pci_get_drvdata(dev));
-	if (xhci->shared_hcd) {
+	xhci = hcd_to_xhci(pci_get_drvdata(dev));//从pci得到hcd，再通过hcd得到驱动上下文
+	if (xhci->shared_hcd) {//3.0的shared_hcd
 		usb_remove_hcd(xhci->shared_hcd);
 		usb_put_hcd(xhci->shared_hcd);
 	}
-	usb_hcd_pci_remove(dev);
+	usb_hcd_pci_remove(dev);//2.0的hcd
 	kfree(xhci);
 }
 
 #ifdef CONFIG_PM
-static int xhci_pci_suspend(struct usb_hcd *hcd, bool do_wakeup)
+static int xhci_pci_suspend(struct usb_hcd *hcd, bool do_wakeup)//suspend、resume接口
 {
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
 	int	retval = 0;
@@ -250,19 +250,19 @@ static int xhci_pci_resume(struct usb_hcd *hcd, bool hibernated)
 }
 #endif /* CONFIG_PM */
 
-static const struct hc_driver xhci_pci_hc_driver = {
+static const struct hc_driver xhci_pci_hc_driver = {//主控制器驱动
 	.description =		hcd_name,
 	.product_desc =		"xHCI Host Controller",
 	.hcd_priv_size =	sizeof(struct xhci_hcd *),
 
 	/*
-	 * generic hardware linkage
+	 * generic hardware linkage//通用硬件链接
 	 */
 	.irq =			xhci_irq,
 	.flags =		HCD_MEMORY | HCD_USB3 | HCD_SHARED,
 
 	/*
-	 * basic lifecycle operations
+	 * basic lifecycle operations//基本生命周期操作
 	 */
 	.reset =		xhci_pci_setup,
 	.start =		xhci_run,
@@ -274,35 +274,40 @@ static const struct hc_driver xhci_pci_hc_driver = {
 	.shutdown =		xhci_shutdown,
 
 	/*
-	 * managing i/o requests and associated device resources
+	 * managing i/o requests and associated device resources//管理io请求和关联的资源
 	 */
-	.urb_enqueue =		xhci_urb_enqueue,
+	.urb_enqueue =		xhci_urb_enqueue,//urb队列操作接口
 	.urb_dequeue =		xhci_urb_dequeue,
-	.alloc_dev =		xhci_alloc_dev,
+	
+	.alloc_dev =		xhci_alloc_dev,//申请设备释放设备
 	.free_dev =		xhci_free_dev,
-	.alloc_streams =	xhci_alloc_streams,
+	
+	.alloc_streams =	xhci_alloc_streams,//申请流/释放流
 	.free_streams =		xhci_free_streams,
-	.add_endpoint =		xhci_add_endpoint,
+	
+	.add_endpoint =		xhci_add_endpoint,//增加端点、丢弃端点、重置端点
 	.drop_endpoint =	xhci_drop_endpoint,
 	.endpoint_reset =	xhci_endpoint_reset,
-	.check_bandwidth =	xhci_check_bandwidth,
+	
+	.check_bandwidth =	xhci_check_bandwidth,//检查带宽和重置带宽
 	.reset_bandwidth =	xhci_reset_bandwidth,
-	.address_device =	xhci_address_device,
-	.update_hub_device =	xhci_update_hub_device,
+	
+	.address_device =	xhci_address_device,//设备地址
+	.update_hub_device =	xhci_update_hub_device,//更新hub设备
 	.reset_device =		xhci_discover_or_reset_device,
 
 	/*
-	 * scheduling support
+	 * scheduling support//调度支持
 	 */
 	.get_frame_number =	xhci_get_frame,
 
 	/* Root hub support */
-	.hub_control =		xhci_hub_control,
+	.hub_control =		xhci_hub_control,//根hub控制
 	.hub_status_data =	xhci_hub_status_data,
 	.bus_suspend =		xhci_bus_suspend,
 	.bus_resume =		xhci_bus_resume,
 	/*
-	 * call back when device connected and addressed
+	 * call back when device connected and addressed//回调当设备链接和分配地址
 	 */
 	.update_device =        xhci_update_device,
 	.set_usb2_hw_lpm =	xhci_set_usb2_hardware_lpm,
@@ -329,15 +334,15 @@ static struct pci_driver xhci_pci_driver = {
 	.remove =	xhci_pci_remove,
 	/* suspend and resume implemented later */
 
-	.shutdown = 	usb_hcd_pci_shutdown,
+	.shutdown = 	usb_hcd_pci_shutdown,//使用标准实现
 #ifdef CONFIG_PM_SLEEP
 	.driver = {
-		.pm = &usb_hcd_pci_pm_ops
+		.pm = &usb_hcd_pci_pm_ops//标准实现，sleep
 	},
 #endif
 };
 
-int __init xhci_register_pci(void)
+int __init xhci_register_pci(void)//PCI设备驱动注册
 {
 	return pci_register_driver(&xhci_pci_driver);
 }

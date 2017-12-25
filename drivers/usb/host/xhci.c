@@ -189,7 +189,7 @@ int xhci_reset(struct xhci_hcd *xhci)
 	return ret;
 }
 
-#ifdef CONFIG_PCI
+#ifdef CONFIG_PCI//尝试使用MSI/MSI-X中断
 static int xhci_free_msi(struct xhci_hcd *xhci)
 {
 	int i;
@@ -784,7 +784,7 @@ void xhci_shutdown(struct usb_hcd *hcd)
 		    xhci_readl(xhci, &xhci->op_regs->status));
 }
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM//休眠唤醒部分
 static void xhci_save_registers(struct xhci_hcd *xhci)
 {
 	xhci->s3.command = xhci_readl(xhci, &xhci->op_regs->command);
@@ -1331,24 +1331,24 @@ int xhci_urb_enqueue(struct usb_hcd *hcd, struct urb *urb, gfp_t mem_flags)
 		if (ret)
 			goto free_priv;
 		spin_unlock_irqrestore(&xhci->lock, flags);
-	} else if (usb_endpoint_xfer_bulk(&urb->ep->desc)) {
+	} else if (usb_endpoint_xfer_bulk(&urb->ep->desc)) {//如果是bulk端点
 		spin_lock_irqsave(&xhci->lock, flags);
-		if (xhci->xhc_state & XHCI_STATE_DYING)
+		if (xhci->xhc_state & XHCI_STATE_DYING)//检查hc的状态信息，是否正在死去
 			goto dying;
 		if (xhci->devs[slot_id]->eps[ep_index].ep_state &
-				EP_GETTING_STREAMS) {
+				EP_GETTING_STREAMS) {//检查端点的状态是否是正在使用stream
 			xhci_warn(xhci, "WARN: Can't enqueue URB while bulk ep "
 					"is transitioning to using streams.\n");
 			ret = -EINVAL;
 		} else if (xhci->devs[slot_id]->eps[ep_index].ep_state &
-				EP_GETTING_NO_STREAMS) {
+				EP_GETTING_NO_STREAMS) {//是否没有拥有stream
 			xhci_warn(xhci, "WARN: Can't enqueue URB while bulk ep "
 					"is transitioning to "
 					"not having streams.\n");
 			ret = -EINVAL;
 		} else {
 			ret = xhci_queue_bulk_tx(xhci, GFP_ATOMIC, urb,
-					slot_id, ep_index);
+					slot_id, ep_index);//bulk tx 加入队列
 		}
 		if (ret)
 			goto free_priv;
@@ -1377,7 +1377,7 @@ exit:
 dying:
 	xhci_dbg(xhci, "Ep 0x%x: URB %p submitted for "
 			"non-responsive xHCI host.\n",
-			urb->ep->desc.bEndpointAddress, urb);
+			urb->ep->desc.bEndpointAddress, urb);//打印调试信息，返回-ESHUTDOWN
 	ret = -ESHUTDOWN;
 free_priv:
 	xhci_urb_free_priv(xhci, urb_priv);
@@ -3650,7 +3650,7 @@ disable_slot:
 
 /*
  * Issue an Address Device command (which will issue a SetAddress request to
- * the device).
+ * the device).//给设备发送一个SetAddress的命令
  * We should be protected by the usb_address0_mutex in khubd's hub_port_init, so
  * we should only issue and wait on one address command at the same time.
  *
@@ -3743,7 +3743,7 @@ int xhci_address_device(struct usb_hcd *hcd, struct usb_device *udev)
 		break;
 	case COMP_TX_ERR:
 		dev_warn(&udev->dev, "Device not responding to set address.\n");
-		ret = -EPROTO;
+		ret = -EPROTO;//协议错误，设备对设置地址不响应
 		break;
 	case COMP_DEV_ERR:
 		dev_warn(&udev->dev, "ERROR: Incompatible device for address "
@@ -4249,16 +4249,16 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
 
-static int __init xhci_hcd_init(void)
+static int __init xhci_hcd_init(void)//模块加载的入口
 {
 	int retval;
 
-	retval = xhci_register_pci();
+	retval = xhci_register_pci();//从总线角度为PCI设备驱动
 	if (retval < 0) {
 		printk(KERN_DEBUG "Problem registering PCI driver.");
 		return retval;
 	}
-	retval = xhci_register_plat();
+	retval = xhci_register_plat();//从功能角度为平台设备驱动
 	if (retval < 0) {
 		printk(KERN_DEBUG "Problem registering platform driver.");
 		goto unreg_pci;
