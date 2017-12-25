@@ -1450,10 +1450,10 @@ EXPORT_SYMBOL_GPL(usb_hcd_map_urb_for_dma);
  * expects usb_submit_urb() to have sanity checked and conditioned all
  * inputs in the urb
  */
-int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)
+int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)//在usb_submit_urb中调用这个借口
 {
 	int			status;
-	struct usb_hcd		*hcd = bus_to_hcd(urb->dev->bus);
+	struct usb_hcd		*hcd = bus_to_hcd(urb->dev->bus);//得到usb_hcd
 
 	/* increment urb's reference count as part of giving it to the HCD
 	 * (which will control it).  HCD guarantees that it either returns
@@ -1462,7 +1462,7 @@ int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)
 	usb_get_urb(urb);
 	atomic_inc(&urb->use_count);
 	atomic_inc(&urb->dev->urbnum);
-	usbmon_urb_submit(&hcd->self, urb);
+	usbmon_urb_submit(&hcd->self, urb);//增加urb的引用计数
 
 	/* NOTE requirements on root-hub callers (usbfs and the hub
 	 * driver, for now):  URBs' urb->transfer_buffer must be
@@ -1473,18 +1473,18 @@ int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)
 	 */
 
 	if (is_root_hub(urb->dev)) {
-		status = rh_urb_enqueue(hcd, urb);
+		status = rh_urb_enqueue(hcd, urb);//如果是根hub，入rh的队列
 	} else {
 		status = map_urb_for_dma(hcd, urb, mem_flags);
 		if (likely(status == 0)) {
-			status = hcd->driver->urb_enqueue(hcd, urb, mem_flags);
+			status = hcd->driver->urb_enqueue(hcd, urb, mem_flags);//由hcd实现入队列的接口
 			if (unlikely(status))
 				unmap_urb_for_dma(hcd, urb);
 		}
 	}
 
 	if (unlikely(status)) {
-		usbmon_urb_submit_error(&hcd->self, urb, status);
+		usbmon_urb_submit_error(&hcd->self, urb, status);//如果检测到错误，更新状态，减少引用计数
 		urb->hcpriv = NULL;
 		INIT_LIST_HEAD(&urb->urb_list);
 		atomic_dec(&urb->use_count);
@@ -1493,7 +1493,7 @@ int usb_hcd_submit_urb (struct urb *urb, gfp_t mem_flags)
 			wake_up(&usb_kill_urb_queue);
 		usb_put_urb(urb);
 	}
-	return status;
+	return status;//返回提交的状态信息
 }
 
 /*-------------------------------------------------------------------------*/

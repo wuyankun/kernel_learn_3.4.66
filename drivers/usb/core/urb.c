@@ -115,7 +115,7 @@ EXPORT_SYMBOL_GPL(usb_get_urb);
 /**
  * usb_anchor_urb - anchors an URB while it is processed
  * @urb: pointer to the urb to anchor
- * @anchor: pointer to the anchor
+ * @anchor: pointer to the anchor:抛锚，锚定
  *
  * This can be called to have access to URBs which are to be executed
  * without bothering to track them
@@ -127,7 +127,7 @@ void usb_anchor_urb(struct urb *urb, struct usb_anchor *anchor)
 	spin_lock_irqsave(&anchor->lock, flags);
 	usb_get_urb(urb);
 	list_add_tail(&urb->anchor_list, &anchor->urb_list);
-	urb->anchor = anchor;
+	urb->anchor = anchor;//关联锚定
 
 	if (unlikely(anchor->poisoned)) {
 		atomic_inc(&urb->reject);
@@ -140,7 +140,7 @@ EXPORT_SYMBOL_GPL(usb_anchor_urb);
 /* Callers must hold anchor->lock */
 static void __usb_unanchor_urb(struct urb *urb, struct usb_anchor *anchor)
 {
-	urb->anchor = NULL;
+	urb->anchor = NULL;//取消锚定关联
 	list_del(&urb->anchor_list);
 	usb_put_urb(urb);
 	if (list_empty(&anchor->urb_list))
@@ -180,85 +180,85 @@ EXPORT_SYMBOL_GPL(usb_unanchor_urb);
 /*-------------------------------------------------------------------*/
 
 /**
- * usb_submit_urb - issue an asynchronous transfer request for an endpoint
- * @urb: pointer to the urb describing the request
- * @mem_flags: the type of memory to allocate, see kmalloc() for a list
+ * usb_submit_urb - issue an asynchronous transfer request for an endpoint //发出对某一个端点的异步传输请求
+ * @urb: pointer to the urb describing the request //urb来对请求进行描述
+ * @mem_flags: the type of memory to allocate, see kmalloc() for a list//内存的flags特征
  *	of valid options for this.
  *
  * This submits a transfer request, and transfers control of the URB
- * describing that request to the USB subsystem.  Request completion will
+ * describing that request to the USB subsystem.  Request completion will//请求的完成情况将会稍后异步指明，通过调用完成情况的处理方法
  * be indicated later, asynchronously, by calling the completion handler.
  * The three types of completion are success, error, and unlink
- * (a software-induced fault, also called "request cancellation").
+ * (a software-induced fault, also called "request cancellation").//完成的结果有3种，成功，错误，和失去连接
  *
- * URBs may be submitted in interrupt context.
+ * URBs may be submitted in interrupt context.//urb可以在中断上下文提交
  *
- * The caller must have correctly initialized the URB before submitting
- * it.  Functions such as usb_fill_bulk_urb() and usb_fill_control_urb() are
- * available to ensure that most fields are correctly initialized, for
+ * The caller must have correctly initialized the URB before submitting//调用提交前必须完成urb的初始化，可以通过usb_fill_bulk_urb usb_fill_contorl_urb
+ * it.  Functions such as usb_fill_bulk_urb() and usb_fill_control_urb() are//是可以确保大部分配置被正确初始化的，个别特殊类型的传输，即使不会被任何的传输
+ * available to ensure that most fields are correctly initialized, for//类型表示。
  * the particular kind of transfer, although they will not initialize
  * any transfer flags.
  *
- * Successful submissions return 0; otherwise this routine returns a
+ * Successful submissions return 0; otherwise this routine returns a//成功提交返回0，否则返回一个负数的错误码。
  * negative error number.  If the submission is successful, the complete()
- * callback from the URB will be called exactly once, when the USB core and
+ * callback from the URB will be called exactly once, when the USB core and//提交成功，urb绑定的完成的回调函数将会被调用一次，当usb core 和HCD完成了该urb的处理。
  * Host Controller Driver (HCD) are finished with the URB.  When the completion
- * function is called, control of the URB is returned to the device
+ * function is called, control of the URB is returned to the device//当回调函数被调用，urb的控制权会被移交给usb设备驱动，回调函数可以立刻释放或者重用该urb.
  * driver which issued the request.  The completion handler may then
  * immediately free or reuse that URB.
  *
  * With few exceptions, USB device drivers should never access URB fields
- * provided by usbcore or the HCD until its complete() is called.
- * The exceptions relate to periodic transfer scheduling.  For both
- * interrupt and isochronous urbs, as part of successful URB submission
+ * provided by usbcore or the HCD until its complete() is called.//除非在少数异常情况，usb设备驱动不应该控制urb的填充区域，直到usb core 和HCD调用回调函数。
+ * The exceptions relate to periodic transfer scheduling.  For both//例如定期的传输调度。
+ * interrupt and isochronous urbs, as part of successful URB submission//对于中断和同步urb请求，urb->interval会被修改为实际的传输周期，通常是2的倍数。
  * urb->interval is modified to reflect the actual transfer period used
  * (normally some power of two units).  And for isochronous urbs,
- * urb->start_frame is modified to reflect when the URB's transfers were
- * scheduled to start.  Not all isochronous transfer scheduling policies
+ * urb->start_frame is modified to reflect when the URB's transfers were//同步urb的urb->start_frame也被会修改，参考该urb真实的调度起始
+ * scheduled to start.  Not all isochronous transfer scheduling policies//并不是所有的同步urb调度策略会工作，但是大部分主控驱动可以轻松处理ISO队列，在10-200ms之间
  * will work, but most host controller drivers should easily handle ISO
  * queues going from now until 10-200 msec into the future.
  *
  * For control endpoints, the synchronous usb_control_msg() call is
- * often used (in non-interrupt context) instead of this call.
+ * often used (in non-interrupt context) instead of this call.//对应控制端点，往往使用usb_contorl_msg函数，对于批量端点，同步的usb_bulk_msg是可用的
  * That is often used through convenience wrappers, for the requests
  * that are standardized in the USB 2.0 specification.  For bulk
  * endpoints, a synchronous usb_bulk_msg() call is available.
  *
  * Request Queuing:
  *
- * URBs may be submitted to endpoints before previous ones complete, to
+ * URBs may be submitted to endpoints before previous ones complete, to//urb可能在前一个urb被处理完之前提交，从而最小化的影响中断潜力和数据传输。
  * minimize the impact of interrupt latencies and system overhead on data
- * throughput.  With that queuing policy, an endpoint's queue would never
+ * throughput.  With that queuing policy, an endpoint's queue would never//使用查询策略，一个端点的队列永远不会为空
  * be empty.  This is required for continuous isochronous data streams,
- * and may also be required for some kinds of interrupt transfers. Such
- * queuing also maximizes bandwidth utilization by letting USB controllers
+ * and may also be required for some kinds of interrupt transfers. Such//来满足连续的同步数据流，一些类型的中断传输，这种查询也最大化了带宽，通过让
+ * queuing also maximizes bandwidth utilization by letting USB controllers//USB控制完成urb请求，在usb设备驱动完成上一次请求处理之前。
  * start work on later requests before driver software has finished the
  * completion processing for earlier (successful) requests.
  *
  * As of Linux 2.6, all USB endpoint transfer queues support depths greater
  * than one.  This was previously a HCD-specific behavior, except for ISO
- * transfers.  Non-isochronous endpoint queues are inactive during cleanup
+ * transfers.  Non-isochronous endpoint queues are inactive during cleanup//在2.6内核，所有的端点传输请求支持深度超过1，这是HCD的特殊行为
  * after faults (transfer errors or cancellation).
  *
  * Reserved Bandwidth Transfers:
  *
- * Periodic transfers (interrupt or isochronous) are performed repeatedly,
+ * Periodic transfers (interrupt or isochronous) are performed repeatedly,//周期性传输是性能保证的，将会保留带宽来确保这种类型传输
  * using the interval specified in the urb.  Submitting the first urb to
  * the endpoint reserves the bandwidth necessary to make those transfers.
- * If the USB subsystem can't allocate sufficient bandwidth to perform
+ * If the USB subsystem can't allocate sufficient bandwidth to perform//如果usb系统没有分配足够的带宽为周期性传输，提交将会失败。
  * the periodic request, submitting such a periodic request should fail.
  *
- * For devices under xHCI, the bandwidth is reserved at configuration time, or
+ * For devices under xHCI, the bandwidth is reserved at configuration time, or//对于使用xHCI，带宽是保留的，在配置时间，或者设置被选择期间。
  * when the alt setting is selected.  If there is not enough bus bandwidth, the
- * configuration/alt setting request will fail.  Therefore, submissions to
- * periodic endpoints on devices under xHCI should never fail due to bandwidth
+ * configuration/alt setting request will fail.  Therefore, submissions to//当没有足够的带宽，配置和控制设置请求会失败，所以在xHCI上，周期性端点
+ * periodic endpoints on devices under xHCI should never fail due to bandwidth//传输不会失败因为带宽控制
  * constraints.
  *
- * Device drivers must explicitly request that repetition, by ensuring that
+ * Device drivers must explicitly request that repetition, by ensuring that//设备驱动必须明白请求的可传递，通过确保一些urb总是在端点队列上。
  * some URB is always on the endpoint's queue (except possibly for short
- * periods during completion callacks).  When there is no longer an urb
- * queued, the endpoint's bandwidth reservation is canceled.  This means
- * drivers can use their completion handlers to ensure they keep bandwidth
+ * periods during completion callacks).  When there is no longer an urb//当这里没有一个urb队列时，端点的带宽会取消，因为设备驱动需要使用urb的完成
+ * queued, the endpoint's bandwidth reservation is canceled.  This means//回调函数来确保保留足够的带宽使用，通过重新初始化和重新提交刚完成的urb，直到
+ * drivers can use their completion handlers to ensure they keep bandwidth//不在需要带宽。
  * they need, by reinitializing and resubmitting the just-completed urb
  * until the driver longer needs that periodic bandwidth.
  *
@@ -269,26 +269,26 @@ EXPORT_SYMBOL_GPL(usb_unanchor_urb);
  * different possible values; GFP_KERNEL, GFP_NOFS, GFP_NOIO and
  * GFP_ATOMIC.
  *
- * GFP_NOFS is not ever used, as it has not been implemented yet.
+ * GFP_NOFS is not ever used, as it has not been implemented yet.//内存的flag和kmalloc相同，除了NOFS未被使用和实现
  *
  * GFP_ATOMIC is used when
  *   (a) you are inside a completion handler, an interrupt, bottom half,
  *       tasklet or timer, or
  *   (b) you are holding a spinlock or rwlock (does not apply to
  *       semaphores), or
- *   (c) current->state != TASK_RUNNING, this is the case only after
+ *   (c) current->state != TASK_RUNNING, this is the case only after//一些中断上下文，拥有锁的情况下，使用ATOMIC标识
  *       you've changed it.
  *
- * GFP_NOIO is used in the block io path and error handling of storage
+ * GFP_NOIO is used in the block io path and error handling of storage//NOIO用在块设备IO的路径上和对存储设备的错误处理中
  * devices.
  *
- * All other situations use GFP_KERNEL.
+ * All other situations use GFP_KERNEL.//其他情况都可以使用KERNEL选项
  *
  * Some more specific rules for mem_flags can be inferred, such as
- *  (1) start_xmit, timeout, and receive methods of network drivers must
- *      use GFP_ATOMIC (they are called with a spinlock held);
+ *  (1) start_xmit, timeout, and receive methods of network drivers must//一些特殊场景必须使用atomic
+ *      use GFP_ATOMIC (they are called with a spinlock held);//网卡
  *  (2) queuecommand methods of scsi drivers must use GFP_ATOMIC (also
- *      called with a spinlock held);
+ *      called with a spinlock held);//scsi设备
  *  (3) If you use a kernel thread with a network driver you must use
  *      GFP_NOIO, unless (b) or (c) apply;
  *  (4) after you have done a down() you can use GFP_KERNEL, unless (b) or (c)
@@ -315,61 +315,61 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 	 * will be required to set urb->ep directly and we will eliminate
 	 * urb->pipe.
 	 */
-	ep = usb_pipe_endpoint(dev, urb->pipe);
+	ep = usb_pipe_endpoint(dev, urb->pipe);//从urb中拿到ep信息，所以设备驱动需要设置urb的ep信息
 	if (!ep)
 		return -ENOENT;
 
 	urb->ep = ep;
-	urb->status = -EINPROGRESS;
-	urb->actual_length = 0;
+	urb->status = -EINPROGRESS;//初始化状态码为“处理中”
+	urb->actual_length = 0;//实际处理的长度初始化为0
 
-	/* Lots of sanity checks, so HCDs can rely on clean data
+	/* Lots of sanity checks, so HCDs can rely on clean data//一些检查，HCD不需要重复检查，只关注数据本身
 	 * and don't need to duplicate tests
 	 */
-	xfertype = usb_endpoint_type(&ep->desc);
+	xfertype = usb_endpoint_type(&ep->desc);//urb的类型检查
 	if (xfertype == USB_ENDPOINT_XFER_CONTROL) {
 		struct usb_ctrlrequest *setup =
 				(struct usb_ctrlrequest *) urb->setup_packet;
 
 		if (!setup)
 			return -ENOEXEC;
-		is_out = !(setup->bRequestType & USB_DIR_IN) ||
+		is_out = !(setup->bRequestType & USB_DIR_IN) ||//方向判定
 				!setup->wLength;
 	} else {
 		is_out = usb_endpoint_dir_out(&ep->desc);
 	}
 
-	/* Clear the internal flags and cache the direction for later use */
+	/* Clear the internal flags and cache the direction for later use *///取消内部的flags特征，之前保留了方向信息
 	urb->transfer_flags &= ~(URB_DIR_MASK | URB_DMA_MAP_SINGLE |
 			URB_DMA_MAP_PAGE | URB_DMA_MAP_SG | URB_MAP_LOCAL |
 			URB_SETUP_MAP_SINGLE | URB_SETUP_MAP_LOCAL |
 			URB_DMA_SG_COMBINED);
-	urb->transfer_flags |= (is_out ? URB_DIR_OUT : URB_DIR_IN);
+	urb->transfer_flags |= (is_out ? URB_DIR_OUT : URB_DIR_IN);//把方向信息置回
 
 	if (xfertype != USB_ENDPOINT_XFER_CONTROL &&
-			dev->state < USB_STATE_CONFIGURED)
+			dev->state < USB_STATE_CONFIGURED)//如果不是配置传输，设备的状态小于已配置，则返回NODEV错误
 		return -ENODEV;
 
-	max = usb_endpoint_maxp(&ep->desc);
+	max = usb_endpoint_maxp(&ep->desc);//端点最大的传输单元检查
 	if (max <= 0) {
 		dev_dbg(&dev->dev,
 			"bogus endpoint ep%d%s in %s (bad maxpacket %d)\n",
 			usb_endpoint_num(&ep->desc), is_out ? "out" : "in",
 			__func__, max);
-		return -EMSGSIZE;
+		return -EMSGSIZE;//返回错误MSGSIZE
 	}
 
 	/* periodic transfers limit size per frame/uframe,
 	 * but drivers only control those sizes for ISO.
 	 * while we're checking, initialize return status.
 	 */
-	if (xfertype == USB_ENDPOINT_XFER_ISOC) {
+	if (xfertype == USB_ENDPOINT_XFER_ISOC) {//ISO传输类型
 		int	n, len;
 
 		/* SuperSpeed isoc endpoints have up to 16 bursts of up to
 		 * 3 packets each
 		 */
-		if (dev->speed == USB_SPEED_SUPER) {
+		if (dev->speed == USB_SPEED_SUPER) {//SS支持高达16个 bursts
 			int     burst = 1 + ep->ss_ep_comp.bMaxBurst;
 			int     mult = USB_SS_MULT(ep->ss_ep_comp.bmAttributes);
 			max *= burst;
@@ -377,13 +377,13 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 		}
 
 		/* "high bandwidth" mode, 1-3 packets/uframe? */
-		if (dev->speed == USB_SPEED_HIGH) {
+		if (dev->speed == USB_SPEED_HIGH) {//HS模式
 			int	mult = 1 + ((max >> 11) & 0x03);
 			max &= 0x07ff;
 			max *= mult;
 		}
 
-		if (urb->number_of_packets <= 0)
+		if (urb->number_of_packets <= 0)//urb参数检查
 			return -EINVAL;
 		for (n = 0; n < urb->number_of_packets; n++) {
 			len = urb->iso_frame_desc[n].length;
@@ -396,7 +396,7 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 
 	/* the I/O buffer must be mapped/unmapped, except when length=0 */
 	if (urb->transfer_buffer_length > INT_MAX)
-		return -EMSGSIZE;
+		return -EMSGSIZE;//消息体大小错误
 
 #ifdef DEBUG
 	/* stuff that drivers shouldn't do, but which shouldn't
@@ -470,7 +470,7 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 				return -EINVAL;
 			max = 1 << 15;
 			break;
-		case USB_SPEED_WIRELESS:
+		case USB_SPEED_WIRELESS://对于无线传输有速率要求
 			if (urb->interval > 16)
 				return -EINVAL;
 			break;
@@ -503,14 +503,14 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
 		}
 	}
 
-	return usb_hcd_submit_urb(urb, mem_flags);
+	return usb_hcd_submit_urb(urb, mem_flags);//调用hcd端的submit_urb
 }
 EXPORT_SYMBOL_GPL(usb_submit_urb);
 
 /*-------------------------------------------------------------------*/
 
 /**
- * usb_unlink_urb - abort/cancel a transfer request for an endpoint
+ * usb_unlink_urb - abort/cancel a transfer request for an endpoint//中断/取消一个传输请求
  * @urb: pointer to urb describing a previously submitted request,
  *	may be NULL
  *
@@ -592,7 +592,7 @@ int usb_unlink_urb(struct urb *urb)
 EXPORT_SYMBOL_GPL(usb_unlink_urb);
 
 /**
- * usb_kill_urb - cancel a transfer request and wait for it to finish
+ * usb_kill_urb - cancel a transfer request and wait for it to finish//取消一个urb并且等待完成
  * @urb: pointer to URB describing a previously submitted request,
  *	may be NULL
  *
