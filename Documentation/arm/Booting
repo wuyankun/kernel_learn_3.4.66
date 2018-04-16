@@ -21,10 +21,10 @@ following:
 5. Call the kernel image.
 
 
-1. Setup and initialise RAM
+1. Setup and initialise RAM //设置和初始化内存
 ---------------------------
 
-Existing boot loaders:		MANDATORY
+Existing boot loaders:		MANDATORY//强制要求
 New boot loaders:		MANDATORY
 
 The boot loader is expected to find and initialise all RAM that the
@@ -35,10 +35,10 @@ the RAM in the machine, or any other method the boot loader designer
 sees fit.)
 
 
-2. Initialise one serial port
+2. Initialise one serial port//初始化一个串口，主要用于调试
 -----------------------------
 
-Existing boot loaders:		OPTIONAL, RECOMMENDED
+Existing boot loaders:		OPTIONAL, RECOMMENDED//可选的，推荐的
 New boot loaders:		OPTIONAL, RECOMMENDED
 
 The boot loader should initialise and enable one serial port on the
@@ -48,16 +48,16 @@ used for debugging purposes, or communication with the target.)
 
 As an alternative, the boot loader can pass the relevant 'console='
 option to the kernel via the tagged lists specifying the port, and
-serial format options as described in
+serial format options as described in//可以将这个串口的配置通过tagged lists传递给内核
 
        Documentation/kernel-parameters.txt.
 
 
-3. Detect the machine type
+3. Detect the machine type//探测机器的类型
 --------------------------
 
 Existing boot loaders:		OPTIONAL
-New boot loaders:		MANDATORY
+New boot loaders:		MANDATORY//新版本的bootloader是强制的
 
 The boot loader should detect the machine type its running on by some
 method.  Whether this is a hard coded value or some algorithm that
@@ -65,15 +65,15 @@ looks at the connected hardware is beyond the scope of this document.
 The boot loader must ultimately be able to provide a MACH_TYPE_xxx
 value to the kernel. (see linux/arch/arm/tools/mach-types).
 
-4. Setup boot data
+4. Setup boot data//设置启动的数据
 ------------------
 
-Existing boot loaders:		OPTIONAL, HIGHLY RECOMMENDED
-New boot loaders:		MANDATORY
+Existing boot loaders:		OPTIONAL, HIGHLY RECOMMENDED//高度推荐
+New boot loaders:		MANDATORY//强制的
 
-The boot loader must provide either a tagged list or a dtb image for
+The boot loader must provide either a tagged list or a dtb image for//必须提供一个tagged list属性列表，或者一个dtb文件给到内核
 passing configuration data to the kernel.  The physical address of the
-boot data is passed to the kernel in register r2.
+boot data is passed to the kernel in register r2.//这个启动数据需要把物理地址放置在R2寄存器中。
 
 4a. Setup the kernel tagged list
 --------------------------------
@@ -82,7 +82,7 @@ The boot loader must create and initialise the kernel tagged list.
 A valid tagged list starts with ATAG_CORE and ends with ATAG_NONE.
 The ATAG_CORE tag may or may not be empty.  An empty ATAG_CORE tag
 has the size field set to '2' (0x00000002).  The ATAG_NONE must set
-the size field to zero.
+the size field to zero.//必须创建并初始化一个tagged list属性列表
 
 Any number of tags can be placed in the list.  It is undefined
 whether a repeated tag appends to the information carried by the
@@ -91,7 +91,7 @@ entirety; some tags behave as the former, others the latter.
 
 The boot loader must pass at a minimum the size and location of
 the system memory, and root filesystem location.  Therefore, the
-minimum tagged list should look:
+minimum tagged list should look://必须传递内存的大小和位置信息，根文件系统的位置信息
 
 	+-----------+
 base ->	| ATAG_CORE |  |
@@ -101,19 +101,19 @@ base ->	| ATAG_CORE |  |
 	| ATAG_NONE |  |
 	+-----------+  v
 
-The tagged list should be stored in system RAM.
+The tagged list should be stored in system RAM.//该列表报存在系统内存中。
 
 The tagged list must be placed in a region of memory where neither
 the kernel decompressor nor initrd 'bootp' program will overwrite
-it.  The recommended placement is in the first 16KiB of RAM.
+it.  The recommended placement is in the first 16KiB of RAM.//这个列表信息，不能被解压缩后的内核或者initrd的启动程序覆盖，故放置在内存最开始的16KB的空间。
 
-4b. Setup the device tree
+4b. Setup the device tree//设置设备树
 -------------------------
 
-The boot loader must load a device tree image (dtb) into system ram
+The boot loader must load a device tree image (dtb) into system ram//必须加载一个设备树文件，以64位对齐的地址上。具体看文档说明。
 at a 64bit aligned address and initialize it with the boot data.  The
 dtb format is documented in Documentation/devicetree/booting-without-of.txt.
-The kernel will look for the dtb magic value of 0xd00dfeed at the dtb
+The kernel will look for the dtb magic value of 0xd00dfeed at the dtb//内核查看dtb的魔数来看是使用dtb文件还是tagged list列表。
 physical address to determine if a dtb has been passed instead of a
 tagged list.
 
@@ -123,12 +123,12 @@ placed in a region of memory where the kernel decompressor will not
 overwrite it.  The recommended placement is in the first 16KiB of RAM
 with the caveat that it may not be located at physical address 0 since
 the kernel interprets a value of 0 in r2 to mean neither a tagged list
-nor a dtb were passed.
+nor a dtb were passed.//放置的位置说明
 
-5. Calling the kernel image
+5. Calling the kernel image//调用内核镜像，跳转到内核镜像执行
 ---------------------------
 
-Existing boot loaders:		MANDATORY
+Existing boot loaders:		MANDATORY//强制的
 New boot loaders:		MANDATORY
 
 There are two options for calling the kernel zImage.  If the zImage
@@ -137,16 +137,16 @@ then it is legal for the boot loader to call the zImage in flash
 directly.
 
 The zImage may also be placed in system RAM (at any location) and
-called there.  Note that the kernel uses 16K of RAM below the image
+called there.  Note that the kernel uses 16K of RAM below the image//再次使用16KB来存储页表，故zImage放置在内存的32KB以后的地方。
 to store page tables.  The recommended placement is 32KiB into RAM.
 
-In either case, the following conditions must be met:
+In either case, the following conditions must be met://以下的条件是必须满足的
 
 - Quiesce all DMA capable devices so that memory does not get
-  corrupted by bogus network packets or disk data. This will save
+  corrupted by bogus network packets or disk data. This will save//静默所有的DMA设备，否则内存数据可能被污染，将花费时间来调试该问题
   you many hours of debug.
 
-- CPU register settings
+- CPU register settings//寄存器传递参数约定
   r0 = 0,
   r1 = machine type number discovered in (3) above.
   r2 = physical address of tagged list in system RAM, or
@@ -154,18 +154,18 @@ In either case, the following conditions must be met:
 
 - CPU mode
   All forms of interrupts must be disabled (IRQs and FIQs)
-  The CPU must be in SVC mode.  (A special exception exists for Angel)
+  The CPU must be in SVC mode.  (A special exception exists for Angel)//CPU的工作模式约定
 
 - Caches, MMUs
   The MMU must be off.
   Instruction cache may be on or off.
-  Data cache must be off.
+  Data cache must be off.//Cache和MMU的状态约定
 
 - The boot loader is expected to call the kernel image by jumping
-  directly to the first instruction of the kernel image.
+  directly to the first instruction of the kernel image.//直接跳转到内核镜像的第一条指令
 
   On CPUs supporting the ARM instruction set, the entry must be
-  made in ARM state, even for a Thumb-2 kernel.
+  made in ARM state, even for a Thumb-2 kernel.//指令集和编译约定
 
   On CPUs supporting only the Thumb instruction set such as
-  Cortex-M class CPUs, the entry must be made in Thumb state.
+  Cortex-M class CPUs, the entry must be made in Thumb state.//如果是Thumb指令，则内核的编码必须是Thumb格式的
