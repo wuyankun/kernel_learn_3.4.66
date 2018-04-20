@@ -15,10 +15,10 @@
 #include <asm/byteorder.h>
 #include "pci.h"
 
-static int proc_initialized;	/* = 0 */
+static int proc_initialized;	/* = 0 */ //全局变量，proc是否初始化
 
 static loff_t
-proc_bus_pci_lseek(struct file *file, loff_t off, int whence)
+proc_bus_pci_lseek(struct file *file, loff_t off, int whence)//seek操作，对f_ops的指针位置进行操作
 {
 	loff_t new = -1;
 	struct inode *inode = file->f_path.dentry->d_inode;
@@ -47,7 +47,7 @@ static ssize_t
 proc_bus_pci_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
 {
 	const struct inode *ino = file->f_path.dentry->d_inode;
-	const struct proc_dir_entry *dp = PDE(ino);
+	const struct proc_dir_entry *dp = PDE(ino);//转换到上下文结构
 	struct pci_dev *dev = dp->data;
 	unsigned int pos = *ppos;
 	unsigned int cnt, size;
@@ -354,35 +354,35 @@ static int show_device(struct seq_file *m, void *v)
 
 	drv = pci_dev_driver(dev);
 	seq_printf(m, "%02x%02x\t%04x%04x\t%x",
-			dev->bus->number,
+			dev->bus->number,//第一列：总线号功能号  第二列：厂商号设备号  第三列：中断号
 			dev->devfn,
 			dev->vendor,
 			dev->device,
 			dev->irq);
 
 	/* only print standard and ROM resources to preserve compatibility */
-	for (i = 0; i <= PCI_ROM_RESOURCE; i++) {
+	for (i = 0; i <= PCI_ROM_RESOURCE; i++) {//为了兼容性，只打印了标准的和ROM资源
 		resource_size_t start, end;
 		pci_resource_to_user(dev, i, &dev->resource[i], &start, &end);
 		seq_printf(m, "\t%16llx",
 			(unsigned long long)(start |
-			(dev->resource[i].flags & PCI_REGION_FLAG_MASK)));
+			(dev->resource[i].flags & PCI_REGION_FLAG_MASK)));//起始
 	}
 	for (i = 0; i <= PCI_ROM_RESOURCE; i++) {
 		resource_size_t start, end;
 		pci_resource_to_user(dev, i, &dev->resource[i], &start, &end);
 		seq_printf(m, "\t%16llx",
 			dev->resource[i].start < dev->resource[i].end ?
-			(unsigned long long)(end - start) + 1 : 0);
+			(unsigned long long)(end - start) + 1 : 0);//长度？
 	}
 	seq_putc(m, '\t');
 	if (drv)
-		seq_printf(m, "%s", drv->name);
+		seq_printf(m, "%s", drv->name);//设备名字
 	seq_putc(m, '\n');
 	return 0;
 }
 
-static const struct seq_operations proc_bus_pci_devices_op = {
+static const struct seq_operations proc_bus_pci_devices_op = {//序列化操作，从命名上猜的意思是？
 	.start	= pci_seq_start,
 	.next	= pci_seq_next,
 	.stop	= pci_seq_stop,
@@ -407,12 +407,12 @@ int pci_proc_attach_device(struct pci_dev *dev)
 		} else {
 			sprintf(name, "%02x", bus->number);
 		}
-		bus->procdir = proc_mkdir(name, proc_bus_pci_dir);
+		bus->procdir = proc_mkdir(name, proc_bus_pci_dir);//创建/proc/bus/pci/00文件夹
 		if (!bus->procdir)
 			return -ENOMEM;
 	}
 
-	sprintf(name, "%02x.%x", PCI_SLOT(dev->devfn), PCI_FUNC(dev->devfn));
+	sprintf(name, "%02x.%x", PCI_SLOT(dev->devfn), PCI_FUNC(dev->devfn));//创建/proc/bus/pci/00/下的文件
 	e = proc_create_data(name, S_IFREG | S_IRUGO | S_IWUSR, bus->procdir,
 			     &proc_bus_pci_operations, dev);
 	if (!e)
@@ -463,12 +463,12 @@ int pci_proc_detach_bus(struct pci_bus* bus)
 
 static int proc_bus_pci_dev_open(struct inode *inode, struct file *file)
 {
-	return seq_open(file, &proc_bus_pci_devices_op);
+	return seq_open(file, &proc_bus_pci_devices_op);//再次调用一个函数集
 }
 static const struct file_operations proc_bus_pci_dev_operations = {
 	.owner		= THIS_MODULE,
 	.open		= proc_bus_pci_dev_open,
-	.read		= seq_read,
+	.read		= seq_read,//调用通用实现
 	.llseek		= seq_lseek,
 	.release	= seq_release,
 };
@@ -476,15 +476,15 @@ static const struct file_operations proc_bus_pci_dev_operations = {
 static int __init pci_proc_init(void)
 {
 	struct pci_dev *dev = NULL;
-	proc_bus_pci_dir = proc_mkdir("bus/pci", NULL);
+	proc_bus_pci_dir = proc_mkdir("bus/pci", NULL);//创建/proc/bus/pci目录
 	proc_create("devices", 0, proc_bus_pci_dir,
-		    &proc_bus_pci_dev_operations);
-	proc_initialized = 1;
-	for_each_pci_dev(dev)
-		pci_proc_attach_device(dev);
+		    &proc_bus_pci_dev_operations);//创建/proc/bus/pci/devices文件,关联ops函数集合
+	proc_initialized = 1;//proc初始化完成标识位
+	for_each_pci_dev(dev)//遍历pci树上的设备
+		pci_proc_attach_device(dev);//更新文件内容？
 
 	return 0;
 }
 
-device_initcall(pci_proc_init);
+device_initcall(pci_proc_init);//初始化时会被调用
 
