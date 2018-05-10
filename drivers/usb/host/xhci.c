@@ -80,11 +80,11 @@ void xhci_quiesce(struct xhci_hcd *xhci)
 	u32 mask;
 
 	mask = ~(XHCI_IRQS);
-	halted = xhci_readl(xhci, &xhci->op_regs->status) & STS_HALT;
+	halted = xhci_readl(xhci, &xhci->op_regs->status) & STS_HALT;//op_regs->status,读取状态寄存器
 	if (!halted)
 		mask &= ~CMD_RUN;
 
-	cmd = xhci_readl(xhci, &xhci->op_regs->command);
+	cmd = xhci_readl(xhci, &xhci->op_regs->command);//op_regs->command,读写命令寄存器
 	cmd &= mask;
 	xhci_writel(xhci, cmd, &xhci->op_regs->command);
 }
@@ -97,7 +97,7 @@ void xhci_quiesce(struct xhci_hcd *xhci)
  * should halt within 16 ms of the run/stop bit being cleared.
  * Read HC Halted bit in the status register to see when the HC is finished.
  */
-int xhci_halt(struct xhci_hcd *xhci)
+int xhci_halt(struct xhci_hcd *xhci)//强制关闭
 {
 	int ret;
 	xhci_dbg(xhci, "// Halt the HC\n");
@@ -126,7 +126,7 @@ static int xhci_start(struct xhci_hcd *xhci)
 	temp |= (CMD_RUN);
 	xhci_dbg(xhci, "// Turn on HC, cmd = 0x%x.\n",
 			temp);
-	xhci_writel(xhci, temp, &xhci->op_regs->command);
+	xhci_writel(xhci, temp, &xhci->op_regs->command);//写命令寄存器
 
 	/*
 	 * Wait for the HCHalted Status bit to be 0 to indicate the host is
@@ -163,7 +163,7 @@ int xhci_reset(struct xhci_hcd *xhci)
 	}
 
 	xhci_dbg(xhci, "// Reset the HC\n");
-	command = xhci_readl(xhci, &xhci->op_regs->command);
+	command = xhci_readl(xhci, &xhci->op_regs->command);//写命令寄存器，然后handshake
 	command |= CMD_RESET;
 	xhci_writel(xhci, command, &xhci->op_regs->command);
 
@@ -197,7 +197,7 @@ static int xhci_free_msi(struct xhci_hcd *xhci)
 	if (!xhci->msix_entries)
 		return -EINVAL;
 
-	for (i = 0; i < xhci->msix_count; i++)
+	for (i = 0; i < xhci->msix_count; i++)//释放msix的各路中断资源
 		if (xhci->msix_entries[i].vector)
 			free_irq(xhci->msix_entries[i].vector,
 					xhci_to_hcd(xhci));
@@ -219,7 +219,7 @@ static int xhci_setup_msi(struct xhci_hcd *xhci)
 	}
 
 	ret = request_irq(pdev->irq, (irq_handler_t)xhci_msi_irq,
-				0, "xhci_hcd", xhci_to_hcd(xhci));
+				0, "xhci_hcd", xhci_to_hcd(xhci));//本质上是个pci设备，申请一路msi中断
 	if (ret) {
 		xhci_dbg(xhci, "disable MSI interrupt\n");
 		pci_disable_msi(pdev);
@@ -241,7 +241,7 @@ static void xhci_free_irq(struct xhci_hcd *xhci)
 	if (xhci_to_hcd(xhci)->irq > 0)
 		return;
 
-	ret = xhci_free_msi(xhci);
+	ret = xhci_free_msi(xhci);//释放中断资源
 	if (!ret)
 		return;
 	if (pdev->irq > 0)
@@ -267,7 +267,7 @@ static int xhci_setup_msix(struct xhci_hcd *xhci)
 	 *   Add additional 1 vector to ensure always available interrupt.
 	 */
 	xhci->msix_count = min(num_online_cpus() + 1,
-				HCS_MAX_INTRS(xhci->hcs_params1));
+				HCS_MAX_INTRS(xhci->hcs_params1));//cups个数+1，保证总是有中断等待调度
 
 	xhci->msix_entries =
 		kmalloc((sizeof(struct msix_entry))*xhci->msix_count,
@@ -277,7 +277,7 @@ static int xhci_setup_msix(struct xhci_hcd *xhci)
 		return -ENOMEM;
 	}
 
-	for (i = 0; i < xhci->msix_count; i++) {
+	for (i = 0; i < xhci->msix_count; i++) {//msix实体初始化操作
 		xhci->msix_entries[i].entry = i;
 		xhci->msix_entries[i].vector = 0;
 	}
@@ -288,7 +288,7 @@ static int xhci_setup_msix(struct xhci_hcd *xhci)
 		goto free_entries;
 	}
 
-	for (i = 0; i < xhci->msix_count; i++) {
+	for (i = 0; i < xhci->msix_count; i++) {//msix多路中断申请
 		ret = request_irq(xhci->msix_entries[i].vector,
 				(irq_handler_t)xhci_msi_irq,
 				0, "xhci_hcd", xhci_to_hcd(xhci));
@@ -317,7 +317,7 @@ static void xhci_cleanup_msix(struct xhci_hcd *xhci)
 
 	xhci_free_irq(xhci);
 
-	if (xhci->msix_entries) {
+	if (xhci->msix_entries) {//释放msix申请的实体资源
 		pci_disable_msix(pdev);
 		kfree(xhci->msix_entries);
 		xhci->msix_entries = NULL;
@@ -335,7 +335,7 @@ static void xhci_msix_sync_irqs(struct xhci_hcd *xhci)
 
 	if (xhci->msix_entries) {
 		for (i = 0; i < xhci->msix_count; i++)
-			synchronize_irq(xhci->msix_entries[i].vector);
+			synchronize_irq(xhci->msix_entries[i].vector);//中断flush
 	}
 }
 
@@ -362,7 +362,7 @@ static int xhci_try_enable_msi(struct usb_hcd *hcd)
 		free_irq(hcd->irq, hcd);
 	hcd->irq = 0;
 
-	ret = xhci_setup_msix(xhci);
+	ret = xhci_setup_msix(xhci);//尝试msix中断，msi中断，传统中断
 	if (ret)
 		/* fall back to msi*/
 		ret = xhci_setup_msi(xhci);
@@ -436,7 +436,7 @@ static void compliance_mode_recovery(unsigned long arg)
 
 	if (xhci->port_status_u0 != ((1 << xhci->num_usb3_ports)-1))
 		mod_timer(&xhci->comp_mode_recovery_timer,
-			jiffies + msecs_to_jiffies(COMP_MODE_RCVRY_MSECS));
+			jiffies + msecs_to_jiffies(COMP_MODE_RCVRY_MSECS));//修改定时器，再次启动
 }
 
 /*
@@ -452,16 +452,16 @@ static void compliance_mode_recovery(unsigned long arg)
 static void compliance_mode_recovery_timer_init(struct xhci_hcd *xhci)
 {
 	xhci->port_status_u0 = 0;
-	init_timer(&xhci->comp_mode_recovery_timer);
+	init_timer(&xhci->comp_mode_recovery_timer);//初始化一个timer
 
-	xhci->comp_mode_recovery_timer.data = (unsigned long) xhci;
+	xhci->comp_mode_recovery_timer.data = (unsigned long) xhci;//修改timer的相关属性
 	xhci->comp_mode_recovery_timer.function = compliance_mode_recovery;
 	xhci->comp_mode_recovery_timer.expires = jiffies +
 			msecs_to_jiffies(COMP_MODE_RCVRY_MSECS);
 
 	set_timer_slack(&xhci->comp_mode_recovery_timer,
 			msecs_to_jiffies(COMP_MODE_RCVRY_MSECS));
-	add_timer(&xhci->comp_mode_recovery_timer);
+	add_timer(&xhci->comp_mode_recovery_timer);//启动定时器
 	xhci_dbg(xhci, "Compliance Mode Recovery Timer Initialized.\n");
 }
 
@@ -475,12 +475,12 @@ static bool compliance_mode_recovery_timer_quirk_check(void)
 {
 	const char *dmi_product_name, *dmi_sys_vendor;
 
-	dmi_product_name = dmi_get_system_info(DMI_PRODUCT_NAME);
+	dmi_product_name = dmi_get_system_info(DMI_PRODUCT_NAME);//从dmi接口获取到产品信息
 	dmi_sys_vendor = dmi_get_system_info(DMI_SYS_VENDOR);
 	if (!dmi_product_name || !dmi_sys_vendor)
 		return false;
 
-	if (!(strstr(dmi_sys_vendor, "Hewlett-Packard")))
+	if (!(strstr(dmi_sys_vendor, "Hewlett-Packard")))//特殊处理
 		return false;
 
 	if (strstr(dmi_product_name, "Z420") ||
@@ -511,18 +511,18 @@ int xhci_init(struct usb_hcd *hcd)
 	int retval = 0;
 
 	xhci_dbg(xhci, "xhci_init\n");
-	spin_lock_init(&xhci->lock);
+	spin_lock_init(&xhci->lock);//一个自旋锁
 	if (xhci->hci_version == 0x95 && link_quirk) {
 		xhci_dbg(xhci, "QUIRK: Not clearing Link TRB chain bits.\n");
 		xhci->quirks |= XHCI_LINK_TRB_QUIRK;
 	} else {
 		xhci_dbg(xhci, "xHCI doesn't need link TRB QUIRK\n");
 	}
-	retval = xhci_mem_init(xhci, GFP_KERNEL);
+	retval = xhci_mem_init(xhci, GFP_KERNEL);//内存初始化
 	xhci_dbg(xhci, "Finished xhci_init\n");
 
 	/* Initializing Compliance Mode Recovery Data If Needed */
-	if (compliance_mode_recovery_timer_quirk_check()) {
+	if (compliance_mode_recovery_timer_quirk_check()) {//recovery定时器检查
 		xhci->quirks |= XHCI_COMP_MODE_QUIRK;
 		compliance_mode_recovery_timer_init(xhci);
 	}
@@ -604,7 +604,7 @@ static int xhci_run_finished(struct xhci_hcd *xhci)
  * Start the HC after it was halted.
  *
  * This function is called by the USB core when the HC driver is added.
- * Its opposite is xhci_stop().
+ * Its opposite is xhci_stop().//usb core 调用，当HC 驱动被添加
  *
  * xhci_init() must be called once before this function can be called.
  * Reset the HC, enable device slot contexts, program DCBAAP, and
@@ -763,7 +763,7 @@ void xhci_stop(struct usb_hcd *hcd)
  *
  * This is called when the machine is rebooting or halting.  We assume that the
  * machine will be powered off, and the HC's internal state will be reset.
- * Don't bother to free memory.
+ * Don't bother to free memory.//当机器重启或者关闭时会被调用
  *
  * This will only ever be called with the main usb_hcd (the USB3 roothub).
  */

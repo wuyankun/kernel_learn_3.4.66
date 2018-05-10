@@ -48,8 +48,8 @@
 
 /**
  * struct xhci_cap_regs - xHCI Host Controller Capability Registers.
- * @hc_capbase:		length of the capabilities register and HC version number
- * @hcs_params1:	HCSPARAMS1 - Structural Parameters 1
+ * @hc_capbase:		length of the capabilities register and HC version number //能力寄存器的长度和hc的版本信息
+ * @hcs_params1:	HCSPARAMS1 - Structural Parameters 1//结构参数123——4
  * @hcs_params2:	HCSPARAMS2 - Structural Parameters 2
  * @hcs_params3:	HCSPARAMS3 - Structural Parameters 3
  * @hcc_params:		HCCPARAMS - Capability Parameters
@@ -133,7 +133,7 @@ struct xhci_cap_regs {
 #define	NUM_PORT_REGS	4
 
 /**
- * struct xhci_op_regs - xHCI Host Controller Operational Registers.
+ * struct xhci_op_regs - xHCI Host Controller Operational Registers.//操作寄存器结构体
  * @command:		USBCMD - xHC command register
  * @status:		USBSTS - xHC status register
  * @page_size:		This indicates the page size that the host controller
@@ -281,7 +281,7 @@ struct xhci_op_regs {
 #define XDEV_RESUME	(0xf << 5)
 /* true: port has power (see HCC_PPC) */
 #define PORT_POWER	(1 << 9)
-/* bits 10:13 indicate device speed:
+/* bits 10:13 indicate device speed://速率模式
  * 0 - undefined speed - port hasn't be initialized by a reset yet
  * 1 - full speed
  * 2 - low speed
