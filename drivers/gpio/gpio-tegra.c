@@ -1,5 +1,5 @@
 /*
- * arch/arm/mach-tegra/gpio.c
+ * arch/arm/mach-tegra/gpio.c //Nvidia公司的图睿系列SOC平台的gpio实现
  *
  * Copyright (c) 2010 Google, Inc
  *
@@ -40,7 +40,7 @@
 #define GPIO_REG(x)		(GPIO_BANK(x) * tegra_gpio_bank_stride + \
 					GPIO_PORT(x) * 4)
 
-#define GPIO_CNF(x)		(GPIO_REG(x) + 0x00)
+#define GPIO_CNF(x)		(GPIO_REG(x) + 0x00) //寄存器操作，相关的偏移量计算
 #define GPIO_OE(x)		(GPIO_REG(x) + 0x10)
 #define GPIO_OUT(x)		(GPIO_REG(x) + 0X20)
 #define GPIO_IN(x)		(GPIO_REG(x) + 0x30)
@@ -56,7 +56,7 @@
 #define GPIO_MSK_INT_ENB(x)	(GPIO_REG(x) + tegra_gpio_upper_offset + 0x50)
 #define GPIO_MSK_INT_LVL(x)	(GPIO_REG(x) + tegra_gpio_upper_offset + 0x60)
 
-#define GPIO_INT_LVL_MASK		0x010101
+#define GPIO_INT_LVL_MASK		0x010101//几种不同的中断触发方式寄存器设置
 #define GPIO_INT_LVL_EDGE_RISING	0x000101
 #define GPIO_INT_LVL_EDGE_FALLING	0x000100
 #define GPIO_INT_LVL_EDGE_BOTH		0x010100
@@ -83,7 +83,7 @@ static u32 tegra_gpio_bank_stride;
 static u32 tegra_gpio_upper_offset;
 static struct tegra_gpio_bank *tegra_gpio_banks;
 
-static inline void tegra_gpio_writel(u32 val, u32 reg)
+static inline void tegra_gpio_writel(u32 val, u32 reg)//本质上是读写相关的物理地址的寄存器
 {
 	__raw_writel(val, regs + reg);
 }
@@ -149,13 +149,13 @@ static int tegra_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
 	return irq_find_mapping(irq_domain, offset);
 }
 
-static struct gpio_chip tegra_gpio_chip = {
+static struct gpio_chip tegra_gpio_chip = {//从功能划分，扮演的是个gpio_chip,实现gpio管脚的通用接口
 	.label			= "tegra-gpio",
-	.direction_input	= tegra_gpio_direction_input,
+	.direction_input	= tegra_gpio_direction_input,//两个方向设置，两个值设置
 	.get			= tegra_gpio_get,
 	.direction_output	= tegra_gpio_direction_output,
 	.set			= tegra_gpio_set,
-	.to_irq			= tegra_gpio_to_irq,
+	.to_irq			= tegra_gpio_to_irq,//gpio_to_irq的接口实现
 	.base			= 0,
 	.ngpio			= TEGRA_NR_GPIOS,
 };
@@ -325,9 +325,9 @@ static int tegra_gpio_wake_enable(struct irq_data *d, unsigned int enable)
 }
 #endif
 
-static struct irq_chip tegra_gpio_irq_chip = {
+static struct irq_chip tegra_gpio_irq_chip = {//从另外一个角度，扮演的是个irq芯片，所以需要实现irq_chip的功能
 	.name		= "GPIO",
-	.irq_ack	= tegra_gpio_irq_ack,
+	.irq_ack	= tegra_gpio_irq_ack,//中断响应，屏蔽，解除屏蔽，设置中断触发方式,是否具备唤醒功能
 	.irq_mask	= tegra_gpio_irq_mask,
 	.irq_unmask	= tegra_gpio_irq_unmask,
 	.irq_set_type	= tegra_gpio_irq_set_type,
@@ -351,7 +351,7 @@ static struct tegra_gpio_soc_config tegra30_gpio_config = {
 	.upper_offset = 0x80,
 };
 
-static struct of_device_id tegra_gpio_of_match[] __devinitdata = {
+static struct of_device_id tegra_gpio_of_match[] __devinitdata = {//兼容tegra30和tegra20系列SOC
 	{ .compatible = "nvidia,tegra30-gpio", .data = &tegra30_gpio_config },
 	{ .compatible = "nvidia,tegra20-gpio", .data = &tegra20_gpio_config },
 	{ },
@@ -380,10 +380,10 @@ static int __devinit tegra_gpio_probe(struct platform_device *pdev)
 		config = &tegra20_gpio_config;
 
 	tegra_gpio_bank_stride = config->bank_stride;
-	tegra_gpio_upper_offset = config->upper_offset;
+	tegra_gpio_upper_offset = config->upper_offset;//差异化平台数据初始化
 
 	for (;;) {
-		res = platform_get_resource(pdev, IORESOURCE_IRQ, tegra_gpio_bank_count);
+		res = platform_get_resource(pdev, IORESOURCE_IRQ, tegra_gpio_bank_count);//获取各个bank的中断资源
 		if (!res)
 			break;
 		tegra_gpio_bank_count++;
@@ -393,17 +393,17 @@ static int __devinit tegra_gpio_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	tegra_gpio_chip.ngpio = tegra_gpio_bank_count * 32;
+	tegra_gpio_chip.ngpio = tegra_gpio_bank_count * 32;//每个bank有32发gpio口
 
 	tegra_gpio_banks = devm_kzalloc(&pdev->dev,
 			tegra_gpio_bank_count * sizeof(*tegra_gpio_banks),
-			GFP_KERNEL);
+			GFP_KERNEL);//每一个bank申请一个上下文环境
 	if (!tegra_gpio_banks) {
 		dev_err(&pdev->dev, "Couldn't allocate bank structure\n");
 		return -ENODEV;
 	}
 
-	irq_base = irq_alloc_descs(-1, 0, tegra_gpio_chip.ngpio, 0);
+	irq_base = irq_alloc_descs(-1, 0, tegra_gpio_chip.ngpio, 0);//动态申请中断号的起始值，共的个数
 	if (irq_base < 0) {
 		dev_err(&pdev->dev, "Couldn't allocate IRQ numbers\n");
 		return -ENODEV;
@@ -421,7 +421,7 @@ static int __devinit tegra_gpio_probe(struct platform_device *pdev)
 
 		bank = &tegra_gpio_banks[i];
 		bank->bank = i;
-		bank->irq = res->start;
+		bank->irq = res->start;//平台设备中断号和bank上下文环境关联
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -430,13 +430,13 @@ static int __devinit tegra_gpio_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	regs = devm_request_and_ioremap(&pdev->dev, res);
+	regs = devm_request_and_ioremap(&pdev->dev, res);//mem资源进行ioremap，从物理地址映射为虚拟地址，经过MMC映射，也许是线性映射，需要转变到另外一个地址空间中
 	if (!regs) {
 		dev_err(&pdev->dev, "Couldn't ioremap regs\n");
 		return -ENODEV;
 	}
 
-	for (i = 0; i < tegra_gpio_bank_count; i++) {
+	for (i = 0; i < tegra_gpio_bank_count; i++) {//初始化使能状态
 		for (j = 0; j < 4; j++) {
 			int gpio = tegra_gpio_compose(i, j, 0);
 			tegra_gpio_writel(0x00, GPIO_INT_ENB(gpio));
@@ -447,7 +447,7 @@ static int __devinit tegra_gpio_probe(struct platform_device *pdev)
 	tegra_gpio_chip.of_node = pdev->dev.of_node;
 #endif
 
-	gpiochip_add(&tegra_gpio_chip);
+	gpiochip_add(&tegra_gpio_chip);//注册一个gpiochid到系统中
 
 	for (gpio = 0; gpio < tegra_gpio_chip.ngpio; gpio++) {
 		int irq = irq_find_mapping(irq_domain, gpio);
@@ -481,12 +481,12 @@ static struct platform_driver tegra_gpio_driver = {
 		.owner	= THIS_MODULE,
 		.of_match_table = tegra_gpio_of_match,
 	},
-	.probe		= tegra_gpio_probe,
+	.probe		= tegra_gpio_probe,//探测入口
 };
 
 static int __init tegra_gpio_init(void)
 {
-	return platform_driver_register(&tegra_gpio_driver);
+	return platform_driver_register(&tegra_gpio_driver);//模块入口，注册平台设备驱动
 }
 postcore_initcall(tegra_gpio_init);
 
@@ -504,7 +504,7 @@ void tegra_gpio_config(struct tegra_gpio_table *table, int num)
 	}
 }
 
-#ifdef	CONFIG_DEBUG_FS
+#ifdef	CONFIG_DEBUG_FS//调试用的文件创建
 
 #include <linux/debugfs.h>
 #include <linux/seq_file.h>
@@ -537,7 +537,7 @@ static int dbg_gpio_open(struct inode *inode, struct file *file)
 	return single_open(file, dbg_gpio_show, &inode->i_private);
 }
 
-static const struct file_operations debug_fops = {
+static const struct file_operations debug_fops = {//proc下文件的读写接口实现
 	.open		= dbg_gpio_open,
 	.read		= seq_read,
 	.llseek		= seq_lseek,
