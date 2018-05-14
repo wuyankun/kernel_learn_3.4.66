@@ -22,18 +22,18 @@
 #include <linux/cramfs_fs.h>
 
 static z_stream stream;
-static int initialized;
+static int initialized;//静态变量
 
 /* Returns length of decompressed data. */
-int cramfs_uncompress_block(void *dst, int dstlen, void *src, int srclen)
+int cramfs_uncompress_block(void *dst, int dstlen, void *src, int srclen)//uncompress解压缩的
 {
 	int err;
 
-	stream.next_in = src;
-	stream.avail_in = srclen;
+	stream.next_in = src;//源泛型指针
+	stream.avail_in = srclen;//源长度
 
-	stream.next_out = dst;
-	stream.avail_out = dstlen;
+	stream.next_out = dst;//目标泛型指针
+	stream.avail_out = dstlen;//目标长度
 
 	err = zlib_inflateReset(&stream);
 	if (err != Z_OK) {
@@ -56,14 +56,14 @@ err:
 int cramfs_uncompress_init(void)
 {
 	if (!initialized++) {
-		stream.workspace = vmalloc(zlib_inflate_workspacesize());
+		stream.workspace = vmalloc(zlib_inflate_workspacesize());//逻辑地址是连续的vmalloc，使用zlib的接口函数
 		if ( !stream.workspace ) {
 			initialized = 0;
 			return -ENOMEM;
 		}
 		stream.next_in = NULL;
 		stream.avail_in = 0;
-		zlib_inflateInit(&stream);
+		zlib_inflateInit(&stream);//inflate是充气的，膨胀的
 	}
 	return 0;
 }
@@ -71,7 +71,7 @@ int cramfs_uncompress_init(void)
 void cramfs_uncompress_exit(void)
 {
 	if (!--initialized) {
-		zlib_inflateEnd(&stream);
+		zlib_inflateEnd(&stream);//释放相关的资源
 		vfree(stream.workspace);
 	}
 }

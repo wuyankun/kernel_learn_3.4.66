@@ -1,10 +1,10 @@
 config CRAMFS
-	tristate "Compressed ROM file system support (cramfs)"
+	tristate "Compressed ROM file system support (cramfs)"//压缩的只读文件系统
 	depends on BLOCK
 	select ZLIB_INFLATE
 	help
 	  Saying Y here includes support for CramFs (Compressed ROM File
-	  System).  CramFs is designed to be a simple, small, and compressed
+	  System).  CramFs is designed to be a simple, small, and compressed//用于嵌入式设备，一个简单的，小的，支持压缩的文件系统，最大支持256MB大小，且不支持uid/gid，硬链接和时间戳
 	  file system for ROM based embedded systems.  CramFs is read-only,
 	  limited to 256MB file systems (with 16MB files), and doesn't support
 	  16/32 bits uid/gid, hard links and timestamps.
@@ -14,6 +14,6 @@ config CRAMFS
 
 	  To compile this as a module, choose M here: the module will be called
 	  cramfs.  Note that the root file system (the one containing the
-	  directory /) cannot be compiled as a module.
+	  directory /) cannot be compiled as a module.//根文件系统不只能编译成模块
 
 	  If unsure, say N.

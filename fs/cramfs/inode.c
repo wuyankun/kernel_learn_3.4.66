@@ -25,12 +25,12 @@
 
 #include <asm/uaccess.h>
 
-static const struct super_operations cramfs_ops;
-static const struct inode_operations cramfs_dir_inode_operations;
-static const struct file_operations cramfs_directory_operations;
-static const struct address_space_operations cramfs_aops;
+static const struct super_operations cramfs_ops;//超级块的操作
+static const struct inode_operations cramfs_dir_inode_operations;//inode操作
+static const struct file_operations cramfs_directory_operations;//file操作
+static const struct address_space_operations cramfs_aops;//地址空间操作
 
-static DEFINE_MUTEX(read_mutex);
+static DEFINE_MUTEX(read_mutex);//互斥变量
 
 
 /* These macros may change in future, to provide better st_ino semantics. */
@@ -65,48 +65,48 @@ static struct inode *get_cramfs_inode(struct super_block *sb,
 	struct inode *inode;
 	static struct timespec zerotime;
 
-	inode = iget_locked(sb, cramino(cramfs_inode, offset));
+	inode = iget_locked(sb, cramino(cramfs_inode, offset));//获得一个inode节点内存
 	if (!inode)
 		return ERR_PTR(-ENOMEM);
 	if (!(inode->i_state & I_NEW))
 		return inode;
 
-	switch (cramfs_inode->mode & S_IFMT) {
+	switch (cramfs_inode->mode & S_IFMT) {//根据是何种文件类型，关联相关的操作函数指针
 	case S_IFREG:
-		inode->i_fop = &generic_ro_fops;
+		inode->i_fop = &generic_ro_fops;//常规文件，使用通用的只读的fops
 		inode->i_data.a_ops = &cramfs_aops;
 		break;
 	case S_IFDIR:
-		inode->i_op = &cramfs_dir_inode_operations;
+		inode->i_op = &cramfs_dir_inode_operations;//目录使用自定义的节点ops和fops
 		inode->i_fop = &cramfs_directory_operations;
 		break;
 	case S_IFLNK:
-		inode->i_op = &page_symlink_inode_operations;
+		inode->i_op = &page_symlink_inode_operations;//如果是链接，使用软链接
 		inode->i_data.a_ops = &cramfs_aops;
 		break;
 	default:
 		init_special_inode(inode, cramfs_inode->mode,
-				old_decode_dev(cramfs_inode->size));
+				old_decode_dev(cramfs_inode->size));//其他特殊的设备文件（字符和块设备）
 	}
 
-	inode->i_mode = cramfs_inode->mode;
+	inode->i_mode = cramfs_inode->mode;//节点的模式，uid和gid信息
 	inode->i_uid = cramfs_inode->uid;
 	inode->i_gid = cramfs_inode->gid;
 
 	/* if the lower 2 bits are zero, the inode contains data */
-	if (!(inode->i_ino & 3)) {
+	if (!(inode->i_ino & 3)) {//判断节点是否包含数据
 		inode->i_size = cramfs_inode->size;
-		inode->i_blocks = (cramfs_inode->size - 1) / 512 + 1;
+		inode->i_blocks = (cramfs_inode->size - 1) / 512 + 1;//节点占用的数据大小和块数
 	}
 
 	/* Struct copy intentional */
-	inode->i_mtime = inode->i_atime = inode->i_ctime = zerotime;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = zerotime;//初始化修改时间，访问时间，创建时间相同
 	/* inode->i_nlink is left 1 - arguably wrong for directories,
 	   but it's the best we can do without reading the directory
 	   contents.  1 yields the right result in GNU find, even
 	   without -noleaf option. */
 
-	unlock_new_inode(inode);
+	unlock_new_inode(inode);//inode属性设置完毕，解锁释放
 
 	return inode;
 }
@@ -124,7 +124,7 @@ static struct inode *get_cramfs_inode(struct super_block *sb,
  */
 #define READ_BUFFERS (2)
 /* NEXT_BUFFER(): Loop over [0..(READ_BUFFERS-1)]. */
-#define NEXT_BUFFER(_ix) ((_ix) ^ 1)
+#define NEXT_BUFFER(_ix) ((_ix) ^ 1)//0->1 1->0
 
 /*
  * BLKS_PER_BUF_SHIFT should be at least 2 to allow for "compressed"
@@ -132,8 +132,8 @@ static struct inode *get_cramfs_inode(struct super_block *sb,
  * alignment.
  */
 #define BLKS_PER_BUF_SHIFT	(2)
-#define BLKS_PER_BUF		(1 << BLKS_PER_BUF_SHIFT)
-#define BUFFER_SIZE		(BLKS_PER_BUF*PAGE_CACHE_SIZE)
+#define BLKS_PER_BUF		(1 << BLKS_PER_BUF_SHIFT)//每个buffer需要的块数
+#define BUFFER_SIZE		(BLKS_PER_BUF*PAGE_CACHE_SIZE)//每个buffer的大小，块数乘上页大小
 
 static unsigned char read_buffers[READ_BUFFERS][BUFFER_SIZE];
 static unsigned buffer_blocknr[READ_BUFFERS];
@@ -231,7 +231,7 @@ static int cramfs_remount(struct super_block *sb, int *flags, char *data)
 	return 0;
 }
 
-static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
+static int cramfs_fill_super(struct super_block *sb, void *data, int silent)//挂载时用来回调填充sb结构体
 {
 	int i;
 	struct cramfs_super super;
@@ -239,12 +239,12 @@ static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
 	struct cramfs_sb_info *sbi;
 	struct inode *root;
 
-	sb->s_flags |= MS_RDONLY;
+	sb->s_flags |= MS_RDONLY;//设置为只读
 
-	sbi = kzalloc(sizeof(struct cramfs_sb_info), GFP_KERNEL);
+	sbi = kzalloc(sizeof(struct cramfs_sb_info), GFP_KERNEL);//分配存储上下文信息的结构内存
 	if (!sbi)
 		return -ENOMEM;
-	sb->s_fs_info = sbi;
+	sb->s_fs_info = sbi;//上下文和sb关联起来
 
 	/* Invalidate the read buffers on mount: think disk change.. */
 	mutex_lock(&read_mutex);
@@ -252,11 +252,11 @@ static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
 		buffer_blocknr[i] = -1;
 
 	/* Read the first block and get the superblock from it */
-	memcpy(&super, cramfs_read(sb, 0, sizeof(super)), sizeof(super));
+	memcpy(&super, cramfs_read(sb, 0, sizeof(super)), sizeof(super));//读取出来一个cramfs_super结构信息出来，从0开始
 	mutex_unlock(&read_mutex);
 
 	/* Do sanity checks on the superblock */
-	if (super.magic != CRAMFS_MAGIC) {
+	if (super.magic != CRAMFS_MAGIC) {//压缩文件签名检查
 		/* check for wrong endianness */
 		if (super.magic == CRAMFS_MAGIC_WEND) {
 			if (!silent)
@@ -266,7 +266,7 @@ static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
 
 		/* check at 512 byte offset */
 		mutex_lock(&read_mutex);
-		memcpy(&super, cramfs_read(sb, 512, sizeof(super)), sizeof(super));
+		memcpy(&super, cramfs_read(sb, 512, sizeof(super)), sizeof(super));//第一个检查未通过，再从512偏移读取，再次检查签名信息
 		mutex_unlock(&read_mutex);
 		if (super.magic != CRAMFS_MAGIC) {
 			if (super.magic == CRAMFS_MAGIC_WEND && !silent)
@@ -278,21 +278,21 @@ static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	/* get feature flags first */
-	if (super.flags & ~CRAMFS_SUPPORTED_FLAGS) {
+	if (super.flags & ~CRAMFS_SUPPORTED_FLAGS) {//检查文件系统类型特征是否匹配
 		printk(KERN_ERR "cramfs: unsupported filesystem features\n");
 		goto out;
 	}
 
 	/* Check that the root inode is in a sane state */
-	if (!S_ISDIR(super.root.mode)) {
+	if (!S_ISDIR(super.root.mode)) {//根inode应该是个目录属性
 		printk(KERN_ERR "cramfs: root is not a directory\n");
 		goto out;
 	}
 	/* correct strange, hard-coded permissions of mkcramfs */
-	super.root.mode |= (S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+	super.root.mode |= (S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);//不支持权限控制
 
 	root_offset = super.root.offset << 2;
-	if (super.flags & CRAMFS_FLAG_FSID_VERSION_2) {
+	if (super.flags & CRAMFS_FLAG_FSID_VERSION_2) {//检查版本兼容情况
 		sbi->size=super.size;
 		sbi->blocks=super.fsid.blocks;
 		sbi->files=super.fsid.files;
@@ -301,12 +301,12 @@ static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
 		sbi->blocks=0;
 		sbi->files=0;
 	}
-	sbi->magic=super.magic;
+	sbi->magic=super.magic;//记录属性
 	sbi->flags=super.flags;
 	if (root_offset == 0)
 		printk(KERN_INFO "cramfs: empty filesystem");
 	else if (!(super.flags & CRAMFS_FLAG_SHIFTED_ROOT_OFFSET) &&
-		 ((root_offset != sizeof(struct cramfs_super)) &&
+		 ((root_offset != sizeof(struct cramfs_super)) &&//从0或者512的地方读取
 		  (root_offset != 512 + sizeof(struct cramfs_super))))
 	{
 		printk(KERN_ERR "cramfs: bad root offset %lu\n", root_offset);
@@ -314,11 +314,11 @@ static int cramfs_fill_super(struct super_block *sb, void *data, int silent)
 	}
 
 	/* Set it all up.. */
-	sb->s_op = &cramfs_ops;
-	root = get_cramfs_inode(sb, &super.root, 0);
+	sb->s_op = &cramfs_ops;//超级块的ops关联属性设置
+	root = get_cramfs_inode(sb, &super.root, 0);//获取一个inode,作为根inode
 	if (IS_ERR(root))
 		goto out;
-	sb->s_root = d_make_root(root);
+	sb->s_root = d_make_root(root);//保存根inode
 	if (!sb->s_root)
 		goto out;
 	return 0;
@@ -328,7 +328,7 @@ out:
 	return -EINVAL;
 }
 
-static int cramfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+static int cramfs_statfs(struct dentry *dentry, struct kstatfs *buf)//查看状态信息
 {
 	struct super_block *sb = dentry->d_sb;
 	u64 id = huge_encode_dev(sb->s_bdev->bd_dev);
@@ -533,7 +533,7 @@ err:
 	return 0;
 }
 
-static const struct address_space_operations cramfs_aops = {
+static const struct address_space_operations cramfs_aops = {//命名空间的ops操作
 	.readpage = cramfs_readpage
 };
 
@@ -544,17 +544,17 @@ static const struct address_space_operations cramfs_aops = {
 /*
  * A directory can only readdir
  */
-static const struct file_operations cramfs_directory_operations = {
+static const struct file_operations cramfs_directory_operations = {//目录fops操作实现，包括偏移，读取，读取列表信息
 	.llseek		= generic_file_llseek,
 	.read		= generic_read_dir,
 	.readdir	= cramfs_readdir,
 };
 
-static const struct inode_operations cramfs_dir_inode_operations = {
+static const struct inode_operations cramfs_dir_inode_operations = {//目录inode操作，这里是查看
 	.lookup		= cramfs_lookup,
 };
 
-static const struct super_operations cramfs_ops = {
+static const struct super_operations cramfs_ops = {//超级块的操作函数，释放超级块，重新mount,查看状态信息
 	.put_super	= cramfs_put_super,
 	.remount_fs	= cramfs_remount,
 	.statfs		= cramfs_statfs,
@@ -563,13 +563,13 @@ static const struct super_operations cramfs_ops = {
 static struct dentry *cramfs_mount(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
-	return mount_bdev(fs_type, flags, dev_name, data, cramfs_fill_super);
+	return mount_bdev(fs_type, flags, dev_name, data, cramfs_fill_super);//调用bdev的标准实现，这里有个回调函数实现cramfs_fill_super
 }
 
-static struct file_system_type cramfs_fs_type = {
+static struct file_system_type cramfs_fs_type = {//文件系统的初始化结构体
 	.owner		= THIS_MODULE,
 	.name		= "cramfs",
-	.mount		= cramfs_mount,
+	.mount		= cramfs_mount,//实现mount和kill_sb接口
 	.kill_sb	= kill_block_super,
 	.fs_flags	= FS_REQUIRES_DEV,
 };
@@ -578,10 +578,10 @@ static int __init init_cramfs_fs(void)
 {
 	int rv;
 
-	rv = cramfs_uncompress_init();
+	rv = cramfs_uncompress_init();//调用zlib的实现，初始化相关的变量
 	if (rv < 0)
 		return rv;
-	rv = register_filesystem(&cramfs_fs_type);
+	rv = register_filesystem(&cramfs_fs_type);//注册一个文件系统类型
 	if (rv < 0)
 		cramfs_uncompress_exit();
 	return rv;
