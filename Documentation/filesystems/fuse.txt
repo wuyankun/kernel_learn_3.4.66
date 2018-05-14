@@ -39,12 +39,12 @@ What is FUSE?
 
 FUSE is a userspace filesystem framework.  It consists of a kernel
 module (fuse.ko), a userspace library (libfuse.*) and a mount utility
-(fusermount).
+(fusermount).//内核模块 用户空间的库 挂载工具
 
 One of the most important features of FUSE is allowing secure,
 non-privileged mounts.  This opens up new possibilities for the use of
 filesystems.  A good example is sshfs: a secure network filesystem
-using the sftp protocol.
+using the sftp protocol.//一个例子 sshfs
 
 The userspace library and utilities are available from the FUSE
 homepage:
@@ -62,7 +62,7 @@ The filesystem type given to mount(2) can be one of the following:
   argument of the mount system call may contain an arbitrary string,
   which is not interpreted by the kernel.
 
-'fuseblk'
+'fuseblk'//ntfs-3g通过mount查看就显示该种类型
 
   The filesystem is block device based.  The first argument of the
   mount system call is interpreted as the name of the device.
@@ -70,7 +70,7 @@ The filesystem type given to mount(2) can be one of the following:
 Mount options
 ~~~~~~~~~~~~~
 
-'fd=N'
+'fd=N'//dev/fuse
 
   The file descriptor to use for communication between the userspace
   filesystem and the kernel.  The file descriptor must have been
@@ -82,13 +82,13 @@ Mount options
 
 'user_id=N'
 
-  The numeric user id of the mount owner.
+  The numeric user id of the mount owner.//uid
 
-'group_id=N'
+'group_id=N'//gid
 
   The numeric group id of the mount owner.
 
-'default_permissions'
+'default_permissions'//权限控制
 
   By default FUSE doesn't check file access permissions, the
   filesystem is free to implement its access policy or leave it to
@@ -97,20 +97,20 @@ Mount options
   access based on file mode.  It is usually useful together with the
   'allow_other' mount option.
 
-'allow_other'
+'allow_other'//容许其他用户挂载
 
   This option overrides the security measure restricting file access
   to the user mounting the filesystem.  This option is by default only
   allowed to root, but this restriction can be removed with a
   (userspace) configuration option.
 
-'max_read=N'
+'max_read=N'//最大读取的页限制
 
   With this option the maximum size of read operations can be set.
   The default is infinite.  Note that the size of read requests is
   limited anyway to 32 pages (which is 128kbyte on i386).
 
-'blksize=N'
+'blksize=N'//块设备时，可以设置块大小，经过测试ntfs-3g不支持设置
 
   Set the block size for the filesystem.  The default is 512.  This
   option is only valid for 'fuseblk' type mounts.
@@ -118,7 +118,7 @@ Mount options
 Control filesystem
 ~~~~~~~~~~~~~~~~~~
 
-There's a control filesystem for FUSE, which can be mounted by:
+There's a control filesystem for FUSE, which can be mounted by://控制文件系统
 
   mount -t fusectl none /sys/fs/fuse/connections
 
@@ -126,7 +126,7 @@ Mounting it under the '/sys/fs/fuse/connections' directory makes it
 backwards compatible with earlier versions.
 
 Under the fuse control filesystem each connection has a directory
-named by a unique number.
+named by a unique number.//在这个目录下存在一个目录，用一个唯一的数字标识
 
 For each connection the following files exist within this directory:
 
@@ -135,13 +135,13 @@ For each connection the following files exist within this directory:
   The number of requests which are waiting to be transferred to
   userspace or being processed by the filesystem daemon.  If there is
   no filesystem activity and 'waiting' is non-zero, then the
-  filesystem is hung or deadlocked.
+  filesystem is hung or deadlocked.//正在等待被处理的情况，如果没有被处理的活动，waiting又非0，表示文件系统挂死或者发生了死锁
 
  'abort'
 
   Writing anything into this file will abort the filesystem
   connection.  This means that all waiting requests will be aborted an
-  error returned for all aborted and new requests.
+  error returned for all aborted and new requests.//向该文件写入将会导致中断文件系统的链接
 
 Only the owner of the mount may read or write these files.
 
@@ -189,7 +189,7 @@ Aborting a filesystem connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 It is possible to get into certain situations where the filesystem is
-not responding.  Reasons for this may be:
+not responding.  Reasons for this may be://有一些原因会让用户存在需求去中断文件系统的链接
 
   a) Broken userspace filesystem implementation
 
