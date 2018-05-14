@@ -758,7 +758,7 @@ struct posix_acl;
  * the RCU path lookup and 'stat' data) fields at the beginning
  * of the 'struct inode'
  */
-struct inode {
+struct inode {//inode唯一指代一个文件，一个文件可以有多个路径和名字
 	umode_t			i_mode;
 	unsigned short		i_opflags;
 	uid_t			i_uid;
@@ -770,16 +770,16 @@ struct inode {
 	struct posix_acl	*i_default_acl;
 #endif
 
-	const struct inode_operations	*i_op;
-	struct super_block	*i_sb;
-	struct address_space	*i_mapping;
+	const struct inode_operations	*i_op;//inode的操作函数集
+	struct super_block	*i_sb;//超级块,关联到该inode所属的超级块
+	struct address_space	*i_mapping;//缓存文件的内容，如果缓存有，不到物理介质上取
 
 #ifdef CONFIG_SECURITY
 	void			*i_security;
 #endif
 
 	/* Stat data, not accessed from path walking */
-	unsigned long		i_ino;
+	unsigned long		i_ino;//inode的编号
 	/*
 	 * Filesystems may only read i_nlink directly.  They shall use the
 	 * following functions for modification:
@@ -791,12 +791,12 @@ struct inode {
 		const unsigned int i_nlink;
 		unsigned int __i_nlink;
 	};
-	dev_t			i_rdev;
-	struct timespec		i_atime;
+	dev_t			i_rdev;//设备号
+	struct timespec		i_atime;//三个时间
 	struct timespec		i_mtime;
 	struct timespec		i_ctime;
-	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size */
-	unsigned short          i_bytes;
+	spinlock_t		i_lock;	/* i_blocks, i_bytes, maybe i_size *///锁
+	unsigned short          i_bytes;//三种可能的计量方式
 	blkcnt_t		i_blocks;
 	loff_t			i_size;
 
@@ -823,7 +823,7 @@ struct inode {
 	u64			i_version;
 	atomic_t		i_dio_count;
 	atomic_t		i_writecount;
-	const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
+	const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops *///关联文件的操作函数集合
 	struct file_lock	*i_flock;
 	struct address_space	i_data;
 #ifdef CONFIG_QUOTA
@@ -973,7 +973,7 @@ static inline int ra_has_index(struct file_ra_state *ra, pgoff_t index)
 #define FILE_MNT_WRITE_TAKEN	1
 #define FILE_MNT_WRITE_RELEASED	2
 
-struct file {
+struct file {//file 结构体,编程中抽象出来的对象的概念，同一个真实的存储片段，在不同的进程中打开，生成多个file对象
 	/*
 	 * fu_list becomes invalid after file_free is called and queued via
 	 * fu_rcuhead for RCU freeing
@@ -985,20 +985,20 @@ struct file {
 	struct path		f_path;
 #define f_dentry	f_path.dentry
 #define f_vfsmnt	f_path.mnt
-	const struct file_operations	*f_op;
+	const struct file_operations	*f_op;//文件的操作函数指针集
 
 	/*
 	 * Protects f_ep_links, f_flags, f_pos vs i_size in lseek SEEK_CUR.
 	 * Must not be taken from IRQ context.
 	 */
-	spinlock_t		f_lock;
+	spinlock_t		f_lock;//文件锁
 #ifdef CONFIG_SMP
 	int			f_sb_list_cpu;
 #endif
-	atomic_long_t		f_count;
+	atomic_long_t		f_count;//打开计数
 	unsigned int 		f_flags;
 	fmode_t			f_mode;
-	loff_t			f_pos;
+	loff_t			f_pos;//读写指针，偏移量
 	struct fown_struct	f_owner;
 	const struct cred	*f_cred;
 	struct file_ra_state	f_ra;
@@ -1008,14 +1008,14 @@ struct file {
 	void			*f_security;
 #endif
 	/* needed for tty driver, and maybe others */
-	void			*private_data;
+	void			*private_data;//私有数据
 
 #ifdef CONFIG_EPOLL
 	/* Used by fs/eventpoll.c to link all the hooks to this file */
 	struct list_head	f_ep_links;
 	struct list_head	f_tfile_llink;
 #endif /* #ifdef CONFIG_EPOLL */
-	struct address_space	*f_mapping;
+	struct address_space	*f_mapping;//文件读写的缓存
 #ifdef CONFIG_DEBUG_WRITECOUNT
 	unsigned long f_mnt_write_state;
 #endif
@@ -1420,16 +1420,16 @@ struct super_block {
 	dev_t			s_dev;		/* search index; _not_ kdev_t */
 	unsigned char		s_dirt;
 	unsigned char		s_blocksize_bits;
-	unsigned long		s_blocksize;
-	loff_t			s_maxbytes;	/* Max file size */
-	struct file_system_type	*s_type;
-	const struct super_operations	*s_op;
-	const struct dquot_operations	*dq_op;
+	unsigned long		s_blocksize; //块大小
+	loff_t			s_maxbytes;	/* Max file size */ //支持最大的文件大小
+	struct file_system_type	*s_type;//文件系统信息
+	const struct super_operations	*s_op;//超级块操作函数
+	const struct dquot_operations	*dq_op;//磁盘配额相关
 	const struct quotactl_ops	*s_qcop;
 	const struct export_operations *s_export_op;
 	unsigned long		s_flags;
-	unsigned long		s_magic;
-	struct dentry		*s_root;
+	unsigned long		s_magic;//魔力数字
+	struct dentry		*s_root;//挂载的根节点
 	struct rw_semaphore	s_umount;
 	struct mutex		s_lock;
 	int			s_count;
@@ -1439,7 +1439,7 @@ struct super_block {
 #endif
 	const struct xattr_handler **s_xattr;
 
-	struct list_head	s_inodes;	/* all inodes */
+	struct list_head	s_inodes;	/* all inodes */ //链接下面的所有的inode节点
 	struct hlist_bl_head	s_anon;		/* anonymous dentries for (nfs) exporting */
 #ifdef CONFIG_SMP
 	struct list_head __percpu *s_files;
@@ -1466,7 +1466,7 @@ struct super_block {
 	wait_queue_head_t	s_wait_unfrozen;
 
 	char s_id[32];				/* Informational name */
-	u8 s_uuid[16];				/* UUID */
+	u8 s_uuid[16];				/* UUID *///uuid信息
 
 	void 			*s_fs_info;	/* Filesystem private info */
 	unsigned int		s_max_links;
