@@ -19,7 +19,7 @@ struct uart_8250_port {
 	struct list_head	list;		/* ports on this IRQ */
 	unsigned short		capabilities;	/* port capabilities */
 	unsigned short		bugs;		/* port bugs */
-	unsigned int		tx_loadsz;	/* transmit fifo load size */
+	unsigned int		tx_loadsz;	/* transmit fifo load size */ //发送 负载大小设置
 	unsigned char		acr;
 	unsigned char		ier;
 	unsigned char		lcr;

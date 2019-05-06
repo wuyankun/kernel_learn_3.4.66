@@ -30,7 +30,7 @@ struct dw8250_data {
 	int	line;
 };
 
-static void dw8250_serial_out(struct uart_port *p, int offset, int value)
+static void dw8250_serial_out(struct uart_port *p, int offset, int value)//覆写串口输出输入实现
 {
 	struct dw8250_data *d = p->private_data;
 
@@ -74,7 +74,7 @@ static int dw8250_handle_irq(struct uart_port *p)
 	struct dw8250_data *d = p->private_data;
 	unsigned int iir = p->serial_in(p, UART_IIR);
 
-	if (serial8250_handle_irq(p, iir)) {
+	if (serial8250_handle_irq(p, iir)) {//调用标准的serial8250处理中断的实现
 		return 1;
 	} else if ((iir & UART_IIR_BUSY) == UART_IIR_BUSY) {
 		/* Clear the USR and write the LCR again. */
@@ -90,7 +90,7 @@ static int dw8250_handle_irq(struct uart_port *p)
 static int __devinit dw8250_probe(struct platform_device *pdev)
 {
 	struct uart_port port = {};
-	struct resource *regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	struct resource *regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);//通过平台设备的接口获取中断和内存资源
 	struct resource *irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 	struct device_node *np = pdev->dev.of_node;
 	u32 val;
@@ -106,7 +106,7 @@ static int __devinit dw8250_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	port.private_data = data;
 
-	spin_lock_init(&port.lock);
+	spin_lock_init(&port.lock);//uart_port 结构体初始化
 	port.mapbase = regs->start;
 	port.irq = irq->start;
 	port.handle_irq = dw8250_handle_irq;
@@ -116,9 +116,9 @@ static int __devinit dw8250_probe(struct platform_device *pdev)
 	port.dev = &pdev->dev;
 
 	port.iotype = UPIO_MEM;
-	port.serial_in = dw8250_serial_in;
+	port.serial_in = dw8250_serial_in;//覆写读写接口
 	port.serial_out = dw8250_serial_out;
-	if (!of_property_read_u32(np, "reg-io-width", &val)) {
+	if (!of_property_read_u32(np, "reg-io-width", &val)) {//是否采用32位寄存器地址宽度
 		switch (val) {
 		case 1:
 			break;
@@ -134,7 +134,7 @@ static int __devinit dw8250_probe(struct platform_device *pdev)
 		}
 	}
 
-	if (!of_property_read_u32(np, "reg-shift", &val))
+	if (!of_property_read_u32(np, "reg-shift", &val))//通过openfirmware接口获取用户配置的属性信息
 		port.regshift = val;
 
 	if (of_property_read_u32(np, "clock-frequency", &val)) {
@@ -143,11 +143,11 @@ static int __devinit dw8250_probe(struct platform_device *pdev)
 	}
 	port.uartclk = val;
 
-	data->line = serial8250_register_port(&port);
+	data->line = serial8250_register_port(&port);//serial8250类型端口注册
 	if (data->line < 0)
 		return data->line;
 
-	platform_set_drvdata(pdev, data);
+	platform_set_drvdata(pdev, data);//关联驱动上下文数据
 
 	return 0;
 }
@@ -167,7 +167,7 @@ static const struct of_device_id dw8250_match[] = {
 };
 MODULE_DEVICE_TABLE(of, dw8250_match);
 
-static struct platform_driver dw8250_platform_driver = {
+static struct platform_driver dw8250_platform_driver = {//平台设备驱动
 	.driver = {
 		.name		= "dw-apb-uart",
 		.owner		= THIS_MODULE,

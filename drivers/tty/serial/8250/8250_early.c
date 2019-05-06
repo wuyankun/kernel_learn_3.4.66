@@ -15,8 +15,10 @@
  * particular, before the UARTs have been discovered and named.
  * Instead of specifying the console device as, e.g., "ttyS0",
  * we locate the device directly by its MMIO or I/O port address.
+ //在串口驱动被初始化前，实际上是串口被发现和命名之前，这时终端还未被
+ //命名为ttyS0这样的，我们定位设备通过MMIO(内存和io空间)或者端口地址
  *
- * The user can specify the device directly, e.g.,
+ * The user can specify the device directly, e.g.,//使用方法举例
  *	earlycon=uart8250,io,0x3f8,9600n8
  *	earlycon=uart8250,mmio,0xff5e0000,115200n8
  *	earlycon=uart8250,mmio32,0xff5e0000,115200n8
@@ -40,15 +42,15 @@
 #include <asm/fixmap.h>
 #endif
 
-struct early_serial8250_device {
+struct early_serial8250_device {//端口，选项，波特率
 	struct uart_port port;
 	char options[16];		/* e.g., 115200n8 */
 	unsigned int baud;
 };
 
-static struct early_serial8250_device early_device;
+static struct early_serial8250_device early_device;//静态变量
 
-static unsigned int __init serial_in(struct uart_port *port, int offset)
+static unsigned int __init serial_in(struct uart_port *port, int offset)//根据uart的类型，通过read和in系列函数实现读写串口数据
 {
 	switch (port->iotype) {
 	case UPIO_MEM:
@@ -62,7 +64,7 @@ static unsigned int __init serial_in(struct uart_port *port, int offset)
 	}
 }
 
-static void __init serial_out(struct uart_port *port, int offset, int value)
+static void __init serial_out(struct uart_port *port, int offset, int value)//写出数据
 {
 	switch (port->iotype) {
 	case UPIO_MEM:
@@ -79,7 +81,7 @@ static void __init serial_out(struct uart_port *port, int offset, int value)
 
 #define BOTH_EMPTY (UART_LSR_TEMT | UART_LSR_THRE)
 
-static void __init wait_for_xmitr(struct uart_port *port)
+static void __init wait_for_xmitr(struct uart_port *port)//等待发送完成，判断寄存器值
 {
 	unsigned int status;
 
@@ -91,7 +93,7 @@ static void __init wait_for_xmitr(struct uart_port *port)
 	}
 }
 
-static void __init serial_putc(struct uart_port *port, int c)
+static void __init serial_putc(struct uart_port *port, int c)//向串口写入一个字节
 {
 	wait_for_xmitr(port);
 	serial_out(port, UART_TX, c);
@@ -104,17 +106,17 @@ static void __init early_serial8250_write(struct console *console,
 	unsigned int ier;
 
 	/* Save the IER and disable interrupts */
-	ier = serial_in(port, UART_IER);
+	ier = serial_in(port, UART_IER);//中断使能寄存器状态保存
 	serial_out(port, UART_IER, 0);
 
-	uart_console_write(port, s, count, serial_putc);
+	uart_console_write(port, s, count, serial_putc);//传入回调函数，字符串起始和个数，端口
 
 	/* Wait for transmitter to become empty and restore the IER */
 	wait_for_xmitr(port);
-	serial_out(port, UART_IER, ier);
+	serial_out(port, UART_IER, ier);//恢复之前的中断状态
 }
 
-static unsigned int __init probe_baud(struct uart_port *port)
+static unsigned int __init probe_baud(struct uart_port *port)//波特率换算，读取寄存器换算波特率值
 {
 	unsigned char lcr, dll, dlm;
 	unsigned int quot;
@@ -131,7 +133,7 @@ static unsigned int __init probe_baud(struct uart_port *port)
 
 static void __init init_port(struct early_serial8250_device *device)
 {
-	struct uart_port *port = &device->port;
+	struct uart_port *port = &device->port;//初始化串口，将传入的波特率通过公司计算后，写入到对应的时钟控制寄存器中
 	unsigned int divisor;
 	unsigned char c;
 
@@ -149,7 +151,7 @@ static void __init init_port(struct early_serial8250_device *device)
 }
 
 static int __init parse_options(struct early_serial8250_device *device,
-								char *options)
+								char *options)//对传递的启动参数进行解析
 {
 	struct uart_port *port = &device->port;
 	int mmio, mmio32, length;
@@ -216,14 +218,14 @@ static int __init parse_options(struct early_serial8250_device *device,
 	return 0;
 }
 
-static struct console early_serial8250_console __initdata = {
+static struct console early_serial8250_console __initdata = {//静态控制台初始化数据
 	.name	= "uart",
 	.write	= early_serial8250_write,
 	.flags	= CON_PRINTBUFFER | CON_BOOT,
 	.index	= -1,
 };
 
-static int __init early_serial8250_setup(char *options)
+static int __init early_serial8250_setup(char *options)//串口设置
 {
 	struct early_serial8250_device *device = &early_device;
 	int err;
@@ -239,7 +241,7 @@ static int __init early_serial8250_setup(char *options)
 	return 0;
 }
 
-int __init setup_early_serial8250_console(char *cmdline)
+int __init setup_early_serial8250_console(char *cmdline)//终端设置
 {
 	char *options;
 	int err;
@@ -252,18 +254,18 @@ int __init setup_early_serial8250_console(char *cmdline)
 	}
 
 	options = strchr(cmdline, ',') + 1;
-	err = early_serial8250_setup(options);
+	err = early_serial8250_setup(options);//串口设置
 	if (err < 0)
 		return err;
 
-	register_console(&early_serial8250_console);
+	register_console(&early_serial8250_console);//注册终端
 
 	return 0;
 }
 
 int serial8250_find_port_for_earlycon(void)
 {
-	struct early_serial8250_device *device = &early_device;
+	struct early_serial8250_device *device = &early_device;//全局变量？
 	struct uart_port *port = &device->port;
 	int line;
 	int ret;
@@ -275,7 +277,7 @@ int serial8250_find_port_for_earlycon(void)
 	if (line < 0)
 		return -ENODEV;
 
-	ret = update_console_cmdline("uart", 8250,
+	ret = update_console_cmdline("uart", 8250,//串口和ttySx设备绑定关系
 			     "ttyS", line, device->options);
 	if (ret < 0)
 		ret = update_console_cmdline("uart", 0,

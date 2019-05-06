@@ -27,7 +27,7 @@
 #define UNKNOWN_DEV 0x3000
 
 
-static const struct pnp_device_id pnp_dev_table[] = {
+static const struct pnp_device_id pnp_dev_table[] = {//plug and play
 	/* Archtek America Corp. */
 	/* Archtek SmartLink Modem 3334BT Plug & Play */
 	{	"AAC000F",		0	},
@@ -374,7 +374,7 @@ static char *modem_names[] __devinitdata = {
 	"33600", "28800", "14400", "V.90", "V.34", "V.32", NULL
 };
 
-static int __devinit check_name(char *name)
+static int __devinit check_name(char *name)//名字遍历匹配
 {
 	char **tmp;
 
@@ -387,7 +387,7 @@ static int __devinit check_name(char *name)
 
 static int __devinit check_resources(struct pnp_dev *dev)
 {
-	resource_size_t base[] = {0x2f8, 0x3f8, 0x2e8, 0x3e8};
+	resource_size_t base[] = {0x2f8, 0x3f8, 0x2e8, 0x3e8};//常见的pnp串口设备使用端口起始地址,长度一般为8
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(base); i++) {
@@ -399,17 +399,17 @@ static int __devinit check_resources(struct pnp_dev *dev)
 }
 
 /*
- * Given a complete unknown PnP device, try to use some heuristics to
+ * Given a complete unknown PnP device, try to use some heuristics//启发法 to
  * detect modems. Currently use such heuristic set:
  *     - dev->name or dev->bus->name must contain "modem" substring;
  *     - device must have only one IO region (8 byte long) with base address
  *       0x2e8, 0x3e8, 0x2f8 or 0x3f8.
  *
- * Such detection looks very ugly, but can detect at least some of numerous
- * PnP modems, alternatively we must hardcode all modems in pnp_devices[]
+ * Such detection looks very ugly, but can detect at least some of numerous//许多的，很多的
+ * PnP modems, alternatively//否则,另外一种选择 we must hardcode all modems in pnp_devices[]
  * table.
  */
-static int __devinit serial_pnp_guess_board(struct pnp_dev *dev, int *flags)
+static int __devinit serial_pnp_guess_board(struct pnp_dev *dev, int *flags)//尝试猜测是否是串口pnp设备
 {
 	if (!(check_name(pnp_dev_name(dev)) ||
 		(dev->card && check_name(dev->card->name))))
@@ -428,18 +428,18 @@ serial_pnp_probe(struct pnp_dev *dev, const struct pnp_device_id *dev_id)
 	int ret, line, flags = dev_id->driver_data;
 
 	if (flags & UNKNOWN_DEV) {
-		ret = serial_pnp_guess_board(dev, &flags);
+		ret = serial_pnp_guess_board(dev, &flags);//如何是未知类型，用规则尝试匹配
 		if (ret < 0)
 			return ret;
 	}
 
 	memset(&port, 0, sizeof(struct uart_port));
-	if (pnp_irq_valid(dev, 0))
+	if (pnp_irq_valid(dev, 0))//中断有效，获取中断号
 		port.irq = pnp_irq(dev, 0);
-	if (pnp_port_valid(dev, 0)) {
+	if (pnp_port_valid(dev, 0)) {//端口有效，获取端口资源起始和类型
 		port.iobase = pnp_port_start(dev, 0);
 		port.iotype = UPIO_PORT;
-	} else if (pnp_mem_valid(dev, 0)) {
+	} else if (pnp_mem_valid(dev, 0)) {//内存区域有效，获取内存区域的起始和类型
 		port.mapbase = pnp_mem_start(dev, 0);
 		port.iotype = UPIO_MEM;
 		port.flags = UPF_IOREMAP;
@@ -452,17 +452,17 @@ serial_pnp_probe(struct pnp_dev *dev, const struct pnp_device_id *dev_id)
 		       port.iobase, port.mapbase, port.irq, port.iotype);
 #endif
 
-	port.flags |= UPF_SKIP_TEST | UPF_BOOT_AUTOCONF;
+	port.flags |= UPF_SKIP_TEST | UPF_BOOT_AUTOCONF;//uart port flag 
 	if (pnp_irq_flags(dev, 0) & IORESOURCE_IRQ_SHAREABLE)
-		port.flags |= UPF_SHARE_IRQ;
-	port.uartclk = 1843200;
-	port.dev = &dev->dev;
+		port.flags |= UPF_SHARE_IRQ;//共享中断类型
+	port.uartclk = 1843200;//默认时钟频率
+	port.dev = &dev->dev;//dev结构关联
 
-	line = serial8250_register_port(&port);
+	line = serial8250_register_port(&port);//注册到8250类型设备中
 	if (line < 0)
 		return -ENODEV;
 
-	pnp_set_drvdata(dev, (void *)((long)line + 1));
+	pnp_set_drvdata(dev, (void *)((long)line + 1));//私有数据绑定，这里数字+1
 	return 0;
 }
 
@@ -480,7 +480,7 @@ static int serial_pnp_suspend(struct pnp_dev *dev, pm_message_t state)
 
 	if (!line)
 		return -ENODEV;
-	serial8250_suspend_port(line - 1);
+	serial8250_suspend_port(line - 1);//调用serial8250的电源管理实现
 	return 0;
 }
 
@@ -498,7 +498,7 @@ static int serial_pnp_resume(struct pnp_dev *dev)
 #define serial_pnp_resume NULL
 #endif /* CONFIG_PM */
 
-static struct pnp_driver serial_pnp_driver = {
+static struct pnp_driver serial_pnp_driver = {//探测，移除，休眠和唤醒，常规结构体
 	.name		= "serial",
 	.probe		= serial_pnp_probe,
 	.remove		= __devexit_p(serial_pnp_remove),
@@ -507,7 +507,7 @@ static struct pnp_driver serial_pnp_driver = {
 	.id_table	= pnp_dev_table,
 };
 
-static int __init serial8250_pnp_init(void)
+static int __init serial8250_pnp_init(void)//模块初始化，注册驱动
 {
 	return pnp_register_driver(&serial_pnp_driver);
 }

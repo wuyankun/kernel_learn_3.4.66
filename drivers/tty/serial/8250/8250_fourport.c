@@ -19,7 +19,7 @@
 		.flags		= UPF_BOOT_AUTOCONF | UPF_FOURPORT,	\
 	}
 
-static struct plat_serial8250_port fourport_data[] = {
+static struct plat_serial8250_port fourport_data[] = {//平台设备带的平台数据
 	PORT(0x1a0, 9),
 	PORT(0x1a8, 9),
 	PORT(0x1b0, 9),
@@ -31,7 +31,7 @@ static struct plat_serial8250_port fourport_data[] = {
 	{ },
 };
 
-static struct platform_device fourport_device = {
+static struct platform_device fourport_device = {//平台设备
 	.name			= "serial8250",
 	.id			= PLAT8250_DEV_FOURPORT,
 	.dev			= {
@@ -41,7 +41,7 @@ static struct platform_device fourport_device = {
 
 static int __init fourport_init(void)
 {
-	return platform_device_register(&fourport_device);
+	return platform_device_register(&fourport_device);//平台设备注册
 }
 
 module_init(fourport_init);

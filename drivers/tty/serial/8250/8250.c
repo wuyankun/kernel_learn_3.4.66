@@ -17,7 +17,7 @@
  */
 
 #if defined(CONFIG_SERIAL_8250_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
-#define SUPPORT_SYSRQ
+#define SUPPORT_SYSRQ//魔力按钮sysq是否支持
 #endif
 
 #include <linux/module.h>
@@ -52,13 +52,13 @@
  *   share_irqs - whether we pass IRQF_SHARED to request_irq().  This option
  *                is unsafe when used on edge-triggered interrupts.
  */
-static unsigned int share_irqs = SERIAL8250_SHARE_IRQS;
+static unsigned int share_irqs = SERIAL8250_SHARE_IRQS;//默认共享中断
 
-static unsigned int nr_uarts = CONFIG_SERIAL_8250_RUNTIME_UARTS;
+static unsigned int nr_uarts = CONFIG_SERIAL_8250_RUNTIME_UARTS;//默认支持的串口个数
 
-static struct uart_driver serial8250_reg;
+static struct uart_driver serial8250_reg;//向前声明，gcc编译要求
 
-static int serial_index(struct uart_port *port)
+static int serial_index(struct uart_port *port)//支持一个芯片多个串口
 {
 	return (serial8250_reg.minor - 64) + port->line;
 }
@@ -112,7 +112,7 @@ static const struct old_serial_port old_serial_port[] = {
 	SERIAL_PORT_DFNS /* defined in asm/serial.h */
 };
 
-#define UART_NR	CONFIG_SERIAL_8250_NR_UARTS
+#define UART_NR	CONFIG_SERIAL_8250_NR_UARTS//支持uart的个数
 
 #ifdef CONFIG_SERIAL_8250_RSA
 
@@ -135,7 +135,7 @@ static DEFINE_MUTEX(hash_mutex);	/* Used to walk the hash */
 /*
  * Here we define the default xmit fifo size used for each type of UART.
  */
-static const struct serial8250_config uart_config[] = {
+static const struct serial8250_config uart_config[] = {//串口配置，默认的发送fifo的大小
 	[PORT_UNKNOWN] = {
 		.name		= "unknown",
 		.fifo_size	= 1,
@@ -267,7 +267,7 @@ static const struct serial8250_config uart_config[] = {
 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
 		.flags		= UART_CAP_FIFO | UART_CAP_AFE,
 	},
-	[PORT_TEGRA] = {
+	[PORT_TEGRA] = {//nvidia 的 tegra系列
 		.name		= "Tegra",
 		.fifo_size	= 32,
 		.tx_loadsz	= 8,
@@ -284,7 +284,7 @@ static const struct serial8250_config uart_config[] = {
 	},
 };
 
-#if defined(CONFIG_MIPS_ALCHEMY)
+#if defined(CONFIG_MIPS_ALCHEMY)//不同芯片的内部寄存器偏移可能不同
 
 /* Au1x00 UART hardware has a weird register layout */
 static const u8 au_io_in_map[] = {
@@ -380,7 +380,7 @@ static void hub6_serial_out(struct uart_port *p, int offset, int value)
 	outb(value, p->iobase + 1);
 }
 
-static unsigned int mem_serial_in(struct uart_port *p, int offset)
+static unsigned int mem_serial_in(struct uart_port *p, int offset)//通用实现
 {
 	offset = map_8250_in_reg(p, offset) << p->regshift;
 	return readb(p->membase + offset);
@@ -428,9 +428,9 @@ static void io_serial_out(struct uart_port *p, int offset, int value)
 	outb(value, p->iobase + offset);
 }
 
-static int serial8250_default_handle_irq(struct uart_port *port);
+static int serial8250_default_handle_irq(struct uart_port *port);//向前声明
 
-static void set_io_from_upio(struct uart_port *p)
+static void set_io_from_upio(struct uart_port *p)//根据不同的芯片实现，初始化串口的读写实现
 {
 	struct uart_8250_port *up =
 		container_of(p, struct uart_8250_port, port);
@@ -481,7 +481,7 @@ serial_port_out_sync(struct uart_port *p, int offset, int value)
 	}
 }
 
-/* Uart divisor latch read */
+/* Uart divisor latch read */ //除数因子阀门
 static inline int _serial_dl_read(struct uart_8250_port *up)
 {
 	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
@@ -661,7 +661,7 @@ static void disable_rsa(struct uart_8250_port *up)
 
 /*
  * This is a quickie test to see how big the FIFO is.
- * It doesn't work at all the time, more's the pity.
+ * It doesn't work at all the time, more's the pity. //快速测试fifo的大小
  */
 static int size_fifo(struct uart_8250_port *up)
 {
@@ -1263,7 +1263,7 @@ static inline void __stop_tx(struct uart_8250_port *p)
 	}
 }
 
-static void serial8250_stop_tx(struct uart_port *port)
+static void serial8250_stop_tx(struct uart_port *port)//结束发送
 {
 	struct uart_8250_port *up =
 		container_of(port, struct uart_8250_port, port);
@@ -1279,7 +1279,7 @@ static void serial8250_stop_tx(struct uart_port *port)
 	}
 }
 
-static void serial8250_start_tx(struct uart_port *port)
+static void serial8250_start_tx(struct uart_port *port)//开始发送
 {
 	struct uart_8250_port *up =
 		container_of(port, struct uart_8250_port, port);
@@ -1308,7 +1308,7 @@ static void serial8250_start_tx(struct uart_port *port)
 	}
 }
 
-static void serial8250_stop_rx(struct uart_port *port)
+static void serial8250_stop_rx(struct uart_port *port)//停止接收
 {
 	struct uart_8250_port *up =
 		container_of(port, struct uart_8250_port, port);
