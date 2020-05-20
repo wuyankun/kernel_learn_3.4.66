@@ -194,7 +194,7 @@ struct imx_uart_data {
 	enum imx_uart_type devtype;
 };
 
-struct imx_port {
+struct imx_port {//关键结构体
 	struct uart_port	port;
 	struct timer_list	timer;
 	unsigned int		old_status;
@@ -1060,7 +1060,7 @@ static void imx_release_port(struct uart_port *port)
 /*
  * Request the memory region(s) being used by 'port'.
  */
-static int imx_request_port(struct uart_port *port)
+static int imx_request_port(struct uart_port *port)//内存资源
 {
 	struct platform_device *pdev = to_platform_device(port->dev);
 	struct resource *mmres;
@@ -1093,7 +1093,7 @@ static void imx_config_port(struct uart_port *port, int flags)
  * even then only between PORT_IMX and PORT_UNKNOWN
  */
 static int
-imx_verify_port(struct uart_port *port, struct serial_struct *ser)
+imx_verify_port(struct uart_port *port, struct serial_struct *ser)//参数合法性检查
 {
 	struct imx_port *sport = (struct imx_port *)port;
 	int ret = 0;
@@ -1179,7 +1179,7 @@ static void imx_poll_put_char(struct uart_port *port, unsigned char c)
 }
 #endif
 
-static struct uart_ops imx_pops = {
+static struct uart_ops imx_pops = {//关键结构体2,ops
 	.tx_empty	= imx_tx_empty,
 	.set_mctrl	= imx_set_mctrl,
 	.get_mctrl	= imx_get_mctrl,
@@ -1196,16 +1196,16 @@ static struct uart_ops imx_pops = {
 	.request_port	= imx_request_port,
 	.config_port	= imx_config_port,
 	.verify_port	= imx_verify_port,
-#if defined(CONFIG_CONSOLE_POLL)
+#if defined(CONFIG_CONSOLE_POLL)//串口是否支持poll功能
 	.poll_get_char  = imx_poll_get_char,
 	.poll_put_char  = imx_poll_put_char,
 #endif
 };
 
-static struct imx_port *imx_ports[UART_NR];
+static struct imx_port *imx_ports[UART_NR];//串口数组
 
 #ifdef CONFIG_SERIAL_IMX_CONSOLE
-static void imx_console_putchar(struct uart_port *port, int ch)
+static void imx_console_putchar(struct uart_port *port, int ch)//写一个字符
 {
 	struct imx_port *sport = (struct imx_port *)port;
 
@@ -1219,7 +1219,7 @@ static void imx_console_putchar(struct uart_port *port, int ch)
  * Interrupts are disabled on entering
  */
 static void
-imx_console_write(struct console *co, const char *s, unsigned int count)
+imx_console_write(struct console *co, const char *s, unsigned int count)//传入字符串指针及个数
 {
 	struct imx_port *sport = imx_ports[co->index];
 	struct imx_port_ucrs old_ucr;
@@ -1243,7 +1243,7 @@ imx_console_write(struct console *co, const char *s, unsigned int count)
 
 	writel(old_ucr.ucr2 | UCR2_TXEN, sport->port.membase + UCR2);
 
-	uart_console_write(&sport->port, s, count, imx_console_putchar);
+	uart_console_write(&sport->port, s, count, imx_console_putchar);//标准的uart的写函数
 
 	/*
 	 *	Finally, wait for transmitter to become empty
@@ -1258,7 +1258,7 @@ imx_console_write(struct console *co, const char *s, unsigned int count)
 
 /*
  * If the port was already initialised (eg, by a boot loader),
- * try to determine the current setup.
+ * try to determine the current setup.//如果接口已经设置，尝试获取当前的设置，比如作为bootloader的调试口
  */
 static void __init
 imx_console_get_options(struct imx_port *sport, int *baud,
@@ -1346,13 +1346,13 @@ imx_console_setup(struct console *co, char *options)
 
 	imx_setup_ufcr(sport, 0);
 
-	return uart_set_options(&sport->port, co, baud, parity, bits, flow);
+	return uart_set_options(&sport->port, co, baud, parity, bits, flow);//标准的初始化参数接口
 }
 
 static struct uart_driver imx_reg;
-static struct console imx_console = {
+static struct console imx_console = {//console 关键结构体
 	.name		= DEV_NAME,
-	.write		= imx_console_write,
+	.write		= imx_console_write,//读写，设置
 	.device		= uart_console_device,
 	.setup		= imx_console_setup,
 	.flags		= CON_PRINTBUFFER,
@@ -1365,7 +1365,7 @@ static struct console imx_console = {
 #define IMX_CONSOLE	NULL
 #endif
 
-static struct uart_driver imx_reg = {
+static struct uart_driver imx_reg = {//UART 驱动结构体
 	.owner          = THIS_MODULE,
 	.driver_name    = DRIVER_NAME,
 	.dev_name       = DEV_NAME,
@@ -1375,7 +1375,7 @@ static struct uart_driver imx_reg = {
 	.cons           = IMX_CONSOLE,
 };
 
-static int serial_imx_suspend(struct platform_device *dev, pm_message_t state)
+static int serial_imx_suspend(struct platform_device *dev, pm_message_t state)//写一个bit位
 {
 	struct imx_port *sport = platform_get_drvdata(dev);
 	unsigned int val;
@@ -1412,7 +1412,7 @@ static int serial_imx_resume(struct platform_device *dev)
  * This function returns 1 iff pdev isn't a device instatiated by dt, 0 iff it
  * could successfully get all information from dt or a negative errno.
  */
-static int serial_imx_probe_dt(struct imx_port *sport,
+static int serial_imx_probe_dt(struct imx_port *sport,//设备树属性解析
 		struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
@@ -1432,10 +1432,10 @@ static int serial_imx_probe_dt(struct imx_port *sport,
 	sport->port.line = ret;
 
 	if (of_get_property(np, "fsl,uart-has-rtscts", NULL))
-		sport->have_rtscts = 1;
+		sport->have_rtscts = 1;//是否使用流控
 
 	if (of_get_property(np, "fsl,irda-mode", NULL))
-		sport->use_irda = 1;
+		sport->use_irda = 1;//红外？
 
 	sport->devdata = of_id->data;
 
@@ -1461,80 +1461,80 @@ static void serial_imx_probe_pdata(struct imx_port *sport,
 		return;
 
 	if (pdata->flags & IMXUART_HAVE_RTSCTS)
-		sport->have_rtscts = 1;
+		sport->have_rtscts = 1;//传统方式获得，是否支持流控
 
 	if (pdata->flags & IMXUART_IRDA)
-		sport->use_irda = 1;
+		sport->use_irda = 1;//红外
 }
 
-static int serial_imx_probe(struct platform_device *pdev)
+static int serial_imx_probe(struct platform_device *pdev)//平台设备探测
 {
-	struct imx_port *sport;
+	struct imx_port *sport;//上下文
 	struct imxuart_platform_data *pdata;
-	void __iomem *base;
+	void __iomem *base;//内存基地址
 	int ret = 0;
-	struct resource *res;
+	struct resource *res;//平台设备附属资源
 
-	sport = kzalloc(sizeof(*sport), GFP_KERNEL);
+	sport = kzalloc(sizeof(*sport), GFP_KERNEL);//上下文环境存储结构体
 	if (!sport)
 		return -ENOMEM;
 
-	ret = serial_imx_probe_dt(sport, pdev);
+	ret = serial_imx_probe_dt(sport, pdev);//属性信息解析，初始化，支持设备树版本与传统版本
 	if (ret > 0)
 		serial_imx_probe_pdata(sport, pdev);
 	else if (ret < 0)
 		goto free;
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);//获取内存资源，物理内存范围
 	if (!res) {
 		ret = -ENODEV;
 		goto free;
 	}
 
-	base = ioremap(res->start, PAGE_SIZE);
+	base = ioremap(res->start, PAGE_SIZE);//映射为虚拟内存
 	if (!base) {
 		ret = -ENOMEM;
 		goto free;
 	}
 
-	sport->port.dev = &pdev->dev;
-	sport->port.mapbase = res->start;
+	sport->port.dev = &pdev->dev;//设备关联
+	sport->port.mapbase = res->start;//映射的内存资源管理
 	sport->port.membase = base;
-	sport->port.type = PORT_IMX,
+	sport->port.type = PORT_IMX,//类型属性
 	sport->port.iotype = UPIO_MEM;
-	sport->port.irq = platform_get_irq(pdev, 0);
-	sport->rxirq = platform_get_irq(pdev, 0);
+	sport->port.irq = platform_get_irq(pdev, 0);//中断号
+	sport->rxirq = platform_get_irq(pdev, 0);//3个中断，tx/rx/rtsirq
 	sport->txirq = platform_get_irq(pdev, 1);
 	sport->rtsirq = platform_get_irq(pdev, 2);
-	sport->port.fifosize = 32;
-	sport->port.ops = &imx_pops;
-	sport->port.flags = UPF_BOOT_AUTOCONF;
-	init_timer(&sport->timer);
+	sport->port.fifosize = 32;//fifo的大小设置，单位？
+	sport->port.ops = &imx_pops;//端口的操作ops
+	sport->port.flags = UPF_BOOT_AUTOCONF;//标识
+	init_timer(&sport->timer);//定时器初始化,定时器到期处理函数，带的上下文环境数据
 	sport->timer.function = imx_timeout;
 	sport->timer.data     = (unsigned long)sport;
 
-	sport->clk = clk_get(&pdev->dev, "uart");
+	sport->clk = clk_get(&pdev->dev, "uart");//获取时钟资源，资源名字为uart
 	if (IS_ERR(sport->clk)) {
 		ret = PTR_ERR(sport->clk);
 		goto unmap;
 	}
-	clk_prepare_enable(sport->clk);
+	clk_prepare_enable(sport->clk);//准备时钟资源
 
-	sport->port.uartclk = clk_get_rate(sport->clk);
+	sport->port.uartclk = clk_get_rate(sport->clk);//获取时钟的频率信息
 
-	imx_ports[sport->port.line] = sport;
+	imx_ports[sport->port.line] = sport;//串口数组
 
 	pdata = pdev->dev.platform_data;
-	if (pdata && pdata->init) {
+	if (pdata && pdata->init) {//如果平台设备有init实现，调用init实现
 		ret = pdata->init(pdev);
 		if (ret)
 			goto clkput;
 	}
 
-	ret = uart_add_one_port(&imx_reg, &sport->port);
+	ret = uart_add_one_port(&imx_reg, &sport->port);//增加一个串口设备
 	if (ret)
 		goto deinit;
-	platform_set_drvdata(pdev, &sport->port);
+	platform_set_drvdata(pdev, &sport->port);//将私有变量和驱动进行关联
 
 	return 0;
 deinit:
@@ -1575,17 +1575,17 @@ static int serial_imx_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver serial_imx_driver = {
+static struct platform_driver serial_imx_driver = {//平台设备驱动
 	.probe		= serial_imx_probe,
 	.remove		= serial_imx_remove,
 
-	.suspend	= serial_imx_suspend,
+	.suspend	= serial_imx_suspend,//电源管理
 	.resume		= serial_imx_resume,
-	.id_table	= imx_uart_devtype,
+	.id_table	= imx_uart_devtype,//兼容列表
 	.driver		= {
 		.name	= "imx-uart",
 		.owner	= THIS_MODULE,
-		.of_match_table = imx_uart_dt_ids,
+		.of_match_table = imx_uart_dt_ids,//设备树信息
 	},
 };
 
@@ -1595,13 +1595,13 @@ static int __init imx_serial_init(void)
 
 	printk(KERN_INFO "Serial: IMX driver\n");
 
-	ret = uart_register_driver(&imx_reg);
+	ret = uart_register_driver(&imx_reg);//注册uart设备驱动
 	if (ret)
 		return ret;
 
-	ret = platform_driver_register(&serial_imx_driver);
+	ret = platform_driver_register(&serial_imx_driver);//注册platform设备驱动
 	if (ret != 0)
-		uart_unregister_driver(&imx_reg);
+		uart_unregister_driver(&imx_reg);//如果平台驱动注册失败，则卸载掉uart驱动
 
 	return ret;
 }
