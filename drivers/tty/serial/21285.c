@@ -358,12 +358,12 @@ static struct uart_ops serial21285_ops = {
 	.verify_port	= serial21285_verify_port,
 };
 
-static struct uart_port serial21285_port = {
+static struct uart_port serial21285_port = {//4.uart_port
 	.mapbase	= 0x42000160,
 	.iotype		= UPIO_MEM,
 	.irq		= 0,
 	.fifosize	= 16,
-	.ops		= &serial21285_ops,
+	.ops		= &serial21285_ops,//5.uart_ops
 	.flags		= UPF_BOOT_AUTOCONF,
 };
 
@@ -457,7 +457,7 @@ static struct console serial21285_console =
 	.setup		= serial21285_console_setup,
 	.flags		= CON_PRINTBUFFER,
 	.index		= -1,
-	.data		= &serial21285_reg,
+	.data		= &serial21285_reg,//3.uart_driver
 };
 
 static int __init rs285_console_init(void)
@@ -473,14 +473,14 @@ console_initcall(rs285_console_init);
 #define SERIAL_21285_CONSOLE	NULL
 #endif
 
-static struct uart_driver serial21285_reg = {
+static struct uart_driver serial21285_reg = {//1.uart_driver
 	.owner			= THIS_MODULE,
 	.driver_name		= "ttyFB",
 	.dev_name		= "ttyFB",
 	.major			= SERIAL_21285_MAJOR,
 	.minor			= SERIAL_21285_MINOR,
 	.nr			= 1,
-	.cons			= SERIAL_21285_CONSOLE,
+	.cons			= SERIAL_21285_CONSOLE,//2.console
 };
 
 static int __init serial21285_init(void)
@@ -493,7 +493,7 @@ static int __init serial21285_init(void)
 
 	ret = uart_register_driver(&serial21285_reg);
 	if (ret == 0)
-		uart_add_one_port(&serial21285_reg, &serial21285_port);
+		uart_add_one_port(&serial21285_reg, &serial21285_port);//uart_port
 
 	return ret;
 }
