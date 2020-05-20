@@ -2228,7 +2228,7 @@ int uart_register_driver(struct uart_driver *drv)
 	if (!drv->state)
 		goto out;
 
-	normal = alloc_tty_driver(drv->nr);
+	normal = alloc_tty_driver(drv->nr);//uart_driver和tty_driver关联起来
 	if (!normal)
 		goto out_kfree;
 
@@ -2340,7 +2340,7 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *uport)
 	 * initialised.
 	 */
 	if (!(uart_console(uport) && (uport->cons->flags & CON_ENABLED))) {
-		spin_lock_init(&uport->lock);
+		spin_lock_init(&uport->lock);//初始化uart的spin_lock
 		lockdep_set_class(&uport->lock, &port_lock_key);
 	}
 
@@ -2426,7 +2426,7 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *uport)
 }
 
 /*
- *	Are the two ports equivalent?
+ *	Are the two ports equivalent?//两个是否为统一串口
  */
 int uart_match_port(struct uart_port *port1, struct uart_port *port2)
 {
