@@ -490,7 +490,7 @@ void ahci_save_initial_config(struct device *dev,
 	}
 
 	/* record values to use during operation */
-	hpriv->cap = cap;
+	hpriv->cap = cap; //保存在变量中
 	hpriv->cap2 = cap2;
 	hpriv->port_map = port_map;
 }
@@ -510,7 +510,7 @@ static void ahci_restore_initial_config(struct ata_host *host)
 	struct ahci_host_priv *hpriv = host->private_data;
 	void __iomem *mmio = hpriv->mmio;
 
-	writel(hpriv->saved_cap, mmio + HOST_CAP);
+	writel(hpriv->saved_cap, mmio + HOST_CAP);//将变量重新写回到值中
 	if (hpriv->saved_cap2)
 		writel(hpriv->saved_cap2, mmio + HOST_CAP2);
 	writel(hpriv->saved_port_map, mmio + HOST_PORTS_IMPL);
@@ -558,7 +558,7 @@ static int ahci_scr_write(struct ata_link *link, unsigned int sc_reg, u32 val)
 	return -EINVAL;
 }
 
-void ahci_start_engine(struct ata_port *ap)
+void ahci_start_engine(struct ata_port *ap)//使能DMA引擎
 {
 	void __iomem *port_mmio = ahci_port_base(ap);
 	u32 tmp;
@@ -571,7 +571,7 @@ void ahci_start_engine(struct ata_port *ap)
 }
 EXPORT_SYMBOL_GPL(ahci_start_engine);
 
-int ahci_stop_engine(struct ata_port *ap)
+int ahci_stop_engine(struct ata_port *ap)//关闭引擎
 {
 	void __iomem *port_mmio = ahci_port_base(ap);
 	u32 tmp;
@@ -1725,7 +1725,7 @@ static void ahci_port_intr(struct ata_port *ap)
 	}
 }
 
-irqreturn_t ahci_interrupt(int irq, void *dev_instance)
+irqreturn_t ahci_interrupt(int irq, void *dev_instance)//中断处理
 {
 	struct ata_host *host = dev_instance;
 	struct ahci_host_priv *hpriv;
@@ -1739,15 +1739,15 @@ irqreturn_t ahci_interrupt(int irq, void *dev_instance)
 	mmio = hpriv->mmio;
 
 	/* sigh.  0xffffffff is a valid return from h/w */
-	irq_stat = readl(mmio + HOST_IRQ_STAT);
+	irq_stat = readl(mmio + HOST_IRQ_STAT);//读取中断状态
 	if (!irq_stat)
 		return IRQ_NONE;
 
-	irq_masked = irq_stat & hpriv->port_map;
+	irq_masked = irq_stat & hpriv->port_map;//和中断mask比对
 
 	spin_lock(&host->lock);
 
-	for (i = 0; i < host->n_ports; i++) {
+	for (i = 0; i < host->n_ports; i++) {//针对每个port的情况单独处理
 		struct ata_port *ap;
 
 		if (!(irq_masked & (1 << i)))
@@ -1755,7 +1755,7 @@ irqreturn_t ahci_interrupt(int irq, void *dev_instance)
 
 		ap = host->ports[i];
 		if (ap) {
-			ahci_port_intr(ap);
+			ahci_port_intr(ap);//针对具体的port端口进行中断处理
 			VPRINTK("port %u\n", i);
 		} else {
 			VPRINTK("port %u (no irq)\n", i);
@@ -1888,7 +1888,7 @@ static void ahci_post_internal_cmd(struct ata_queued_cmd *qc)
 		ahci_kick_engine(ap);
 }
 
-static void ahci_enable_fbs(struct ata_port *ap)
+static void ahci_enable_fbs(struct ata_port *ap)//激活fbs及关闭fbs特征
 {
 	struct ahci_port_priv *pp = ap->private_data;
 	void __iomem *port_mmio = ahci_port_base(ap);
@@ -2066,7 +2066,7 @@ static int ahci_port_start(struct ata_port *ap)
 		rx_fis_sz = AHCI_RX_FIS_SZ;
 	}
 
-	mem = dmam_alloc_coherent(dev, dma_sz, &mem_dma, GFP_KERNEL);
+	mem = dmam_alloc_coherent(dev, dma_sz, &mem_dma, GFP_KERNEL);//申请到一致dma的空间
 	if (!mem)
 		return -ENOMEM;
 	memset(mem, 0, dma_sz);
@@ -2075,7 +2075,7 @@ static int ahci_port_start(struct ata_port *ap)
 	 * First item in chunk of DMA memory: 32-slot command table,
 	 * 32 bytes each in size
 	 */
-	pp->cmd_slot = mem;
+	pp->cmd_slot = mem;//对申请到的内存进行指针锚定
 	pp->cmd_slot_dma = mem_dma;
 
 	mem += AHCI_CMD_SLOT_SZ;
@@ -2120,7 +2120,7 @@ static void ahci_port_stop(struct ata_port *ap)
 		ata_port_warn(ap, "%s (%d)\n", emsg, rc);
 }
 
-void ahci_print_info(struct ata_host *host, const char *scc_s)
+void ahci_print_info(struct ata_host *host, const char *scc_s)//ahci HBA控制器属性解析及打印
 {
 	struct ahci_host_priv *hpriv = host->private_data;
 	void __iomem *mmio = hpriv->mmio;
