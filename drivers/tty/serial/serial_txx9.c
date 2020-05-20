@@ -857,7 +857,7 @@ serial_txx9_type(struct uart_port *port)
 	return "txx9";
 }
 
-static struct uart_ops serial_txx9_pops = {
+static struct uart_ops serial_txx9_pops = {// 5.uart_ops
 	.tx_empty	= serial_txx9_tx_empty,
 	.set_mctrl	= serial_txx9_set_mctrl,
 	.get_mctrl	= serial_txx9_get_mctrl,
@@ -891,7 +891,7 @@ static void __init serial_txx9_register_ports(struct uart_driver *drv,
 		struct uart_txx9_port *up = &serial_txx9_ports[i];
 
 		up->port.line = i;
-		up->port.ops = &serial_txx9_pops;
+		up->port.ops = &serial_txx9_pops; // uart_ops
 		up->port.dev = dev;
 		if (up->port.iobase || up->port.mapbase)
 			uart_add_one_port(drv, &up->port);
@@ -973,14 +973,14 @@ static int __init serial_txx9_console_setup(struct console *co, char *options)
 }
 
 static struct uart_driver serial_txx9_reg;
-static struct console serial_txx9_console = {
+static struct console serial_txx9_console = {//3.console
 	.name		= TXX9_TTY_NAME,
 	.write		= serial_txx9_console_write,
 	.device		= uart_console_device,
 	.setup		= serial_txx9_console_setup,
 	.flags		= CON_PRINTBUFFER,
 	.index		= -1,
-	.data		= &serial_txx9_reg,
+	.data		= &serial_txx9_reg,//4. uart driver
 };
 
 static int __init serial_txx9_console_init(void)
@@ -995,14 +995,14 @@ console_initcall(serial_txx9_console_init);
 #define SERIAL_TXX9_CONSOLE	NULL
 #endif
 
-static struct uart_driver serial_txx9_reg = {
+static struct uart_driver serial_txx9_reg = {//1. uart driver
 	.owner			= THIS_MODULE,
 	.driver_name		= "serial_txx9",
 	.dev_name		= TXX9_TTY_NAME,
 	.major			= TXX9_TTY_MAJOR,
 	.minor			= TXX9_TTY_MINOR_START,
 	.nr			= UART_NR,
-	.cons			= SERIAL_TXX9_CONSOLE,
+	.cons			= SERIAL_TXX9_CONSOLE,//2. console
 };
 
 int __init early_serial_txx9_setup(struct uart_port *port)
@@ -1096,7 +1096,7 @@ static void __devexit serial_txx9_unregister_port(int line)
 /*
  * Register a set of serial devices attached to a platform device.
  */
-static int __devinit serial_txx9_probe(struct platform_device *dev)
+static int __devinit serial_txx9_probe(struct platform_device *dev)//平台设备探测
 {
 	struct uart_port *p = dev->dev.platform_data;
 	struct uart_port port;
@@ -1126,7 +1126,7 @@ static int __devinit serial_txx9_probe(struct platform_device *dev)
 /*
  * Remove serial ports registered against a platform device.
  */
-static int __devexit serial_txx9_remove(struct platform_device *dev)
+static int __devexit serial_txx9_remove(struct platform_device *dev)//平台设备移除
 {
 	int i;
 
@@ -1199,7 +1199,7 @@ pciserial_txx9_init_one(struct pci_dev *dev, const struct pci_device_id *ent)
 		return rc;
 
 	memset(&port, 0, sizeof(port));
-	port.ops = &serial_txx9_pops;
+	port.ops = &serial_txx9_pops;//6. uart_ops
 	port.flags |= UPF_TXX9_HAVE_CTS_LINE;
 	port.uartclk = 66670000;
 	port.irq = dev->irq;
@@ -1272,7 +1272,7 @@ static struct pci_driver serial_txx9_pci_driver = {
 MODULE_DEVICE_TABLE(pci, serial_txx9_pci_tbl);
 #endif /* ENABLE_SERIAL_TXX9_PCI */
 
-static struct platform_device *serial_txx9_plat_devs;
+static struct platform_device *serial_txx9_plat_devs;//全局镜体平台设备指针
 
 static int __init serial_txx9_init(void)
 {
@@ -1280,29 +1280,29 @@ static int __init serial_txx9_init(void)
 
  	printk(KERN_INFO "%s version %s\n", serial_name, serial_version);
 
-	ret = uart_register_driver(&serial_txx9_reg);
+	ret = uart_register_driver(&serial_txx9_reg);//uart驱动注册
 	if (ret)
 		goto out;
 
-	serial_txx9_plat_devs = platform_device_alloc("serial_txx9", -1);
+	serial_txx9_plat_devs = platform_device_alloc("serial_txx9", -1);//平台设备申请
 	if (!serial_txx9_plat_devs) {
 		ret = -ENOMEM;
 		goto unreg_uart_drv;
 	}
 
-	ret = platform_device_add(serial_txx9_plat_devs);
+	ret = platform_device_add(serial_txx9_plat_devs);//平台设备添加
 	if (ret)
 		goto put_dev;
 
 	serial_txx9_register_ports(&serial_txx9_reg,
-				   &serial_txx9_plat_devs->dev);
+				   &serial_txx9_plat_devs->dev);//注册uart设备
 
-	ret = platform_driver_register(&serial_txx9_plat_driver);
+	ret = platform_driver_register(&serial_txx9_plat_driver);//平台驱动注册
 	if (ret)
 		goto del_dev;
 
 #ifdef ENABLE_SERIAL_TXX9_PCI
-	ret = pci_register_driver(&serial_txx9_pci_driver);
+	ret = pci_register_driver(&serial_txx9_pci_driver);//pci驱动注册
 #endif
 	if (ret == 0)
 		goto out;
