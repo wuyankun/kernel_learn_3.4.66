@@ -77,6 +77,7 @@ enum {
 	RX_FIS_SDB		= 0x58, /* offset of SDB FIS data */
 	RX_FIS_UNK		= 0x60, /* offset of Unknown FIS data */
 
+	//r 1.3 3.1
 	/* global controller registers */
 	HOST_CAP		= 0x00, /* host capabilities */
 	HOST_CTL		= 0x04, /* global host control */
@@ -92,7 +93,7 @@ enum {
 	HOST_IRQ_EN		= (1 << 1),  /* global IRQ enable */
 	HOST_AHCI_EN		= (1 << 31), /* AHCI enabled */
 
-	/* HOST_CAP bits */
+	/* HOST_CAP bits */ //r1.3 3.1.1
 	HOST_CAP_SXS		= (1 << 5),  /* Supports External SATA */
 	HOST_CAP_EMS		= (1 << 6),  /* Enclosure Management support */
 	HOST_CAP_CCC		= (1 << 7),  /* Command Completion Coalescing */
@@ -111,12 +112,12 @@ enum {
 	HOST_CAP_NCQ		= (1 << 30), /* Native Command Queueing */
 	HOST_CAP_64		= (1 << 31), /* PCI DAC (64-bit DMA) support */
 
-	/* HOST_CAP2 bits */
+	/* HOST_CAP2 bits */ //r1.3  3.1.10
 	HOST_CAP2_BOH		= (1 << 0),  /* BIOS/OS handoff supported */
 	HOST_CAP2_NVMHCI	= (1 << 1),  /* NVMHCI supported */
 	HOST_CAP2_APST		= (1 << 2),  /* Automatic partial to slumber */
 
-	/* registers for each SATA port */
+	/* registers for each SATA port */ //r1.3 3.3
 	PORT_LST_ADDR		= 0x00, /* command list DMA addr */
 	PORT_LST_ADDR_HI	= 0x04, /* command list DMA addr hi */
 	PORT_FIS_ADDR		= 0x08, /* FIS rx buf addr */
@@ -134,7 +135,7 @@ enum {
 	PORT_SCR_NTF		= 0x3c, /* SATA phy register: SNotification */
 	PORT_FBS		= 0x40, /* FIS-based Switching */
 
-	/* PORT_IRQ_{STAT,MASK} bits */
+	/* PORT_IRQ_{STAT,MASK} bits */ //r1.3 3.3.5
 	PORT_IRQ_COLD_PRES	= (1 << 31), /* cold presence detect */
 	PORT_IRQ_TF_ERR		= (1 << 30), /* task file error */
 	PORT_IRQ_HBUS_ERR	= (1 << 29), /* host bus fatal error */
@@ -167,7 +168,7 @@ enum {
 				  PORT_IRQ_SDB_FIS | PORT_IRQ_DMAS_FIS |
 				  PORT_IRQ_PIOS_FIS | PORT_IRQ_D2H_REG_FIS,
 
-	/* PORT_CMD bits */
+	/* PORT_CMD bits *///r1.3 3.3.7
 	PORT_CMD_ASP		= (1 << 27), /* Aggressive Slumber/Partial */
 	PORT_CMD_ALPE		= (1 << 26), /* Aggressive Link PM enable */
 	PORT_CMD_ATAPI		= (1 << 24), /* Device is ATAPI */
@@ -228,7 +229,7 @@ enum {
 	EM_MAX_SLOTS			= 8,
 	EM_MAX_RETRY			= 5,
 
-	/* em_ctl bits */
+	/* em_ctl bits *///3.1.9
 	EM_CTL_RST		= (1 << 9), /* Reset */
 	EM_CTL_TM		= (1 << 8), /* Transmit Message */
 	EM_CTL_MR		= (1 << 0), /* Message Received */

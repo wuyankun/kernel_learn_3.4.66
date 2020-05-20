@@ -200,7 +200,7 @@ static const struct ata_port_info ahci_port_info[] = {
 	},
 };
 
-static const struct pci_device_id ahci_pci_tbl[] = {
+static const struct pci_device_id ahci_pci_tbl[] = {//驱动兼容设备列表
 	/* Intel */
 	{ PCI_VDEVICE(INTEL, 0x2652), board_ahci }, /* ICH6 */
 	{ PCI_VDEVICE(INTEL, 0x2653), board_ahci }, /* ICH6M */
@@ -423,13 +423,13 @@ static const struct pci_device_id ahci_pci_tbl[] = {
 };
 
 
-static struct pci_driver ahci_pci_driver = {
-	.name			= DRV_NAME,
-	.id_table		= ahci_pci_tbl,
-	.probe			= ahci_init_one,
-	.remove			= ata_pci_remove_one,
+static struct pci_driver ahci_pci_driver = {//pci_driver的结构体
+	.name			= DRV_NAME,//驱动名字
+	.id_table		= ahci_pci_tbl,//兼容设备列表
+	.probe			= ahci_init_one,//探测ahci控制器，即HBA
+	.remove			= ata_pci_remove_one,//删除一个，大部分设备只有一个
 #ifdef CONFIG_PM
-	.suspend		= ahci_pci_device_suspend,
+	.suspend		= ahci_pci_device_suspend,//待机唤醒的操作
 	.resume			= ahci_pci_device_resume,
 #endif
 };
@@ -469,14 +469,14 @@ static void ahci_pci_save_initial_config(struct pci_dev *pdev,
 	}
 
 	ahci_save_initial_config(&pdev->dev, hpriv, force_port_map,
-				 mask_port_map);
+				 mask_port_map);//保存初始化配置内容
 }
 
 static int ahci_pci_reset_controller(struct ata_host *host)
 {
 	struct pci_dev *pdev = to_pci_dev(host->dev);
 
-	ahci_reset_controller(host);
+	ahci_reset_controller(host);//重置HBA
 
 	if (pdev->vendor == PCI_VENDOR_ID_INTEL) {
 		struct ahci_host_priv *hpriv = host->private_data;
@@ -493,7 +493,7 @@ static int ahci_pci_reset_controller(struct ata_host *host)
 	return 0;
 }
 
-static void ahci_pci_init_controller(struct ata_host *host)
+static void ahci_pci_init_controller(struct ata_host *host)//初始化控制器
 {
 	struct ahci_host_priv *hpriv = host->private_data;
 	struct pci_dev *pdev = to_pci_dev(host->dev);
@@ -501,7 +501,7 @@ static void ahci_pci_init_controller(struct ata_host *host)
 	u32 tmp;
 	int mv;
 
-	if (hpriv->flags & AHCI_HFLAG_MV_PATA) {
+	if (hpriv->flags & AHCI_HFLAG_MV_PATA) {//特殊处理
 		if (pdev->device == 0x6121)
 			mv = 2;
 		else
@@ -517,7 +517,7 @@ static void ahci_pci_init_controller(struct ata_host *host)
 			writel(tmp, port_mmio + PORT_IRQ_STAT);
 	}
 
-	ahci_init_controller(host);
+	ahci_init_controller(host);//调用这个初始化控制器
 }
 
 static int ahci_vt8251_hardreset(struct ata_link *link, unsigned int *class,
@@ -640,7 +640,7 @@ static int ahci_pci_device_resume(struct pci_dev *pdev)
 }
 #endif
 
-static int ahci_configure_dma_masks(struct pci_dev *pdev, int using_dac)
+static int ahci_configure_dma_masks(struct pci_dev *pdev, int using_dac)//dma mask bit位设置
 {
 	int rc;
 
@@ -678,7 +678,7 @@ static int ahci_configure_dma_masks(struct pci_dev *pdev, int using_dac)
 	return 0;
 }
 
-static void ahci_pci_print_info(struct ata_host *host)
+static void ahci_pci_print_info(struct ata_host *host)//支持的设备类型
 {
 	struct pci_dev *pdev = to_pci_dev(host->dev);
 	u16 cc;
@@ -1050,23 +1050,23 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	unsigned int board_id = ent->driver_data;
 	struct ata_port_info pi = ahci_port_info[board_id];
-	const struct ata_port_info *ppi[] = { &pi, NULL };
-	struct device *dev = &pdev->dev;
-	struct ahci_host_priv *hpriv;
-	struct ata_host *host;
+	const struct ata_port_info *ppi[] = { &pi, NULL };//二维数组
+	struct device *dev = &pdev->dev;//得到dev设备，方便pr_info使用
+	struct ahci_host_priv *hpriv;//HBA的私有数据指针，保留上下文环境
+	struct ata_host *host;//HBA结构上下文指针
 	int n_ports, i, rc;
 	int ahci_pci_bar = AHCI_PCI_BAR_STANDARD;
 
 	VPRINTK("ENTER\n");
 
-	WARN_ON((int)ATA_MAX_QUEUE > AHCI_MAX_CMDS);
+	WARN_ON((int)ATA_MAX_QUEUE > AHCI_MAX_CMDS);//兼容性检测，最多32个port，每个port支持32个命令
 
-	ata_print_version_once(&pdev->dev, DRV_VERSION);
+	ata_print_version_once(&pdev->dev, DRV_VERSION);//打印设备支持的协议版本
 
 	/* The AHCI driver can only drive the SATA ports, the PATA driver
 	   can drive them all so if both drivers are selected make sure
 	   AHCI stays out of the way */
-	if (pdev->vendor == PCI_VENDOR_ID_MARVELL && !marvell_enable)
+	if (pdev->vendor == PCI_VENDOR_ID_MARVELL && !marvell_enable)//不兼容设备处理
 		return -ENODEV;
 
 	/*
@@ -1074,7 +1074,7 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	 * ahci, use ata_generic instead.
 	 */
 	if (pdev->vendor == PCI_VENDOR_ID_NVIDIA &&
-	    pdev->device == PCI_DEVICE_ID_NVIDIA_NFORCE_MCP89_SATA &&
+	    pdev->device == PCI_DEVICE_ID_NVIDIA_NFORCE_MCP89_SATA &&//不兼容设备处理
 	    pdev->subsystem_vendor == PCI_VENDOR_ID_APPLE &&
 	    pdev->subsystem_device == 0xcb89)
 		return -ENODEV;
@@ -1083,7 +1083,7 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	 * At the moment, we can only use the AHCI mode. Let the users know
 	 * that for SAS drives they're out of luck.
 	 */
-	if (pdev->vendor == PCI_VENDOR_ID_PROMISE)
+	if (pdev->vendor == PCI_VENDOR_ID_PROMISE)//不兼容设备处理
 		dev_info(&pdev->dev,
 			 "PDC42819 can only drive SATA devices with this driver\n");
 
@@ -1094,21 +1094,21 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		ahci_pci_bar = AHCI_PCI_BAR_ENMOTUS;
 
 	/* acquire resources */
-	rc = pcim_enable_device(pdev);
+	rc = pcim_enable_device(pdev);//使能设备
 	if (rc)
 		return rc;
 
 	/* AHCI controllers often implement SFF compatible interface.
 	 * Grab all PCI BARs just in case.
 	 */
-	rc = pcim_iomap_regions_request_all(pdev, 1 << ahci_pci_bar, DRV_NAME);
+	rc = pcim_iomap_regions_request_all(pdev, 1 << ahci_pci_bar, DRV_NAME);//得到所有bar的资源
 	if (rc == -EBUSY)
 		pcim_pin_device(pdev);
 	if (rc)
 		return rc;
 
 	if (pdev->vendor == PCI_VENDOR_ID_INTEL &&
-	    (pdev->device == 0x2652 || pdev->device == 0x2653)) {
+	    (pdev->device == 0x2652 || pdev->device == 0x2653)) {//特殊设备处理
 		u8 map;
 
 		/* ICH6s share the same PCI ID for both piix and ahci
@@ -1123,12 +1123,12 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 		}
 	}
 
-	hpriv = devm_kzalloc(dev, sizeof(*hpriv), GFP_KERNEL);
+	hpriv = devm_kzalloc(dev, sizeof(*hpriv), GFP_KERNEL);//分配HBA上下文环境的内存
 	if (!hpriv)
 		return -ENOMEM;
-	hpriv->flags |= (unsigned long)pi.private_data;
+	hpriv->flags |= (unsigned long)pi.private_data;//默认表示存在私有数据
 
-	/* MCP65 revision A1 and A2 can't do MSI */
+	/* MCP65 revision A1 and A2 can't do MSI *///特殊设备处理
 	if (board_id == board_ahci_mcp65 &&
 	    (pdev->revision == 0xa1 || pdev->revision == 0xa2))
 		hpriv->flags |= AHCI_HFLAG_NO_MSI;
@@ -1141,16 +1141,16 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (ahci_sb600_enable_64bit(pdev))
 		hpriv->flags &= ~AHCI_HFLAG_32BIT_ONLY;
 
-	if ((hpriv->flags & AHCI_HFLAG_NO_MSI) || pci_enable_msi(pdev))
-		pci_intx(pdev, 1);
+	if ((hpriv->flags & AHCI_HFLAG_NO_MSI) || pci_enable_msi(pdev))//如果支持MSI，则使能MSI
+		pci_intx(pdev, 1);//否则打开传统中断
 
-	hpriv->mmio = pcim_iomap_table(pdev)[ahci_pci_bar];
+	hpriv->mmio = pcim_iomap_table(pdev)[ahci_pci_bar];//得到AHCI BAR空间映射出来的虚拟地址
 
 	/* save initial config */
-	ahci_pci_save_initial_config(pdev, hpriv);
+	ahci_pci_save_initial_config(pdev, hpriv);//保留原始的状态数据
 
 	/* prepare host */
-	if (hpriv->cap & HOST_CAP_NCQ) {
+	if (hpriv->cap & HOST_CAP_NCQ) {//是否支持NCQ命令
 		pi.flags |= ATA_FLAG_NCQ;
 		/*
 		 * Auto-activate optimization is supposed to be
@@ -1162,10 +1162,10 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 			pi.flags |= ATA_FLAG_FPDMA_AA;
 	}
 
-	if (hpriv->cap & HOST_CAP_PMP)
+	if (hpriv->cap & HOST_CAP_PMP)//是否支持电源管理
 		pi.flags |= ATA_FLAG_PMP;
 
-	ahci_set_em_messages(hpriv, &pi);
+	ahci_set_em_messages(hpriv, &pi);//暂时不懂
 
 	if (ahci_broken_system_poweroff(pdev)) {
 		pi.flags |= ATA_FLAG_NO_POWEROFF_SPINDOWN;
@@ -1190,27 +1190,27 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	 * determining the maximum port number requires looking at
 	 * both CAP.NP and port_map.
 	 */
-	n_ports = max(ahci_nr_ports(hpriv->cap), fls(hpriv->port_map));
+	n_ports = max(ahci_nr_ports(hpriv->cap), fls(hpriv->port_map));//支持的port个数计算
 
-	host = ata_host_alloc_pinfo(&pdev->dev, ppi, n_ports);
+	host = ata_host_alloc_pinfo(&pdev->dev, ppi, n_ports);//每个port建立pinfo内存
 	if (!host)
 		return -ENOMEM;
-	host->private_data = hpriv;
+	host->private_data = hpriv;//HBA关联上下文结构体指针
 
-	if (!(hpriv->cap & HOST_CAP_SSS) || ahci_ignore_sss)
+	if (!(hpriv->cap & HOST_CAP_SSS) || ahci_ignore_sss)//SSS能力判定
 		host->flags |= ATA_HOST_PARALLEL_SCAN;
 	else
 		printk(KERN_INFO "ahci: SSS flag set, parallel bus scan disabled\n");
 
-	if (pi.flags & ATA_FLAG_EM)
+	if (pi.flags & ATA_FLAG_EM)//是否支持em
 		ahci_reset_em(host);
 
-	for (i = 0; i < host->n_ports; i++) {
+	for (i = 0; i < host->n_ports; i++) {//每个port的数据变量关联
 		struct ata_port *ap = host->ports[i];
 
 		ata_port_pbar_desc(ap, ahci_pci_bar, -1, "abar");
 		ata_port_pbar_desc(ap, ahci_pci_bar,
-				   0x100 + ap->port_no * 0x80, "port");
+				   0x100 + ap->port_no * 0x80, "port");//每个port占用0x80大小，0x100之前为公用空间
 
 		/* set enclosure management message type */
 		if (ap->flags & ATA_FLAG_EM)
@@ -1229,23 +1229,23 @@ static int ahci_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	ahci_gtf_filter_workaround(host);
 
 	/* initialize adapter */
-	rc = ahci_configure_dma_masks(pdev, hpriv->cap & HOST_CAP_64);
+	rc = ahci_configure_dma_masks(pdev, hpriv->cap & HOST_CAP_64);//配置DMA?
 	if (rc)
 		return rc;
 
-	rc = ahci_pci_reset_controller(host);
+	rc = ahci_pci_reset_controller(host);//重置控制器
 	if (rc)
 		return rc;
 
-	ahci_pci_init_controller(host);
-	ahci_pci_print_info(host);
+	ahci_pci_init_controller(host);//初始化控制器
+	ahci_pci_print_info(host);//打印信息
 
-	pci_set_master(pdev);
+	pci_set_master(pdev);//设置设备为总线master设备，可以发起传输
 	return ata_host_activate(host, pdev->irq, ahci_interrupt, IRQF_SHARED,
-				 &ahci_sht);
+				 &ahci_sht);//把中断和中断处理函数进行关联
 }
 
-static int __init ahci_init(void)
+static int __init ahci_init(void)//ahci 是pci设备
 {
 	return pci_register_driver(&ahci_pci_driver);
 }
